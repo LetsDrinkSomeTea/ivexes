@@ -1,14 +1,25 @@
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ElementTree
 import chromadb
 
 import click
+import config.log
+logger = config.log.get(__name__)
 
-import log
-logger = log.get(__name__)
+def insert_cwe(collection: chromadb.Collection, xml_data):
+    """
+    Parse CWE XML data and insert it into the ChromaDB collection.
 
-def insert_cwe(collection: chromadb.Collection, xml_file: str):
-    tree = ET.parse(xml_file)
-    root = tree.getroot()
+    Args:
+        collection: The ChromaDB collection to insert into
+        xml_data: Either a file path (str) or an ElementTree root element
+    """
+    if isinstance(xml_data, str):
+        # If xml_data is a file path, parse it
+        tree = ElementTree.parse(xml_data)
+        root = tree.getroot()
+    else:
+        # If xml_data is already an ElementTree root element, use it directly
+        root = xml_data
     cwe_ns = {'ns': 'http://cwe.mitre.org/cwe-7'}
 
     weaknesses = root.find('ns:Weaknesses', cwe_ns)
@@ -39,9 +50,21 @@ def insert_cwe(collection: chromadb.Collection, xml_file: str):
     return collection
 
 
-def insert_capec(collection: chromadb.Collection, xml_file: str):
-    tree = ET.parse(xml_file)
-    root = tree.getroot()
+def insert_capec(collection: chromadb.Collection, xml_data):
+    """
+    Parse CAPEC XML data and insert it into the ChromaDB collection.
+
+    Args:
+        collection: The ChromaDB collection to insert into
+        xml_data: Either a file path (str) or an ElementTree root element
+    """
+    if isinstance(xml_data, str):
+        # If xml_data is a file path, parse it
+        tree = ElementTree.parse(xml_data)
+        root = tree.getroot()
+    else:
+        # If xml_data is already an ElementTree root element, use it directly
+        root = xml_data
     capec_ns = {'ns': 'http://capec.mitre.org/capec-3'}
 
     attack_patterns = root.find('ns:Attack_Patterns', capec_ns)
