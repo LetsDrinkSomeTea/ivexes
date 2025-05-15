@@ -1,22 +1,23 @@
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
-from dotenv import load_dotenv
 
-load_dotenv(verbose=True)
-
-from parser import insert_capec, insert_cwe
+from modules.vector_db.parser import insert_capec, insert_cwe
+from modules.vector_db.downloader import get_cwe_tree, get_capec_tree
 
 import chromadb
 from chromadb.utils.embedding_functions.openai_embedding_function import OpenAIEmbeddingFunction
-from chromadb.config import Settings
 
-import log
-
+from config.settings import settings
+import config.log as log
 logger = log.get(__name__)
 
 class CweCapecDatabase:
-    def __init__(self, openai_embedding: bool = False) -> None:
-        self.chroma_client = chromadb.PersistentClient(settings=Settings(allow_reset=True))
-        ef = OpenAIEmbeddingFunction(model_name="text-embedding-3-large") if openai_embedding else DefaultEmbeddingFunction()
+    def __init__(self) -> None:
+        self.chroma_client = chromadb.PersistentClient(settings=chromadb.config.Settings(allow_reset=True))
+        ef = OpenAIEmbeddingFunction(
+            model_name=settings.embedding_model,
+            api_key=settings.openai_api_key,
+        ) if settings.embedding_provider == "openai" else DefaultEmbeddingFunction()
+        logger.info(f"using {settings.embedding_provider=}")
         self.collection = self.chroma_client.get_or_create_collection(name="collection-local", embedding_function=ef)
 
         logger.info(f"currently {self.collection.count()} entries loaded")
@@ -26,22 +27,22 @@ class CweCapecDatabase:
 
 
     def initialize(self) -> None:
-        """Load CWE and CAPEC datasets into the Chroma collection with error handling."""
+        """Download and load CWE and CAPEC datasets into the Chroma collection with error handling."""
         try:
-            insert_cwe(self.collection, './cwe.xml')
-            logger.info("Successfully inserted CWE data from './cwe.xml'.")
-        except FileNotFoundError as fnf:
-            logger.error("CWE file not found: %s", fnf)
+            logger.info("Downloading and parsing CWE data...")
+            cwe_root = get_cwe_tree()
+            insert_cwe(self.collection, cwe_root)
+            logger.info("Successfully downloaded and inserted CWE data.")
         except Exception as exc:
-            logger.error("Failed to insert CWE data: %s", exc)
+            logger.error("Failed to download or insert CWE data: %s", exc)
 
         try:
-            insert_capec(self.collection, './capec.xml')
-            logger.info("Successfully inserted CAPEC data from './capec.xml'.")
-        except FileNotFoundError as fnf:
-            logger.error("CAPEC file not found: %s", fnf)
+            logger.info("Downloading and parsing CAPEC data...")
+            capec_root = get_capec_tree()
+            insert_capec(self.collection, capec_root)
+            logger.info("Successfully downloaded and inserted CAPEC data.")
         except Exception as exc:
-            logger.error("Failed to insert CAPEC data: %s", exc)
+            logger.error("Failed to download or insert CAPEC data: %s", exc)
 
     def clear(self) -> None:
         self.chroma_client.reset()
@@ -63,7 +64,7 @@ class CweCapecDatabase:
         documents = results.get("documents", [[]])[0]
         return [f"{m.get("type", "").upper()}-{m.get("id", "")} {d}" for (m,d) in zip(metadata, documents)]
 
-    
+
     def query_cwe(self, query_text: str, n: int = 3) -> list[str]:
         return self.query(query_text, ["cwe"], n)
 

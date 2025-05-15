@@ -1,0 +1,22 @@
+dotenv
+
+pydantic
+pydantic_settings
+
+# Vector DB
+chromadb
+
+# Code browser
+pynvim
+docker-py
+
+# LLMs
+openai
+
+# Langchain
+langchain_core
+
+# CLI
+python-dotenv
+click
+

@@ -1,11 +1,11 @@
 from langchain_core.tools import tool
 
-from embed import CweCapecDatabase
-import log
+from modules.vector_db.embed import CweCapecDatabase
+import config.log
 
-logger = log.get(__name__)
+logger = config.log.get(__name__)
 
-db = CweCapecDatabase(openai_embedding=True)
+db = CweCapecDatabase()
 
 @tool(parse_docstring=True)
 def semantic_search_cwe(query: str, n: int = 5):

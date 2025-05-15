@@ -2,6 +2,9 @@ import os
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from dotenv import load_dotenv
+load_dotenv(verbose=True)
+
 class Settings(BaseSettings):
     """
     Application settings using Pydantic.
@@ -18,3 +21,8 @@ class Settings(BaseSettings):
 
     log_level: str = Field(default_factory=lambda: os.environ.get("LOG_LEVEL", "INFO"))
 
+    # Embedding settings
+    embedding_model: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large"))
+    embedding_provider: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_PROVIDER", "openai"))
+
+settings = Settings()
