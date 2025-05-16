@@ -4,11 +4,10 @@ Functional Diff Tool
 Entry point for comparing two source directories and extracting changed functions.
 """
 import subprocess
-import log
+import config.log
+logger = config.log.get(__name__)
 
-logger = log.get(__name__)
-
-def diff(old_dir, new_dir):
+def diff(old_dir, new_dir) -> list[str]:
 
    cmd = [
       "git", "diff",
@@ -17,8 +16,6 @@ def diff(old_dir, new_dir):
       "--no-index",    # to compare folders not commits
       old_dir, new_dir
    ]
-   # @@ -1390,136 +1390,135 @@ 
-   # diff --git a/screen-4.5.0/termcap.c b/screen-4.5.1/termcap.c
    logger.info(f"Running: {" ".join(cmd)}")
    result = subprocess.run(cmd, stdout=subprocess.PIPE, text=True)
    files = result.stdout.split("diff --git ")[1:]

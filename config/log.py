@@ -3,7 +3,7 @@ import datetime
 from config.settings import settings
 
 now = datetime.datetime.now()
-logging.basicConfig(level=logging.ERROR)
+#logging.basicConfig(level=logging.ERROR)
 
 def get(name: str):
     """
@@ -16,7 +16,8 @@ def get(name: str):
     """
     logger = logging.getLogger(name)
     logger.setLevel(settings.log_level)
-    logger.handlers = []
+    logger.handlers.clear()
+#    logger.propagate = False
 
     # Define a unified formatter
     log_format = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
