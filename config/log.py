@@ -5,14 +5,17 @@ from config.settings import settings
 now = datetime.datetime.now()
 #logging.basicConfig(level=logging.ERROR)
 
-def get(name: str):
+def get(name: str) -> logging.Logger:
     """
     Set up and return a logger with the given name and level.
-    Uses Rich for prettier console output with unified formatting.
+
+    Uses a unified formatter for consistent log output formatting.
+
     Args:
-    name (str): Logger name.
+        name: Logger name to identify the source of log messages
+
     Returns:
-    logging.Logger: Configured logger.
+        A configured logger instance
     """
     logger = logging.getLogger(name)
     logger.setLevel(settings.log_level)
