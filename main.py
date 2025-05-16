@@ -54,7 +54,7 @@ def cmd_query(query_text: str, type: str, count: int) -> None:
         count: Maximum number of results to return
     """
     db = CweCapecDatabase()
-    types = list(type) if type else None
+    types = [type] if type else None
     results = db.query(query_text, types, count)
     for result in results:
         click.echo(result)

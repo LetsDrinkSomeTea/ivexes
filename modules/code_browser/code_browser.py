@@ -50,7 +50,7 @@ class CodeBrowser:
             fr"\b{symbol}\b",  # exakter Wortbeginn/-ende
             '/codebase',  # Arbeitsverzeichnis
         ]
-        logger.info(f"Running: {" ".join(cmd)}")
+        logger.info(f"Running: {' '.join(cmd)}")
         res = self.container.exec_run(cmd)
 
         if res.exit_code != 0 :
