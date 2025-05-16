@@ -7,9 +7,17 @@ import os
 import config.log
 logger = config.log.get(__name__)
 
-def setup_container(code_base: os.path, port: str = '8080', renew: bool = False) -> Container | None:
+def setup_container(code_base: str, port: str = '8080', renew: bool = False) -> Container | None:
     """
-    Set up a Docker container with the codebase mounted.
+    Set up a Docker container with the codebase mounted for Neovim LSP analysis.
+
+    Args:
+        code_base: Path to the codebase directory to be mounted
+        port: Port number to expose from the container (default: '8080')
+        renew: Whether to remove existing container and create a new one (default: False)
+
+    Returns:
+        The Docker container object if successful, None otherwise
     """
     client = docker.from_env()
     c = [c for c in client.containers.list() if c.name == f"nvim-lsp-{os.path.basename(code_base)}"]

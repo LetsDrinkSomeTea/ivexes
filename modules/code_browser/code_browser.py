@@ -16,7 +16,14 @@ NVIM_DELAY = 0.8
 class CodeBrowser:
     """Code Browser for Neovim LSP."""
 
-    def __init__(self, codebase: os.path, port: int = 8080):
+    def __init__(self, codebase: str, port: int = 8080) -> None:
+        """
+        Initialize the CodeBrowser with a codebase path and port.
+
+        Args:
+            codebase: Path to the codebase directory
+            port: Port number for Neovim connection
+        """
         self.path = os.path.abspath(codebase)
         logger.info(f"Codebase: {self.path} starting container ...")
         self.container = setup_container(self.path)
@@ -28,8 +35,16 @@ class CodeBrowser:
             sys.exit(1)
 
 
-    def _search_symbol(self, symbol):
-        """Suche mit ripgrep (vimgrep-Format) im Workspace."""
+    def _search_symbol(self, symbol: str) -> tuple[str, int, int]:
+        """
+        Search for a symbol in the workspace using ripgrep in vimgrep format.
+
+        Args:
+            symbol: The symbol name to search for
+
+        Returns:
+            A tuple containing (file_path, line_number, column_number) of the first occurrence
+        """
         cmd = [
             "rg", "--vimgrep",
             fr"\b{symbol}\b",  # exakter Wortbeginn/-ende
@@ -54,8 +69,16 @@ class CodeBrowser:
         logger.info(f"Found at: {file_path=} {line=} {col=}")
         return file_path, line, col
 
-    def get_file_content(self, file):
-        """Get the content of the file."""
+    def get_file_content(self, file: str) -> str:
+        """
+        Get the content of a file from the container.
+
+        Args:
+            file: Path to the file within the container
+
+        Returns:
+            The content of the file as a string
+        """
         cmd = [
             "cat",
             file,
@@ -68,8 +91,16 @@ class CodeBrowser:
         logger.info(f"Got {len(res.output.splitlines())} lines from {file}")
         return res.output.decode()
 
-    def get_codebase_structure(self, n: int=3):
-        """Get the structure of the codebase."""
+    def get_codebase_structure(self, n: int=3) -> str:
+        """
+        Get the structure of the codebase using the tree command.
+
+        Args:
+            n: Maximum depth level of the tree (default: 3)
+
+        Returns:
+            A string representation of the codebase directory structure
+        """
         cmd = [
             "tree",
             "-L", str(n),
@@ -82,9 +113,23 @@ class CodeBrowser:
             return []
         logger.info(f"Tree got {len(res.output.splitlines())} entries in {self.path}")
         return res.output.decode()
-    
-    def get_symbols(self, file):
-        """Get all symbols in the file."""
+
+    def get_symbols(self, file: str) -> list[tuple[str, str, int, tuple[int, int]]]:
+        """
+        Get all symbols (variables, functions, classes, etc.) in the specified file using LSP.
+
+        Args:
+            file: Path to the file to analyze
+
+        Returns:
+            A list of tuples containing symbol information:
+            - symbol_name (str): Name of the symbol
+            - symbol_type (str): Type of symbol (function, class, variable, etc.)
+            - line_number (int): Line number where symbol is defined
+            - range (tuple): Symbol range as (start_col, end_col)
+            
+            
+        """
         self.nvim.command(f"edit {file}")
         sleep(NVIM_DELAY)
 
@@ -98,8 +143,20 @@ class CodeBrowser:
 
         return symbols
 
-    def get_references(self, symbol):
-        """Get all references to the symbol at the given line and column."""
+    def get_references(self, symbol: str) -> list[tuple[str, str, int, tuple[int, int]]]:
+        """
+        Get all references to the specified symbol in the codebase using LSP.
+
+        Args:
+            symbol: The symbol name to find references for
+
+        Returns:
+            A list of tuples containing reference information:
+            - file_path (str): Path to the file containing the reference
+            - code_context (str): The line of code containing the reference
+            - line_number (int): Line number where reference appears
+            - range (tuple): Reference range as (start_col, end_col)
+        """
         file, line, col = self._search_symbol(symbol)
         self.nvim.command(f"edit {file}")
         sleep(NVIM_DELAY)
@@ -115,8 +172,16 @@ class CodeBrowser:
         return references
 
 
-    def get_definition(self, symbol) -> tuple[str, int, int]:
-        """Open file at position, call LSP-Definition, return sync result."""
+    def get_definition(self, symbol: str) -> tuple[str, int, int]:
+        """
+        Find the definition of a symbol using LSP and return its content and location.
+
+        Args:
+            symbol: The symbol name to find the definition for
+
+        Returns:
+            A tuple containing (definition_content, begin_line, end_line)
+        """
         file, line, col = self._search_symbol(symbol)
         logger.info(f"open {file=} at {line=} {col=}")
         self.nvim.command(f"edit {file}")

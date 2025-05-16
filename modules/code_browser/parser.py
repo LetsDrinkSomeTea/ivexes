@@ -1,6 +1,4 @@
 import re
-from typing import List, Tuple
-
 import config.log
 logger = config.log.get(__name__)
 # Compile once at module load
@@ -24,10 +22,15 @@ _SYMBOL_PATTERN = re.compile(
     re.VERBOSE
 )
 
-def parse_symbols(lines: List[str]) -> List[Tuple[str, str, int, Tuple[int, int]]]:
+def parse_symbols(lines: list[str]) -> list[tuple[str, str, int, tuple[int, int]]]:
     """
-    Parse multiple lines and return a list of tuples:
-      [(name, type, line_no, (col_start, col_end)), ...]
+    Parse symbol information from LSP output lines.
+
+    Args:
+        lines: List of strings containing symbol information in LSP format
+
+    Returns:
+        A list of tuples, each containing (name, type, line_no, (col_start, col_end))
     """
     parsed = []
     for line in lines:
@@ -65,10 +68,15 @@ _REFERENCE_PATTERN = re.compile(
 )
 
 
-def parse_references(lines: List[str]) -> List[Tuple[str, str, int, Tuple[int, int]]]:
+def parse_references(lines: list[str]) -> list[tuple[str, str, int, tuple[int, int]]]:
     """
-    Parse multiple lines and return a list of tuples:
-      [(filename, line_no, col), ...]
+    Parse reference information from LSP output lines.
+
+    Args:
+        lines: List of strings containing reference information in LSP format
+
+    Returns:
+        A list of tuples, each containing (filename, code, line_no, (col_start, col_end))
     """
     parsed = []
     for line in lines:

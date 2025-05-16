@@ -7,7 +7,17 @@ import subprocess
 import config.log
 logger = config.log.get(__name__)
 
-def diff(old_dir, new_dir) -> list[str]:
+def diff(old_dir: str, new_dir: str) -> list[str]:
+   """
+   Compare two directories and extract changed functions using git diff.
+
+   Args:
+       old_dir: Path to the old directory to compare
+       new_dir: Path to the new directory to compare
+
+   Returns:
+       A list of strings, each representing a file diff
+   """
 
    cmd = [
       "git", "diff",
