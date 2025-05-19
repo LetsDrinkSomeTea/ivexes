@@ -8,7 +8,9 @@ from chromadb.utils.embedding_functions.openai_embedding_function import OpenAIE
 
 from config.settings import settings
 import config.log as log
+
 logger = log.get(__name__)
+
 
 class CweCapecDatabase:
     def __init__(self) -> None:
@@ -24,7 +26,6 @@ class CweCapecDatabase:
         if self.collection.count() == 0:
             logger.info("Initializing database...")
             self.initialize()
-
 
     def initialize(self) -> None:
         """Download and load CWE and CAPEC datasets into the Chroma collection with error handling."""
@@ -62,8 +63,7 @@ class CweCapecDatabase:
         logger.debug(results)
         metadata = results.get("metadatas", [[]])[0]
         documents = results.get("documents", [[]])[0]
-        return [f"{m.get("type", "").upper()}-{m.get("id", "")} {d}" for (m,d) in zip(metadata, documents)]
-
+        return [f'{m.get("type", "").upper()}-{m.get("id", "")} {d}' for (m, d) in zip(metadata, documents)]
 
     def query_cwe(self, query_text: str, n: int = 3) -> list[str]:
         return self.query(query_text, ["cwe"], n)

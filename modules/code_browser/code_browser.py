@@ -83,7 +83,7 @@ class CodeBrowser:
             "cat",
             file,
         ]
-        logger.info(f"Running: {" ".join(cmd)}")
+        logger.info(f"Running: {' '.join(cmd)}")
         res = self.container.exec_run(cmd)
         if res.exit_code != 0:
             logger.error(f"Error running command: {res.output}")
@@ -106,7 +106,7 @@ class CodeBrowser:
             "-L", str(n),
             "/codebase",  # Arbeitsverzeichnis
         ]
-        logger.info(f"Running: {" ".join(cmd)}")
+        logger.info(f"Running: {' '.join(cmd)}")
         res = self.container.exec_run(cmd)
         if res.exit_code != 0:
             logger.error(f"Error running command: {res.output}")
