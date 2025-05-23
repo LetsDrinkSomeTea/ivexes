@@ -109,6 +109,4 @@ class Sandbox:
             self.shell.close()
         self.client.close()
         logger.info("SSH connection closed.")
-        self.container.stop()
-        logger.info("Container stopped and removed.")
         return True
