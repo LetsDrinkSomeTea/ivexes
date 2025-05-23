@@ -1,10 +1,11 @@
 from langchain_core.tools import tool
 
-from modules.code_browser.code_browser import CodeBrowser
 from config.settings import settings
+from modules.code_browser.code_browser import CodeBrowser
 
 vulnerable_code_browser = CodeBrowser(settings.vulnerable_codebase_path)
 patched_code_browser = CodeBrowser(settings.patched_codebase_path)
+
 
 @tool(parse_docstring=True)
 def get_definition(symbol: str, vulnerable_version: bool = True) -> str:
@@ -25,6 +26,7 @@ def get_definition(symbol: str, vulnerable_version: bool = True) -> str:
                 f"</definition>")
     else:
         return "No definition found"
+
 
 @tool(parse_docstring=True)
 def get_references(symbol: str, vulnerable_version: bool = True) -> str:
@@ -47,6 +49,7 @@ def get_references(symbol: str, vulnerable_version: bool = True) -> str:
     else:
         return "No References found"
 
+
 @tool(parse_docstring=True)
 def get_symbols(file: str, vulnerable_version: bool = True) -> str:
     """
@@ -67,6 +70,7 @@ def get_symbols(file: str, vulnerable_version: bool = True) -> str:
     else:
         return f"No symbols found in file {file}"
 
+
 @tool(parse_docstring=True)
 def get_file_content(file: str, vulnerable_version: bool = True) -> str:
     """
@@ -82,6 +86,7 @@ def get_file_content(file: str, vulnerable_version: bool = True) -> str:
         return f"Content of {file}:\n<code>{result}</code>"
     else:
         return f"file {file} not found, is the path correct?"
+
 
 @tool(parse_docstring=True)
 def get_file_structure(depth: int = 3, vulnerable_version: bool = True) -> str:

@@ -1,5 +1,7 @@
 import re
+
 import config.log
+
 logger = config.log.get(__name__)
 # Compile once at module load
 _SYMBOL_PATTERN = re.compile(
@@ -21,6 +23,7 @@ _SYMBOL_PATTERN = re.compile(
     ''',
     re.VERBOSE
 )
+
 
 def parse_symbols(lines: list[str]) -> list[tuple[str, str, int, tuple[int, int]]]:
     """
@@ -48,6 +51,7 @@ def parse_symbols(lines: list[str]) -> list[tuple[str, str, int, tuple[int, int]
             logger.warning(f"error parsing line {line}: {e}")
     parsed.sort(key=lambda x: x[1])
     return parsed
+
 
 _REFERENCE_PATTERN = re.compile(
     r'''

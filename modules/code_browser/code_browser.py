@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-import sys
-import subprocess
-import pynvim
 import os
+import sys
 from time import sleep
 
-import config.log
+import pynvim
 
+import config.log
 from modules.code_browser.nvim import setup_container
 from modules.code_browser.parser import parse_symbols, parse_references
 
 logger = config.log.get(__name__)
 NVIM_DELAY = 0.5
+
 
 class CodeBrowser:
     """Code Browser for Neovim LSP."""
@@ -34,7 +34,6 @@ class CodeBrowser:
             logger.error(f"Error connecting to Neovim (127.0.0.1:{port}): {e}")
             sys.exit(1)
 
-
     def _search_symbol(self, symbol: str) -> tuple[str, int, int] | None:
         """
         Search for a symbol in the workspace using ripgrep in vimgrep format.
@@ -45,15 +44,13 @@ class CodeBrowser:
         Returns:
             A tuple containing (file_path, line_number, column_number) of the first occurrence
         """
-        cmd = [
-            "rg", "--vimgrep",
-            fr"\b{symbol}\b",  # exakter Wortbeginn/-ende
-            '/codebase',  # Arbeitsverzeichnis
-        ]
+        cmd = ["rg", "--vimgrep", fr"\b{symbol}\b",  # exakter Wortbeginn/-ende
+               '/codebase',  # Arbeitsverzeichnis
+               ]
         logger.info(f"Running: {' '.join(cmd)}")
         res = self.container.exec_run(cmd)
 
-        if res.exit_code != 0 :
+        if res.exit_code != 0:
             logger.error(f"Error running command: {res.output}")
             return None
         # Format: file:line:col:match
@@ -79,10 +76,7 @@ class CodeBrowser:
         Returns:
             The content of the file as a string
         """
-        cmd = [
-            "cat",
-            file,
-        ]
+        cmd = ["cat", file, ]
         logger.info(f"Running: {' '.join(cmd)}")
         res = self.container.exec_run(cmd)
         if res.exit_code != 0:
@@ -91,7 +85,7 @@ class CodeBrowser:
         logger.info(f"Got {len(res.output.splitlines())} lines from {file}")
         return res.output.decode()
 
-    def get_codebase_structure(self, n: int=3) -> str | None:
+    def get_codebase_structure(self, n: int = 3) -> str | None:
         """
         Get the structure of the codebase using the tree command.
 
@@ -101,11 +95,8 @@ class CodeBrowser:
         Returns:
             A string representation of the codebase directory structure
         """
-        cmd = [
-            "tree",
-            "-L", str(n),
-            "/codebase",  # Arbeitsverzeichnis
-        ]
+        cmd = ["tree", "-L", str(n), "/codebase",  # Arbeitsverzeichnis
+               ]
         logger.info(f"Running: {' '.join(cmd)}")
         res = self.container.exec_run(cmd)
         if res.exit_code != 0:
@@ -137,7 +128,6 @@ class CodeBrowser:
         self.nvim.command_output('lua vim.lsp.buf.document_symbol()')
         sleep(NVIM_DELAY)
         symbols = parse_symbols(self.nvim.current.buffer)
-
 
         logger.info(f"Found {len(symbols)} symbols in {file}")
 
@@ -171,7 +161,6 @@ class CodeBrowser:
 
         return references
 
-
     def get_definition(self, symbol: str) -> tuple[str, str, int, int]:
         """
         Find the definition of a symbol using LSP and return its content and location.
@@ -193,7 +182,6 @@ class CodeBrowser:
         (b_line, b_col) = self.nvim.current.window.cursor
         logger.debug(f"Jumped to definition ({b_line=} {b_col=})")
 
-        # self.nvim.input(b'vaB<Esc>')
         self.nvim.input(b']M')
         sleep(NVIM_DELAY)
         (e_line, e_col) = self.nvim.current.window.cursor
@@ -204,8 +192,7 @@ class CodeBrowser:
             (e_line, e_col) = self.nvim.current.window.cursor
             logger.debug(f"'%' -> ({e_line=} {e_col=})")
 
-
-        res = "\n".join(self.nvim.current.buffer[b_line-1:e_line])
+        res = "\n".join(self.nvim.current.buffer[b_line - 1:e_line])
         logger.debug(f"{res=}")
 
         return res, file, b_line, e_line

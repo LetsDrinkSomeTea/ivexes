@@ -1,9 +1,12 @@
 import xml.etree.ElementTree as ElementTree
-import chromadb
 
+import chromadb
 import click
+
 import config.log
+
 logger = config.log.get(__name__)
+
 
 def insert_cwe(collection: chromadb.Collection, xml_data):
     """
@@ -23,7 +26,11 @@ def insert_cwe(collection: chromadb.Collection, xml_data):
     cwe_ns = {'ns': 'http://cwe.mitre.org/cwe-7'}
 
     weaknesses = root.find('ns:Weaknesses', cwe_ns)
-    with click.progressbar(weaknesses.findall('ns:Weakness', cwe_ns), label="Embedding CWEs: ", show_percent=True) as items:
+    with click.progressbar(
+            weaknesses.findall('ns:Weakness', cwe_ns),
+            label="Embedding CWEs: ",
+            show_percent=True
+    ) as items:
         for weakness in items:
             wid = weakness.get('ID')
             name = weakness.get('Name')
@@ -68,8 +75,11 @@ def insert_capec(collection: chromadb.Collection, xml_data):
     capec_ns = {'ns': 'http://capec.mitre.org/capec-3'}
 
     attack_patterns = root.find('ns:Attack_Patterns', capec_ns)
-    with click.progressbar(attack_patterns.findall('ns:Attack_Pattern', capec_ns), label="Embedding CAPECs: ",
-                           show_percent=True) as items:
+    with click.progressbar(
+            attack_patterns.findall('ns:Attack_Pattern', capec_ns),
+            label="Embedding CAPECs: ",
+            show_percent=True
+    ) as items:
         for ap in items:
             aid = ap.get('ID')
             name = ap.get('Name')

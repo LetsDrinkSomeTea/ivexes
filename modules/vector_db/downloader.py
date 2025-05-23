@@ -1,13 +1,15 @@
-import urllib.request
-import zipfile
 import io
+import urllib.request
 import xml.etree.ElementTree as ElementTree
+import zipfile
+
 import config.log
 
 logger = config.log.get(__name__)
 
 CAPEC_URL = "https://capec.mitre.org/data/xml/capec_latest.xml"
 CWE_URL = "https://cwe.mitre.org/data/xml/cwec_latest.xml.zip"
+
 
 def download_capec():
     """
@@ -25,6 +27,7 @@ def download_capec():
     except Exception as e:
         logger.error(f"Failed to download CAPEC XML: {e}")
         raise
+
 
 def download_cwe():
     """
@@ -53,6 +56,7 @@ def download_cwe():
         logger.error(f"Failed to download or extract CWE XML: {e}")
         raise
 
+
 def get_capec_tree():
     """
     Download the CAPEC XML and return it as an ElementTree.
@@ -62,6 +66,7 @@ def get_capec_tree():
     """
     xml_content = download_capec()
     return ElementTree.fromstring(xml_content)
+
 
 def get_cwe_tree():
     """

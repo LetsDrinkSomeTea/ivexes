@@ -1,12 +1,15 @@
+import os
 import time
 
 import docker
 from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
-import os
+
 import config.log
 from container.utils import find_existing, remove_if_exists
+
 logger = config.log.get(__name__)
+
 
 def setup_container(code_base: str, port: str = '8080', renew: bool = False) -> Container | None:
     """

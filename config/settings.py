@@ -1,9 +1,11 @@
 import os
+
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from dotenv import load_dotenv
 load_dotenv(verbose=True)
+
 
 class Settings(BaseSettings):
     """
@@ -31,5 +33,6 @@ class Settings(BaseSettings):
     # Embedding settings
     embedding_model: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large"))
     embedding_provider: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_PROVIDER", "openai"))
+
 
 settings = Settings()

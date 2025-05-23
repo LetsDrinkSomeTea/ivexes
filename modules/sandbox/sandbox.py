@@ -1,13 +1,16 @@
-import paramiko
 import time
 
-from modules.sandbox.kali import setup_container
+import paramiko
+
 import config.log
+from modules.sandbox.kali import setup_container
 
 logger = config.log.get(__name__)
 
+
 class Sandbox:
-    def __init__(self, executable_archive: str, username: str = "root", password: str = "passwd", host: str = "localhost", port: int = 2222):
+    def __init__(self, executable_archive: str, username: str = "root", password: str = "passwd",
+                 host: str = "localhost", port: int = 2222):
         """
         Initialize the SSH client.
 
@@ -22,7 +25,7 @@ class Sandbox:
         self.username = username
         self.password = password
 
-        self.prompt_string = "" # saved last prompt string for better formatting
+        self.prompt_string = ""  # saved last prompt string for better formatting
 
         self.executable_archive = executable_archive
 
@@ -97,7 +100,6 @@ class Sandbox:
         output = self.prompt_string + output
         self.prompt_string = output.splitlines()[-1]
         return "\n".join(output.splitlines()[:-1]).strip()
-
 
     def close(self):
         """
