@@ -1,10 +1,13 @@
-import logging
 import paramiko
 import time
 
+from modules.sandbox.kali import setup_container
+import config.log
 
-class SSHClientWrapper:
-    def __init__(self, username: str, password: str, host: str = "localhost", port: int = 2222):
+logger = config.log.get(__name__)
+
+class Sandbox:
+    def __init__(self, executable_archive: str, username: str = "root", password: str = "passwd", host: str = "localhost", port: int = 2222):
         """
         Initialize the SSH client.
 
@@ -19,15 +22,28 @@ class SSHClientWrapper:
         self.username = username
         self.password = password
 
+        self.prompt_string = "" # saved last prompt string for better formatting
+
+        self.executable_archive = executable_archive
+
+        self.container = None
+
         self.client = paramiko.SSHClient()
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.shell = None  # This will hold our interactive shell channel
+
+    def __del__(self):
+        """
+        Destructor to ensure the SSH connection is closed.
+        """
+        self.close()
 
     def connect(self) -> bool:
         """
         Connect to the SSH server.
         """
         try:
+            self.container = setup_container(self.executable_archive)
             self.client.connect(
                 hostname=self.host,
                 port=self.port,
@@ -35,10 +51,10 @@ class SSHClientWrapper:
                 password=self.password,
                 timeout=10
             )
-            logging.debug(f"Connected to {self.host}:{self.port} as {self.username}")
+            logger.debug(f"Connected to {self.host}:{self.port} as {self.username}")
             return True
         except Exception as e:
-            logging.error(f"Failed to connect: {e}")
+            logger.error(f"Failed to connect: {e}")
             return False
 
     def get_shell(self):
@@ -47,13 +63,14 @@ class SSHClientWrapper:
         """
         if self.shell is None or self.shell.closed:
             self.shell = self.client.invoke_shell(term="dumb")
-            logging.info("Interactive shell started.")
+            logger.info("Interactive shell started.")
             # Optionally, wait for the shell to be ready
             time.sleep(1)
             # Flush any initial output
             if self.shell.recv_ready():
                 initial_output = self.shell.recv(4096).decode('utf-8')
-                logging.debug(f"Initial shell output: {initial_output}")
+                logger.debug(f"Initial shell output: {initial_output}")
+                self.prompt_string = initial_output.splitlines()[-1]
         return self.shell
 
     def write_to_shell(self, command: bytes, wait: float = 1.0) -> str:
@@ -68,7 +85,7 @@ class SSHClientWrapper:
             str: The output received after sending the command.
         """
         shell = self.get_shell()
-        logging.debug(f"Sending command: {command}")
+        logger.debug(f"Sending command: {command}")
         shell.send(command + b"\n")
         # Wait a bit for the command to produce output.
         time.sleep(wait)
@@ -77,7 +94,9 @@ class SSHClientWrapper:
             output_chunk = shell.recv(4096).decode('utf-8')
             output += output_chunk
             time.sleep(0.1)  # Slight delay in reading further chunks
-        return output.strip()
+        output = self.prompt_string + output
+        self.prompt_string = output.splitlines()[-1]
+        return "\n".join(output.splitlines()[:-1]).strip()
 
 
     def close(self):
@@ -87,5 +106,7 @@ class SSHClientWrapper:
         if self.shell:
             self.shell.close()
         self.client.close()
-        logging.info("SSH connection closed.")
+        logger.info("SSH connection closed.")
+        self.container.stop()
+        logger.info("Container stopped and removed.")
         return True

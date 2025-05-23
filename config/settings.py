@@ -21,6 +21,12 @@ class Settings(BaseSettings):
 
     log_level: str = Field(default_factory=lambda: os.environ.get("LOG_LEVEL", "INFO"))
 
+    # Sandbox settings
+    executable_archive: str = Field(default_factory=lambda: os.environ.get("EXECUTABLE_ARCHIVE", ""))
+
+    # Codebase settings
+    codebase_path: str = Field(default_factory=lambda: os.environ.get("CODEBASE_PATH", ""))
+
     # Embedding settings
     embedding_model: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large"))
     embedding_provider: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_PROVIDER", "openai"))

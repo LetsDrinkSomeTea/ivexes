@@ -8,20 +8,12 @@ import config.log
 from container.utils import find_existing, remove_if_exists
 logger = config.log.get(__name__)
 
-def setup_container(code_base: str, port: str = '8080', renew: bool = False) -> Container | None:
+def setup_container(executable_archive: str, port: str = '2222', renew: bool = True) -> Container | None:
     """
-    Set up a Docker container with the codebase mounted for Neovim LSP analysis.
 
-    Args:
-        code_base: Path to the codebase directory to be mounted
-        port: Port number to expose from the container (default: '8080')
-        renew: Whether to remove existing container and create a new one (default: False)
-
-    Returns:
-        The Docker container object if successful, None otherwise
     """
     client = docker.from_env()
-    container_name = f"kali-{os.path.basename(code_base)}"
+    container_name = f"kali-{os.path.basename(executable_archive)}"
 
     c = remove_if_exists(client, container_name) if renew else find_existing(client, container_name)
     if c:
@@ -29,24 +21,20 @@ def setup_container(code_base: str, port: str = '8080', renew: bool = False) -> 
         return c
 
     try:
-        logger.info(f"Starting container {container_name} with {code_base=}")
+        logger.info(f"Starting container {container_name} with {executable_archive=}")
         container: Container = client.containers.run(
-            image="nvim-lsp:latest",
+            image="kali-ssh:latest",
             name=container_name,
             detach=True,
-            volumes={
-                code_base: {
-                    'bind': '/codebase',
-                    'mode': 'ro'
-                }
-            },
             ports={
-                '8080': ('127.0.0.1', port)  # Bind to a random port
+               '22' : ('127.0.0.1', port)
             },
             remove=True
         )
-        time.sleep(30)  # Wait for the container to start
+        time.sleep(10)  # Wait for the container to start
         logger.info(f"Container {container.name} started")
+        data = open(executable_archive, 'rb').read()
+        container.put_archive("/root", data)
         return container
     except ContainerError as e:
         logger.error(f"Container error: {e}")

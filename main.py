@@ -2,6 +2,7 @@
 import click
 
 from modules.code_browser.code_browser import CodeBrowser
+from modules.sandbox.sandbox import Sandbox
 from modules.vector_db.embed import CweCapecDatabase
 
 import docker
@@ -115,8 +116,8 @@ def cmd_get_definition(path_to_codebase: str, symbol: str) -> None:
     cb = CodeBrowser(path_to_codebase)
     result = cb.get_definition(symbol)
     if result:
-        definition, line, col = result
-        click.echo(f"Found definition at {line}:{col}\n{definition}")
+        definition, file, from_line, to_line = result
+        click.echo(f"Found definition in file {file} from line {from_line} to {to_line} \n{definition}")
     else:
         click.echo("No definition found")
 
@@ -205,7 +206,26 @@ def sandbox() -> None:
 
     This group contains commands for running code in an isolated sandbox environment.
     """
-    click.echo("Sandbox module not yet implemented")
+    pass
+
+@sandbox.command('run')
+@click.argument('path_to_executable_archive')
+@click.argument('command')
+def cmd_run(path_to_executable_archive: str, command: str) -> None:
+    """
+    Run a command in a sandbox environment.
+    Args:
+        path_to_executable_archive: Path to the executable archive
+        command: The command to run in the sandbox
+
+    """
+    sb = Sandbox(path_to_executable_archive)
+    if not sb.connect():
+        click.echo("Failed to connect to sandbox")
+        return
+    result = sb.write_to_shell(command.encode())
+    click.echo(result)
+
 
 if __name__ == '__main__':
     cli()
