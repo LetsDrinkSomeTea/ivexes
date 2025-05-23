@@ -1,5 +1,4 @@
-from langchain_core.tools import tool
-
+from agents import function_tool
 import config.log
 from modules.vector_db.embed import CweCapecDatabase
 
@@ -8,7 +7,7 @@ logger = config.log.get(__name__)
 db = CweCapecDatabase()
 
 
-@tool(parse_docstring=True)
+@function_tool
 def semantic_search_cwe(query: str, n: int = 5):
     """
     Semantically searches Common Weakness Enumeration (CWE) descriptions in a vector database
@@ -24,7 +23,7 @@ def semantic_search_cwe(query: str, n: int = 5):
     return "\n".join(db.query_cwe(query, n))
 
 
-@tool(parse_docstring=True)
+@function_tool
 def semantic_search_capec(query: str, n: int = 5):
     """
     Semantically searches Common Attack Pattern Enumerations and Classifications (CAPEC) descriptions in a vector database
