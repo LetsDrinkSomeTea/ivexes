@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import subprocess
 import sys
 from time import sleep
 
@@ -16,7 +17,7 @@ NVIM_DELAY = 0.5
 class CodeBrowser:
     """Code Browser for Neovim LSP."""
 
-    def __init__(self, codebase: str, port: int = 8080) -> None:
+    def __init__(self, codebase: str, vulnerable_folder: str, patched_folder: str, port: int = 8080) -> None:
         """
         Initialize the CodeBrowser with a codebase path and port.
 
@@ -25,8 +26,13 @@ class CodeBrowser:
             port: Port number for Neovim connection
         """
         self.path = os.path.abspath(codebase)
+        self.vulnerable_folder = os.path.basename(vulnerable_folder)
+        self.patched_folder = os.path.basename(patched_folder)
         logger.info(f"Codebase: {self.path} starting container ...")
+        logger.debug(f'{self.vulnerable_folder=}')
+        logger.debug(f'{self.patched_folder=}')
         self.container = setup_container(self.path)
+        logger.debug(self.get_codebase_structure())
         try:
             self.nvim = pynvim.attach("tcp", address="127.0.0.1", port=port)
             logger.info(f"Connected to Neovim with {self.path}")
@@ -95,8 +101,11 @@ class CodeBrowser:
         Returns:
             A string representation of the codebase directory structure
         """
-        cmd = ["tree", "-L", str(n), "/codebase",  # Arbeitsverzeichnis
-               ]
+        cmd = [
+            "tree",
+            "-L", str(n),
+            "/codebase",  # Arbeitsverzeichnis
+        ]
         logger.info(f"Running: {' '.join(cmd)}")
         res = self.container.exec_run(cmd)
         if res.exit_code != 0:
@@ -196,3 +205,22 @@ class CodeBrowser:
         logger.debug(f"{res=}")
 
         return res, file, b_line, e_line
+
+    def get_diff(self):
+        cmd = [
+            "git", "diff",
+            "-W",  # function context
+            "-w",  # ignore whitespaces
+            "--no-index",
+            "--exit-code",
+            self.vulnerable_folder,
+            self.patched_folder
+        ]
+        logger.info(f"Running: {' '.join(cmd)}")
+        res = self.container.exec_run(cmd)
+        if res.exit_code not in [0, 1]:
+            logger.error(f"Error running command: {res.output}")
+            return None
+        file_diffs = res.output.decode().split("diff --git ")[1:]
+        logger.info(f'{len(file_diffs)} files altered')
+        return file_diffs
