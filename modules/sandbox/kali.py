@@ -15,8 +15,9 @@ def setup_container(executable_archive: str, port: str = '2222', renew: bool = T
     """
 
     """
+    assert executable_archive.endswith('.tar') or executable_archive.endswith('.tgz'), "Executable archive must be a .tar or .tgz file"
     client = docker.from_env()
-    container_name = f"kali-{os.path.basename(executable_archive)}"
+    container_name = f"kali-{os.path.basename(executable_archive).rsplit('.', 1)[0]}"
 
     c = remove_if_exists(client, container_name) if renew else find_existing(client, container_name)
     if c:

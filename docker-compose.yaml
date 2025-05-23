@@ -5,8 +5,8 @@ services:
     image: nvim-lsp:latest
     container_name: nvim-lsp
     pull_policy: never
-#    ports:
-#      - "2222:22"
+    ports:
+      - "8080:8080"
     volumes:
       - ./workspace:/workspace:ro
 
