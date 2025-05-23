@@ -24,7 +24,7 @@ def setup_container(code_base: str, port: str = '8080', renew: bool = False) -> 
         The Docker container object if successful, None otherwise
     """
     client = docker.from_env()
-    container_name = f"kali-{os.path.basename(code_base)}"
+    container_name = f"nvim-lsp-{os.path.basename(code_base)}"
 
     c = remove_if_exists(client, container_name) if renew else find_existing(client, container_name)
     if c:
