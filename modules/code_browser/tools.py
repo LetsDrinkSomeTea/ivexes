@@ -1,14 +1,11 @@
-from langchain_core.tools import tool
-
+from agents import function_tool
 from config.settings import settings
 from modules.code_browser.code_browser import CodeBrowser
 
-vulnerable_code_browser = CodeBrowser(settings.vulnerable_codebase_path)
-patched_code_browser = CodeBrowser(settings.patched_codebase_path)
+code_browser = CodeBrowser(settings.codebase_path, settings.vulnerable_folder, settings.patched_folder)
 
-
-@tool(parse_docstring=True)
-def get_definition(symbol: str, vulnerable_version: bool = True) -> str:
+@function_tool
+def get_definition(symbol: str) -> str:
     """
     Find the definition of a symbol in the codebase.
 
@@ -16,7 +13,6 @@ def get_definition(symbol: str, vulnerable_version: bool = True) -> str:
         symbol: The symbol name to find the definition for
         vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
-    code_browser = vulnerable_code_browser if vulnerable_version else patched_code_browser
     result = code_browser.get_definition(symbol)
     if result:
         definition, file, from_line, to_line = result
@@ -28,8 +24,8 @@ def get_definition(symbol: str, vulnerable_version: bool = True) -> str:
         return "No definition found"
 
 
-@tool(parse_docstring=True)
-def get_references(symbol: str, vulnerable_version: bool = True) -> str:
+@function_tool
+def get_references(symbol: str) -> str:
     """
     Find all references to a symbol in the codebase.
 
@@ -37,7 +33,6 @@ def get_references(symbol: str, vulnerable_version: bool = True) -> str:
         symbol: The symbol name to find references for
         vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
-    code_browser = vulnerable_code_browser if vulnerable_version else patched_code_browser
     results = code_browser.get_references(symbol)
     if results:
         references = []
@@ -50,8 +45,8 @@ def get_references(symbol: str, vulnerable_version: bool = True) -> str:
         return "No References found"
 
 
-@tool(parse_docstring=True)
-def get_symbols(file: str, vulnerable_version: bool = True) -> str:
+@function_tool
+def get_symbols(file: str) -> str:
     """
     Get all symbols (variables, functions, classes) in a file.
 
@@ -59,7 +54,6 @@ def get_symbols(file: str, vulnerable_version: bool = True) -> str:
         file: Path to the file within the codebase to analyze
         vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
-    code_browser = vulnerable_code_browser if vulnerable_version else patched_code_browser
     results = code_browser.get_symbols(file)
     if results:
         symbols = []
@@ -71,8 +65,8 @@ def get_symbols(file: str, vulnerable_version: bool = True) -> str:
         return f"No symbols found in file {file}"
 
 
-@tool(parse_docstring=True)
-def get_file_content(file: str, vulnerable_version: bool = True) -> str:
+@function_tool
+def get_file_content(file: str) -> str:
     """
     Get the content of a file in the codebase.
 
@@ -80,7 +74,6 @@ def get_file_content(file: str, vulnerable_version: bool = True) -> str:
         file: Path to the file within the codebase to analyze
         vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
-    code_browser = vulnerable_code_browser if vulnerable_version else patched_code_browser
     result = code_browser.get_file_content(file)
     if result:
         return f"Content of {file}:\n<code>{result}</code>"
@@ -88,8 +81,8 @@ def get_file_content(file: str, vulnerable_version: bool = True) -> str:
         return f"file {file} not found, is the path correct?"
 
 
-@tool(parse_docstring=True)
-def get_file_structure(depth: int = 3, vulnerable_version: bool = True) -> str:
+@function_tool
+def get_file_structure(depth: int = 3) -> str:
     """
     Get the tree of files in the codebase.
 
@@ -97,9 +90,28 @@ def get_file_structure(depth: int = 3, vulnerable_version: bool = True) -> str:
         depth: Maximum depth level of the tree (default: 3)
         vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
-    code_browser = vulnerable_code_browser if vulnerable_version else patched_code_browser
     result = code_browser.get_codebase_structure(depth)
     if result:
         return f"Tree of the codebase:\n<tree>{result}</tree>"
     else:
         return "No files found in the codebase."
+
+@function_tool
+def get_diff():
+    """
+    Get the diff of the codebase.
+    """
+    result = code_browser.get_diff()
+    if result:
+        return f"Diff of the codebase:\n<diff>{result}</diff>"
+    else:
+        return "No diff found in the codebase."
+
+code_browser_tools = [
+    get_definition,
+    get_references,
+    get_symbols,
+    get_file_content,
+    get_file_structure,
+    get_diff,
+]
