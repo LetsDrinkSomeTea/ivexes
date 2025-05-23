@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     executable_archive: str = Field(default_factory=lambda: os.environ.get("EXECUTABLE_ARCHIVE", ""))
 
     # Codebase settings
-    codebase_path: str = Field(default_factory=lambda: os.environ.get("CODEBASE_PATH", ""))
+    vulnerable_codebase_path: str = Field(default_factory=lambda: os.environ.get("VULNERABLE_CODEBASE_PATH", ""))
+    patched_codebase_path: str = Field(default_factory=lambda: os.environ.get("PATCHED_CODEBASE_PATH", ""))
 
     # Embedding settings
     embedding_model: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large"))
