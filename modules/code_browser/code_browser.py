@@ -11,7 +11,7 @@ from modules.code_browser.nvim import setup_container
 from modules.code_browser.parser import parse_symbols, parse_references
 
 logger = config.log.get(__name__)
-NVIM_DELAY = 0.8
+NVIM_DELAY = 0.5
 
 class CodeBrowser:
     """Code Browser for Neovim LSP."""
@@ -35,7 +35,7 @@ class CodeBrowser:
             sys.exit(1)
 
 
-    def _search_symbol(self, symbol: str) -> tuple[str, int, int]:
+    def _search_symbol(self, symbol: str) -> tuple[str, int, int] | None:
         """
         Search for a symbol in the workspace using ripgrep in vimgrep format.
 
@@ -55,7 +55,7 @@ class CodeBrowser:
 
         if res.exit_code != 0 :
             logger.error(f"Error running command: {res.output}")
-            return []
+            return None
         # Format: file:line:col:match
         hits = []
         for line in res.output.splitlines():
@@ -69,7 +69,7 @@ class CodeBrowser:
         logger.info(f"Found at: {file_path=} {line=} {col=}")
         return file_path, line, col
 
-    def get_file_content(self, file: str) -> str:
+    def get_file_content(self, file: str) -> str | None:
         """
         Get the content of a file from the container.
 
@@ -87,11 +87,11 @@ class CodeBrowser:
         res = self.container.exec_run(cmd)
         if res.exit_code != 0:
             logger.error(f"Error running command: {res.output}")
-            return []
+            return None
         logger.info(f"Got {len(res.output.splitlines())} lines from {file}")
         return res.output.decode()
 
-    def get_codebase_structure(self, n: int=3) -> str:
+    def get_codebase_structure(self, n: int=3) -> str | None:
         """
         Get the structure of the codebase using the tree command.
 
@@ -110,7 +110,7 @@ class CodeBrowser:
         res = self.container.exec_run(cmd)
         if res.exit_code != 0:
             logger.error(f"Error running command: {res.output}")
-            return []
+            return None
         logger.info(f"Tree got {len(res.output.splitlines())} entries in {self.path}")
         return res.output.decode()
 
@@ -172,7 +172,7 @@ class CodeBrowser:
         return references
 
 
-    def get_definition(self, symbol: str) -> tuple[str, int, int]:
+    def get_definition(self, symbol: str) -> tuple[str, str, int, int]:
         """
         Find the definition of a symbol using LSP and return its content and location.
 
@@ -208,4 +208,4 @@ class CodeBrowser:
         res = "\n".join(self.nvim.current.buffer[b_line-1:e_line])
         logger.debug(f"{res=}")
 
-        return res, b_line, e_line
+        return res, file, b_line, e_line
