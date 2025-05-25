@@ -1,5 +1,7 @@
 import asyncio
 
+from agents.run import RunConfig
+
 from config.settings import settings
 import config.log
 logger = config.log.get(__name__)
@@ -11,7 +13,7 @@ from modules.code_browser.tools import code_browser_tools
 from modules.code_browser.tools import code_browser
 from modules.sandbox.tools import sandbox
 
-from agents import Agent, Runner, ModelSettings
+from agents import Agent, ItemHelpers, MessageOutputItem, Runner, ModelSettings, TResponseInputItem, ToolCallItem, run_context
 
 tools = sandbox_tools + cwe_capec_tools + code_browser_tools
 
@@ -34,25 +36,44 @@ model_settings = ModelSettings(
 )
 
 agent = Agent(
-    name="Binary Exploiter",
+    name="Exploiter",
     instructions=system_msg,
     model=settings.model,
     model_settings=model_settings,
-    tools=tools
+    tools=tools,
+
 )
 
 
 async def main(user_msg: str):
-    result = await Runner.run(agent, user_msg)
-    print(result.final_output)
+    input_items: list[TResponseInputItem] = []
+    rc: RunConfig = RunConfig(
+        workflow_name=f"Ivexes ({settings.trace_name} Single Agent)",
+    )
+    while True:
+        input_items.append({'content': user_msg, 'role': 'user'})
+        result = await Runner.run(agent, input_items, run_config=rc)
+
+        for new_item in result.new_items:
+            if isinstance(new_item, MessageOutputItem):
+                print(f'Agent: {ItemHelpers.text_message_output(new_item)}')
+            elif isinstance(new_item, ToolCallItem):
+                print(f'Tool Call')
+            else:
+                print(f'Skipping item: {new_item.__class__.__name__}')
+        input_items = result.to_input_list()
+        user_msg = input("User: ")
+        if user_msg in ['q', 'quit', 'exit']:
+            exit(0)
+
 
 if __name__ == "__main__":
     user_msg = \
 f"""
 Start by querying the diff and finding the vulnerability.
 """
-
     asyncio.run(main(user_msg))
+
 
     # Cleanup
     logger.info("Cleaning up...")
