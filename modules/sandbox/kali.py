@@ -11,11 +11,12 @@ from container.utils import find_existing, remove_if_exists
 logger = config.log.get(__name__)
 
 
-def setup_container(executable_archive: str, port: str = '2222', renew: bool = True) -> Container | None:
+def setup_container(executable_archive: str, port: int = 2222, renew: bool = True) -> Container | None:
     """
 
     """
     assert executable_archive.endswith('.tar') or executable_archive.endswith('.tgz'), "Executable archive must be a .tar or .tgz file"
+    assert isinstance(port, int), f"port must be number, got {type(port)}"
     client = docker.from_env()
     container_name = f"kali-{os.path.basename(executable_archive).rsplit('.', 1)[0]}"
 

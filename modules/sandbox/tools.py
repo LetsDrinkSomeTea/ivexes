@@ -32,7 +32,6 @@ def teardown_sandbox() -> str:
     Returns:
         str: A message indicating the result of the teardown operation.
     """
-    #dc.containers.get("kali-ssh").stop()
     return "Sandbox teardown succesfully" if sandbox.close() else "Failed to teardown sandbox"
 
 

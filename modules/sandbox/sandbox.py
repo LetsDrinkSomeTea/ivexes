@@ -88,7 +88,7 @@ class Sandbox:
             str: The output received after sending the command.
         """
         shell = self.get_shell()
-        logger.debug(f"Sending command: {command}")
+        logger.info(f"Sending command: {command}")
         shell.send(command + b"\n")
         # Wait a bit for the command to produce output.
         time.sleep(wait)

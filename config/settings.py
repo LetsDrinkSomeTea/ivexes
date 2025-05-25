@@ -21,7 +21,9 @@ class Settings(BaseSettings):
     model: str = "gpt-4.1-mini"
     temperature: float = 0.3
 
+    # Logging
     log_level: str = Field(default_factory=lambda: os.environ.get("LOG_LEVEL", "INFO"))
+    trace_name: str = Field(default_factory=lambda: os.environ.get("TRACE_NAME", "ivexes"))
 
     # Sandbox settings
     executable_archive: str = Field(default_factory=lambda: os.environ.get("EXECUTABLE_ARCHIVE", ""))
