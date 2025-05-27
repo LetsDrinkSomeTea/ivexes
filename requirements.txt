@@ -1,23 +1,22 @@
-dotenv~=0.9.9
+dotenv
 
-pydantic~=2.11.4
-pydantic_settings~=2.9.1
+pydantic
+pydantic_settings
 
 # Sandboxes
-paramiko~=3.5.1
+paramiko
 
 # Vector DB
-chromadb~=1.0.9
+chromadb
 
 # Code browser
-pynvim~=0.5.2
-docker~=7.1.0
-
+pynvim
+docker
+chardet
 
 # LLMs
-openai-agents
 openai
 
 # CLI
-python-dotenv~=1.1.0
-click~=8.1.8
+python-dotenv
+click

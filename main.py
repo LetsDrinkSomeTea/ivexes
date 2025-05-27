@@ -1,6 +1,7 @@
-import asyncio
+import re
+from time import sleep
 
-from agents.run import RunConfig
+from openai import RateLimitError
 
 from config.settings import settings
 import config.log
@@ -10,10 +11,10 @@ from modules.sandbox.tools import sandbox_tools
 from modules.vector_db.tools import cwe_capec_tools
 from modules.code_browser.tools import code_browser_tools
 
-from modules.code_browser.tools import code_browser
 from modules.sandbox.tools import sandbox
 
-from agents import Agent, ItemHelpers, MessageOutputItem, Runner, ModelSettings, TResponseInputItem, ToolCallItem, run_context
+from agents import Agent, ItemHelpers, MessageOutputItem, Runner, ModelSettings, TResponseInputItem, ToolCallItem, \
+    trace, MaxTurnsExceeded
 
 tools = sandbox_tools + cwe_capec_tools + code_browser_tools
 
@@ -28,12 +29,22 @@ Your task is to analyze the diff and find the vulnerability and create a PoC exp
 Do not halucinate or make up any information.
 Query the tools you need to find the information you need.
 
+You have access to the following tools:
+- `sandbox`: A Kali Linux sandbox environment where you can run commands and test your exploits. The vulnerable version is installed in the sandbox.
+- `code_browser`: A tool to browse the codebase and find the relevant files and functions.
+- `cwe_capec`: A tool to query the CWE and CAPEC databases for vulnerabilities and exploits.
+The tools are different containerized environments.
+
 Dont stop until you a working PoC exploit and verified it in the sandbox.
+Always create a file in the sandbox with the PoC exploit, preferably in bash or python.
+The vulnerable version is installed in the sandbox.
 """
 
 model_settings = ModelSettings(
     temperature=0.3,
 )
+if settings.model.startswith('o'):
+    model_settings = ModelSettings() # o*-models do not support temperature
 
 agent = Agent(
     name="Exploiter",
@@ -45,42 +56,54 @@ agent = Agent(
 )
 
 
-async def main(user_msg: str):
+def main(user_msg: str):
     input_items: list[TResponseInputItem] = []
-    rc: RunConfig = RunConfig(
-        workflow_name=f"Ivexes ({settings.trace_name} Single Agent)",
-    )
-    while True:
-        input_items.append({'content': user_msg, 'role': 'user'})
-        result = await Runner.run(agent, input_items, run_config=rc)
+    workflow_name = f'Ivexes ({settings.trace_name} Single Agent({settings.model}))'
+    with trace(workflow_name):
+        while True:
+            input_items.append({'content': user_msg, 'role': 'user'})
+            try:
+                result = Runner.run_sync(agent, input_items, max_turns=settings.max_turns)
 
-        for new_item in result.new_items:
-            if isinstance(new_item, MessageOutputItem):
-                print(f'Agent: {ItemHelpers.text_message_output(new_item)}')
-            elif isinstance(new_item, ToolCallItem):
-                print(f'Tool Call')
-            else:
-                print(f'Skipping item: {new_item.__class__.__name__}')
-        input_items = result.to_input_list()
-        user_msg = input("User: ")
-        if user_msg in ['q', 'quit', 'exit']:
-            exit(0)
+                for new_item in result.new_items:
+                    if isinstance(new_item, MessageOutputItem):
+                        print(f'Agent: {ItemHelpers.text_message_output(new_item)}')
+                    elif isinstance(new_item, ToolCallItem):
+                        print(f'Tool Call')
+                    else:
+                        print(f'Skipping item: {new_item.__class__.__name__}')
+                input_items = result.to_input_list()
+                user_msg = input("User: ")
+                if user_msg in ['q', 'quit', 'exit']:
+                    exit(0)
+            except RateLimitError as e:
+                logger.warning(f"Got RateLimitError")
+                m = re.search(r'(\d+(?:\.\d+)?)', e.message)
+                if m:
+                    try_again_in = int(m.group(1))
+                    logger.info(f"Sleeping {try_again_in + 1} seconds to avoid rate limit")
+                    sleep(try_again_in + 1)
+            except MaxTurnsExceeded as e:
+                logger.error(f"Max turns exceeded: {e}")
+                print("Max turns exceeded, exiting.")
+                break
+            except Exception as e:
+                logger.error(f"Got Exception of type {type(e)=}:\n{e}")
+                logger.debug(f"{agent=}\n")
 
 
 if __name__ == "__main__":
+    from modules.code_browser.tools import code_browser
     user_msg = \
 f"""
-Start by querying the diff and finding the vulnerability.
+{code_browser.get_diff()}
 """
-    asyncio.run(main(user_msg))
+    main(user_msg)
 
 
     # Cleanup
     logger.info("Cleaning up...")
     code_browser.container.stop()
-    code_browser.container.remove()
     logger.info("Code browser container stopped and removed.")
-    sandbox.container.stop()
-    sandbox.container.remove()
-    logger.info("Sandbox container stopped and removed.")
+    sandbox.close()
 
