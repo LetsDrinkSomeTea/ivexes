@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-import subprocess
+import chardet
 import sys
 from time import sleep
 
@@ -32,7 +32,6 @@ class CodeBrowser:
         logger.debug(f'{self.vulnerable_folder=}')
         logger.debug(f'{self.patched_folder=}')
         self.container = setup_container(self.path)
-        logger.debug(self.get_codebase_structure())
         try:
             self.nvim = pynvim.attach("tcp", address="127.0.0.1", port=port)
             logger.info(f"Connected to Neovim with {self.path}")
@@ -53,7 +52,7 @@ class CodeBrowser:
         cmd = ["rg", "--vimgrep", fr"\b{symbol}\b",  # exakter Wortbeginn/-ende
                '/codebase',  # Arbeitsverzeichnis
                ]
-        logger.info(f"Running: {' '.join(cmd)}")
+        logger.debug(f"Running: {' '.join(cmd)}")
         res = self.container.exec_run(cmd)
 
         if res.exit_code != 0:
@@ -82,14 +81,26 @@ class CodeBrowser:
         Returns:
             The content of the file as a string
         """
-        cmd = ["cat", file, ]
+        cmd = ["cat", file]
         logger.info(f"Running: {' '.join(cmd)}")
         res = self.container.exec_run(cmd)
+
         if res.exit_code != 0:
             logger.error(f"Error running command: {res.output}")
             return None
-        logger.info(f"Got {len(res.output.splitlines())} lines from {file}")
-        return res.output.decode()
+
+        raw_bytes = res.output
+        detected = chardet.detect(raw_bytes)
+        encoding = detected.get("encoding", "utf-8")
+        confidence = detected.get("confidence", 0)
+
+        logger.debug(f"Detected encoding '{encoding}' with confidence {confidence:.2f} for file {file}")
+
+        try:
+            return raw_bytes.decode(encoding)
+        except UnicodeDecodeError as e:
+            logger.error(f"Failed to decode with detected encoding {encoding}: {e}")
+            return None
 
     def get_codebase_structure(self, n: int = 3) -> str | None:
         """
@@ -111,7 +122,7 @@ class CodeBrowser:
         if res.exit_code != 0:
             logger.error(f"Error running command: {res.output}")
             return None
-        logger.info(f"Tree got {len(res.output.splitlines())} entries in {self.path}")
+        logger.info(f"Tree got {len(res.output.splitlines())} entries")
         return res.output.decode()
 
     def get_symbols(self, file: str) -> list[tuple[str, str, int, tuple[int, int]]]:
@@ -132,7 +143,6 @@ class CodeBrowser:
         """
         self.nvim.command(f"edit {file}")
         sleep(NVIM_DELAY)
-
         # Get the symbols from the buffer
         self.nvim.command_output('lua vim.lsp.buf.document_symbol()')
         sleep(NVIM_DELAY)
@@ -157,16 +167,20 @@ class CodeBrowser:
             - range (tuple): Reference range as (start_col, end_col)
         """
         file, line, col = self._search_symbol(symbol)
-        self.nvim.command(f"edit {file}")
-        sleep(NVIM_DELAY)
-        self.nvim.current.window.cursor = (line, col - 1)
+        try: 
+            self.nvim.command(f"edit {file}")
+            sleep(NVIM_DELAY)
+            self.nvim.current.window.cursor = (line, col - 1)
 
-        # Get the references from the buffer
-        self.nvim.command_output('lua vim.lsp.buf.references()')
-        sleep(NVIM_DELAY)
-        references = parse_references(self.nvim.current.buffer)
+            # Get the references from the buffer
+            self.nvim.command_output('lua vim.lsp.buf.references()')
+            sleep(NVIM_DELAY)
+            references = parse_references(self.nvim.current.buffer)
 
-        logger.info(f"Found {len(references)} references in {file}")
+            logger.info(f"Found {len(references)} references in {file}")
+            logger.debug(f"{references=}")
+        except Exception as e:
+            logger.error(f"{type(e)=}\n{e}")
 
         return references
 
@@ -213,6 +227,7 @@ class CodeBrowser:
             "-w",  # ignore whitespaces
             "--no-index",
             "--exit-code",
+            "--no-prefix",
             self.vulnerable_folder,
             self.patched_folder
         ]
