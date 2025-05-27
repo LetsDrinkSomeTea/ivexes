@@ -21,10 +21,11 @@ def remove_if_exists(client, container_name: str) -> None:
     """
     Remove the container if it exists.
     """
-    container = find_existing(client, container_name)  # container already exists, ask for removal
+    container = find_existing(client, container_name)
     if not container:
         logger.info(f"Container {container_name} not existing.")
         return
     container.stop()
+    container.wait()
     container.remove(force=True)
     logger.info(f"Container {container.name} removed")

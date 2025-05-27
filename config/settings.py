@@ -16,17 +16,17 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(default_factory=lambda: os.environ.get("OPENAI_API_KEY", ""))
     brave_search_api_key: str = Field(default_factory=lambda: os.environ.get("BRAVE_SEARCH_API_KEY", ""))
 
-    # claude-3-haiku-20240307
-    # gpt-4o-mini
-    model: str = "gpt-4.1-mini"
+    # Agent settings
+    model: str = "gpt-4o-mini"
     temperature: float = 0.3
+    max_turns: int = Field(default_factory=lambda: os.environ.get("MAX_TURNS", 10))
 
     # Logging
     log_level: str = Field(default_factory=lambda: os.environ.get("LOG_LEVEL", "INFO"))
     trace_name: str = Field(default_factory=lambda: os.environ.get("TRACE_NAME", "ivexes"))
 
     # Sandbox settings
-    executable_archive: str = Field(default_factory=lambda: os.environ.get("EXECUTABLE_ARCHIVE", ""))
+    setup_archive: str = Field(default_factory=lambda: os.environ.get("SETUP_ARCHIVE", ""))
 
     # Codebase settings
     codebase_path: str = Field(default_factory=lambda: os.environ.get("CODEBASE_PATH", ""))
