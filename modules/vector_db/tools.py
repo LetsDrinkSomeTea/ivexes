@@ -19,7 +19,7 @@ def semantic_search_cwe(query: str, n: int = 5):
     Returns:
        The n best matches
     """
-    logger.info(f"querying CWE: {query}")
+    logger.info(f"Running semantic_search_cwe({query=}, {n=})")
     return "\n".join(db.query_cwe(query, n))
 
 
@@ -35,7 +35,7 @@ def semantic_search_capec(query: str, n: int = 5):
     Returns:
        The n best matches
     """
-    logger.info(f"querying CAPEC: {query}")
+    logger.info(f"Running semantic_search_capec({query=}, {n=})")
     return "\n".join(db.query_capec(query, n))
 
 

@@ -2,6 +2,9 @@ from agents import function_tool
 from config.settings import settings
 from modules.code_browser.code_browser import CodeBrowser
 
+import config.log
+logger = config.log.get(__name__)
+
 code_browser = CodeBrowser(settings.codebase_path, settings.vulnerable_folder, settings.patched_folder)
 
 @function_tool
@@ -13,6 +16,7 @@ def get_definition(symbol: str) -> str:
         symbol: The symbol name to find the definition for
         vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
+    logger.info(f'running get_definition({symbol=})')
     result = code_browser.get_definition(symbol)
     if result:
         definition, file, from_line, to_line = result
@@ -33,6 +37,7 @@ def get_references(symbol: str) -> str:
         symbol: The symbol name to find references for
         vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
+    logger.info(f'running get_references({symbol=})')
     results = code_browser.get_references(symbol)
     if results:
         references = []
@@ -54,6 +59,7 @@ def get_symbols(file: str) -> str:
         file: Path to the file within the codebase to analyze
         vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
+    logger.info(f'running get_symbols({file=})')
     results = code_browser.get_symbols(file)
     if results:
         symbols = []
@@ -74,6 +80,7 @@ def get_file_content(file: str) -> str:
         file: Path to the file within the codebase to analyze
         vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
+    logger.info(f'running get_file_content({file=})')
     result = code_browser.get_file_content(file)
     if result:
         return f"Content of {file}:\n<code>{result}</code>"
@@ -90,6 +97,7 @@ def get_file_structure(depth: int = 3) -> str:
         depth: Maximum depth level of the tree (default: 3)
         vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
+    logger.info(f'running get_file_structure({depth=})')
     result = code_browser.get_codebase_structure(depth)
     if result:
         return f"Tree of the codebase:\n<tree>{result}</tree>"
@@ -101,6 +109,7 @@ def get_diff():
     """
     Get the diff of the codebase.
     """
+    logger.info(f'running get_diff()')
     result = code_browser.get_diff()
     if result:
         return f"Diff of the codebase:\n<diff>{result}</diff>"
