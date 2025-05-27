@@ -9,7 +9,7 @@ logger = config.log.get(__name__)
 
 
 class Sandbox:
-    def __init__(self, executable_archive: str, username: str = "root", password: str = "passwd",
+    def __init__(self, setup_archive: str, username: str = "root", password: str = "passwd",
                  host: str = "localhost", port: int = 2222):
         """
         Initialize the SSH client.
@@ -27,7 +27,7 @@ class Sandbox:
 
         self.prompt_string = ""  # saved last prompt string for better formatting
 
-        self.executable_archive = executable_archive
+        self.setup_archive = setup_archive
 
         self.container = None
 
@@ -35,18 +35,12 @@ class Sandbox:
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.shell = None  # This will hold our interactive shell channel
 
-    def __del__(self):
-        """
-        Destructor to ensure the SSH connection is closed.
-        """
-        self.close()
-
     def connect(self) -> bool:
         """
         Connect to the SSH server.
         """
         try:
-            self.container = setup_container(self.executable_archive)
+            self.container = setup_container(self.setup_archive)
             self.client.connect(
                 hostname=self.host,
                 port=self.port,
@@ -92,12 +86,12 @@ class Sandbox:
         shell.send(command + b"\n")
         # Wait a bit for the command to produce output.
         time.sleep(wait)
-        output = ""
+        output = b""
         while shell.recv_ready():
-            output_chunk = shell.recv(4096).decode('utf-8')
+            output_chunk = shell.recv(4096)
             output += output_chunk
-            time.sleep(0.1)  # Slight delay in reading further chunks
-        output = self.prompt_string + output
+            time.sleep(wait)  # Slight delay in reading further chunks
+        output = self.prompt_string + output.decode('utf-8')
         self.prompt_string = output.splitlines()[-1]
         return "\n".join(output.splitlines()[:-1]).strip()
 
@@ -108,5 +102,9 @@ class Sandbox:
         if self.shell:
             self.shell.close()
         self.client.close()
-        logger.info("SSH connection closed.")
+        logger.debug("SSH connection closed.")
+        if self.container:
+            self.container.stop()
+        logger.debug("Container stopped.")
+        logger.info("Sandbox closed.")
         return True

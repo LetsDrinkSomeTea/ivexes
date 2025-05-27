@@ -6,6 +6,7 @@ from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
 import config.log
+from config.settings import settings
 from container.utils import find_existing, remove_if_exists
 
 logger = config.log.get(__name__)
@@ -24,7 +25,7 @@ def setup_container(code_base: str, port: str = '8080', renew: bool = False) -> 
         The Docker container object if successful, None otherwise
     """
     client = docker.from_env()
-    container_name = f"nvim-lsp-{os.path.basename(code_base)}"
+    container_name = f"nvim-lsp-{settings.vulnerable_folder}"
 
     c = remove_if_exists(client, container_name) if renew else find_existing(client, container_name)
     if c:
@@ -46,7 +47,7 @@ def setup_container(code_base: str, port: str = '8080', renew: bool = False) -> 
             ports={
                 '8080': ('127.0.0.1', port)  # Bind to a random port
             },
-            remove=True
+            #remove=True
         )
         time.sleep(30)  # Wait for the container to start
         logger.info(f"Container {container.name} started")
