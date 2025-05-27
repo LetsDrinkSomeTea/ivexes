@@ -2,6 +2,7 @@
 import click
 
 from modules.code_browser.code_browser import CodeBrowser
+from modules.code_browser.tools import code_browser as cb
 from modules.sandbox.sandbox import Sandbox
 from modules.vector_db.embed import CweCapecDatabase
 
@@ -101,9 +102,8 @@ def code_browser() -> None:
     pass
 
 @code_browser.command('get-definition')
-@click.argument('path_to_codebase')
 @click.argument('symbol')
-def cmd_get_definition(path_to_codebase: str, symbol: str) -> None:
+def cmd_get_definition(symbol: str) -> None:
     """
     Find the definition of a symbol in the codebase.
 
@@ -111,7 +111,6 @@ def cmd_get_definition(path_to_codebase: str, symbol: str) -> None:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find the definition for
     """
-    cb = CodeBrowser(path_to_codebase)
     result = cb.get_definition(symbol)
     if result:
         definition, file, from_line, to_line = result
@@ -120,9 +119,8 @@ def cmd_get_definition(path_to_codebase: str, symbol: str) -> None:
         click.echo("No definition found")
 
 @code_browser.command('get-references')
-@click.argument('path_to_codebase')
 @click.argument('symbol')
-def cmd_get_references(path_to_codebase: str, symbol: str) -> None:
+def cmd_get_references(symbol: str) -> None:
     """
     Find all references to a symbol in the codebase.
 
@@ -130,7 +128,6 @@ def cmd_get_references(path_to_codebase: str, symbol: str) -> None:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find references for
     """
-    cb = CodeBrowser(path_to_codebase)
     results = cb.get_references(symbol)
     if results:
         click.echo(f"Found {len(results)} references:")
@@ -141,9 +138,8 @@ def cmd_get_references(path_to_codebase: str, symbol: str) -> None:
         click.echo("No References found")
 
 @code_browser.command('get-symbols')
-@click.argument('path_to_codebase')
 @click.argument('file')
-def cmd_get_symbols(path_to_codebase: str, file: str) -> None:
+def cmd_get_symbols(file: str) -> None:
     """
     Get all symbols (variables, functions, classes) in a file.
 
@@ -151,15 +147,13 @@ def cmd_get_symbols(path_to_codebase: str, file: str) -> None:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to analyze
     """
-    cb = CodeBrowser(path_to_codebase)
     symbols = cb.get_symbols(file)
     for symbol in symbols:
         click.echo(symbol)
 
 @code_browser.command('get-file')
-@click.argument('path_to_codebase')
 @click.argument('file')
-def cmd_get_file(path_to_codebase: str, file: str) -> None:
+def cmd_get_file(file: str) -> None:
     """
     Get the content of a file in the codebase.
 
@@ -167,14 +161,12 @@ def cmd_get_file(path_to_codebase: str, file: str) -> None:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to retrieve
     """
-    cb = CodeBrowser(path_to_codebase)
     content = cb.get_file_content(file)
     click.echo(content)
 
 @code_browser.command('get-tree')
-@click.argument('path_to_codebase')
 @click.option('--count', '-n', default=3, help="Number of recursive levels")
-def cmd_get_tree(path_to_codebase: str, count: int) -> None:
+def cmd_get_tree(count: int) -> None:
     """
     Get the directory structure of the codebase.
 
@@ -182,7 +174,6 @@ def cmd_get_tree(path_to_codebase: str, count: int) -> None:
         path_to_codebase: Path to the codebase directory
         count: Maximum depth level for the directory tree
     """
-    cb = CodeBrowser(path_to_codebase)
     content = cb.get_codebase_structure(n=count)
     click.echo(content)
 
@@ -207,9 +198,8 @@ def sandbox() -> None:
     pass
 
 @sandbox.command('run')
-@click.argument('path_to_executable_archive')
 @click.argument('command')
-def cmd_run(path_to_executable_archive: str, command: str) -> None:
+def cmd_run(command: str) -> None:
     """
     Run a command in a sandbox environment.
     Args:
@@ -217,11 +207,30 @@ def cmd_run(path_to_executable_archive: str, command: str) -> None:
         command: The command to run in the sandbox
 
     """
-    sb = Sandbox(path_to_executable_archive)
+    from modules.sandbox.tools import sandbox as sb
     if not sb.connect():
         click.echo("Failed to connect to sandbox")
         return
     result = sb.write_to_shell(command.encode())
+    click.echo(result)
+
+@sandbox.command('create-file')
+@click.argument('path')
+@click.argument('content')
+def cmd_run(path: str, content: str) -> None:
+    """
+    Run a command in a sandbox environment.
+    Args:
+        path_to_executable_archive: Path to the executable archive
+        command: The command to run in the sandbox
+
+    """
+    from modules.sandbox.tools import sandbox as sb
+    if not sb.connect():
+        click.echo("Failed to connect to sandbox")
+        return
+    command = f'cat > {path} << EOL\n{content}\nEOL\n'
+    return sb.write_to_shell(command.encode())
     click.echo(result)
 
 
