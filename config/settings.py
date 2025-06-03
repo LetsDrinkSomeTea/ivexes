@@ -1,5 +1,5 @@
 import os
-
+from config.components import banner
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     # Agent settings
     model: str = "gpt-4o-mini"
     temperature: float = 0.3
-    max_turns: int = Field(default_factory=lambda: os.environ.get("MAX_TURNS", 10))
+    max_turns: int = Field(default_factory=lambda: int(os.environ.get("MAX_TURNS", "10")))
 
     # Logging
     log_level: str = Field(default_factory=lambda: os.environ.get("LOG_LEVEL", "INFO"))
@@ -39,3 +39,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+print(banner(
+    model=settings.model,
+    temperature=settings.temperature,
+    max_turns=settings.max_turns,
+))
