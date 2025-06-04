@@ -20,3 +20,6 @@ jobs:
       - name: run app
         run: |
           python3 manual.py --help
+      - name: query vectordb
+        run: |
+          python3 manual.py vector-db query test-value
