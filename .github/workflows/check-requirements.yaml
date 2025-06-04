@@ -8,12 +8,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
+      - name: install dependencies
         run: |
           pip install -r requirements.txt
-      - name: Run Tests
+      - name: run tests
         run: |
           python3 tests/run_tests.py
-      - name: init
+      - name: build container
+        run: |
+          docker compose build
+      - name: run app
         run: |
           python3 manual.py --help
