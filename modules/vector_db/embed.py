@@ -1,6 +1,5 @@
 import chromadb
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
-from chromadb.utils.embedding_functions.openai_embedding_function import OpenAIEmbeddingFunction
 
 import config.log as log
 from config.settings import settings
@@ -13,10 +12,13 @@ logger = log.get(__name__)
 class CweCapecDatabase:
     def __init__(self) -> None:
         self.chroma_client = chromadb.PersistentClient(settings=chromadb.config.Settings(allow_reset=True))
-        ef = OpenAIEmbeddingFunction(
-            model_name=settings.embedding_model,
-            api_key=settings.openai_api_key,
-        ) if settings.embedding_provider == "openai" else DefaultEmbeddingFunction()
+        ef =   DefaultEmbeddingFunction()
+        if settings.embedding_provider == "openai":
+            from chromadb.utils.embedding_functions.openai_embedding_function import OpenAIEmbeddingFunction
+            ef = OpenAIEmbeddingFunction(
+                model_name=settings.embedding_model,
+                api_key=settings.openai_api_key,
+            ) 
         logger.info(f"using {settings.embedding_provider=}")
         self.collection = self.chroma_client.get_or_create_collection(name="collection-local", embedding_function=ef)
 
