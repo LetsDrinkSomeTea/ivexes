@@ -20,3 +20,6 @@ openai
 # CLI
 python-dotenv
 click
+
+# Token
+tiktoken

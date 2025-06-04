@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import click
+import os
 
 from modules.code_browser.code_browser import CodeBrowser
 from modules.code_browser.tools import code_browser as cb
@@ -17,6 +18,22 @@ def cli() -> None:
     This is the main entry point for the CLI application.
     """
     pass
+
+@cli.command()
+@click.argument('path', type=click.Path(exists=True))
+def tokenize(path: str) -> None:
+    """
+    Tokenize a file and print the number of tokens, characters, and words.
+
+    """
+    import modules.token.count as count
+    res = (0, 0, 0)  # Default result in case of error
+    if os.path.isdir(path):
+        res = count.get_directory_statistics(path)
+    elif os.path.isfile(path):
+        res = count.get_file_statistics(path)
+
+    click.echo(f"===== Result of counting =====\nTokens: {res[0]}\nCharacters: {res[1]}\nWords: {res[2]}")
 
 # Vector DB module commands
 @cli.group()
