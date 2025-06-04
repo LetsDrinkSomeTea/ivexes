@@ -1,0 +1,18 @@
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  requirements:
+    name: Check python requirements
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+      - name: Run Tests
+        run: |
+          python3 tests/tests/run_tests.py
