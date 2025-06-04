@@ -16,6 +16,7 @@ chardet
 
 # LLMs
 openai
+openai-agents
 
 # CLI
 python-dotenv
