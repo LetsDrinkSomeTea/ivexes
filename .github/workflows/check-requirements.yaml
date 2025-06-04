@@ -1,0 +1,26 @@
+name: Check Requirements
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  requirements:
+    name: Check python requirements
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: run tests
+        run: |
+          python3 tests/run_tests.py
+      - name: build container
+        run: |
+          docker compose build
+      - name: run app
+        run: |
+          python3 manual.py --help
+      - name: query vectordb
+        run: |
+          python3 manual.py vector-db query test-value
