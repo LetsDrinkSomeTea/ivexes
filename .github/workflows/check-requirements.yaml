@@ -15,4 +15,7 @@ jobs:
           pip install -r requirements.txt
       - name: Run Tests
         run: |
-          python3 tests/tests/run_tests.py
+          python3 tests/run_tests.py
+      - name: init
+        run: |
+          python3 manual.py --help
