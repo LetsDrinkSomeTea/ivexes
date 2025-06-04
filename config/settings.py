@@ -34,8 +34,8 @@ class Settings(BaseSettings):
     patched_folder: str = Field(default_factory=lambda: os.environ.get("PATCHED_CODEBASE_FOLDER", ""))
 
     # Embedding settings
-    embedding_model: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large"))
-    embedding_provider: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_PROVIDER", "openai"))
+    embedding_model: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_MODEL", "builtin"))
+    embedding_provider: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_PROVIDER", "builtin"))
 
 
 settings = Settings()
