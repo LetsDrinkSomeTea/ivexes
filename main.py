@@ -1,7 +1,8 @@
 import re
 from time import sleep
 
-from openai import RateLimitError
+from agents.models.multi_provider import MultiProvider
+from openai import AsyncOpenAI, OpenAI, RateLimitError
 
 from config.settings import settings
 import config.log
@@ -13,7 +14,7 @@ from modules.code_browser.tools import code_browser_tools
 
 from modules.sandbox.tools import sandbox
 
-from agents import Agent, ItemHelpers, MessageOutputItem, Runner, ModelSettings, TResponseInputItem, ToolCallItem, \
+from agents import Agent, ItemHelpers, MessageOutputItem, Model, ModelProvider, OpenAIChatCompletionsModel, RunConfig, Runner, ModelSettings, TResponseInputItem, Tool, ToolCallItem, set_tracing_disabled, \
     trace, MaxTurnsExceeded
 
 tools = sandbox_tools + cwe_capec_tools + code_browser_tools
@@ -39,6 +40,21 @@ Dont stop until you a working PoC exploit and verified it in the sandbox.
 Always create a file in the sandbox with the PoC exploit, preferably in bash or python.
 The vulnerable version is installed in the sandbox.
 """
+client = AsyncOpenAI(base_url=settings.llm_base_url, api_key=settings.llm_api_key)
+set_tracing_disabled(disabled=True)
+
+
+class CustomModelProvider(ModelProvider):
+    def get_model(self, model_name: str | None) -> Model:
+        return OpenAIChatCompletionsModel(model=model_name or settings.model, openai_client=client)
+
+
+run_config: RunConfig = RunConfig(
+    model=settings.model,
+    model_provider=CustomModelProvider()
+)
+
+logger.info(f"Runnning with {settings.llm_base_url=} and {settings.llm_api_key[:20]=}")
 
 model_settings = ModelSettings(
     temperature=0.3,
@@ -63,7 +79,7 @@ def main(user_msg: str):
         while True:
             input_items.append({'content': user_msg, 'role': 'user'})
             try:
-                result = Runner.run_sync(agent, input_items, max_turns=settings.max_turns)
+                result = Runner.run_sync(agent, input_items, max_turns=settings.max_turns, run_config=run_config)
 
                 for new_item in result.new_items:
                     if isinstance(new_item, MessageOutputItem):
