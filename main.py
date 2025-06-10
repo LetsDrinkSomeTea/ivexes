@@ -1,23 +1,22 @@
 import re
 from time import sleep
-
-from agents.models.multi_provider import MultiProvider
-from openai import AsyncOpenAI, OpenAI, RateLimitError
+from typing import cast
 
 from config.settings import settings
 import config.log
+from modules.printer.printer import print_result
 logger = config.log.get(__name__)
+from config.run import get_config
 
 from modules.sandbox.tools import sandbox_tools
 from modules.vector_db.tools import cwe_capec_tools
 from modules.code_browser.tools import code_browser_tools
 
-from modules.sandbox.tools import sandbox
 
-from agents import Agent, ItemHelpers, MessageOutputItem, Model, ModelProvider, OpenAIChatCompletionsModel, RunConfig, Runner, ModelSettings, TResponseInputItem, Tool, ToolCallItem, set_tracing_disabled, \
-    trace, MaxTurnsExceeded
+from openai import RateLimitError
+from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExceeded
 
-tools = sandbox_tools + cwe_capec_tools + code_browser_tools
+tools: list[Tool] = cast(list[Tool], sandbox_tools + cwe_capec_tools + code_browser_tools)
 
 system_msg = \
 """
@@ -40,24 +39,6 @@ Dont stop until you a working PoC exploit and verified it in the sandbox.
 Always create a file in the sandbox with the PoC exploit, preferably in bash or python.
 The vulnerable version is installed in the sandbox.
 """
-client = AsyncOpenAI(base_url=settings.llm_base_url, api_key=settings.llm_api_key)
-set_tracing_disabled(disabled=True)
-
-
-class CustomModelProvider(ModelProvider):
-    def get_model(self, model_name: str | None) -> Model:
-        return OpenAIChatCompletionsModel(model=model_name or settings.model, openai_client=client)
-
-
-run_config: RunConfig = RunConfig(
-    model=settings.model,
-    model_provider=CustomModelProvider(),
-    model_settings=ModelSettings(
-        temperature=settings.temperature,
-    )
-)
-
-logger.info(f"Runnning with {settings.llm_base_url=} and {settings.llm_api_key[:20]=}")
 
 agent = Agent(
     name="Exploiter",
@@ -75,16 +56,8 @@ def main(user_msg: str):
         while True:
             input_items.append({'content': user_msg, 'role': 'user'})
             try:
-                result = Runner.run_sync(agent, input_items, max_turns=settings.max_turns, run_config=run_config)
-
-                for new_item in result.new_items:
-                    if isinstance(new_item, MessageOutputItem):
-                        print(f'Agent: {ItemHelpers.text_message_output(new_item)}')
-                    elif isinstance(new_item, ToolCallItem):
-                        print(f'Tool Call')
-                    else:
-                        print(f'Skipping item: {new_item.__class__.__name__}')
-                input_items = result.to_input_list()
+                result = Runner.run_sync(agent, input_items, max_turns=settings.max_turns, run_config=get_config())
+                input_items = print_result(result)
                 user_msg = input("User: ")
                 if user_msg in ['q', 'quit', 'exit']:
                     exit(0)
@@ -111,11 +84,3 @@ f"""
 {code_browser.get_diff()}
 """
     main(user_msg)
-
-
-    # Cleanup
-    logger.info("Cleaning up...")
-    code_browser.container.stop()
-    logger.info("Code browser container stopped and removed.")
-    sandbox.close()
-
