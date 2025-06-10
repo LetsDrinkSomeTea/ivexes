@@ -51,22 +51,18 @@ class CustomModelProvider(ModelProvider):
 
 run_config: RunConfig = RunConfig(
     model=settings.model,
-    model_provider=CustomModelProvider()
+    model_provider=CustomModelProvider(),
+    model_settings=ModelSettings(
+        temperature=settings.temperature,
+    )
 )
 
 logger.info(f"Runnning with {settings.llm_base_url=} and {settings.llm_api_key[:20]=}")
-
-model_settings = ModelSettings(
-    temperature=0.3,
-)
-if settings.model.startswith('o'):
-    model_settings = ModelSettings() # o*-models do not support temperature
 
 agent = Agent(
     name="Exploiter",
     instructions=system_msg,
     model=settings.model,
-    model_settings=model_settings,
     tools=tools,
 
 )
