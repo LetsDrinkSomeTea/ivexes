@@ -16,9 +16,13 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(default_factory=lambda: os.environ.get("OPENAI_API_KEY", ""))
     brave_search_api_key: str = Field(default_factory=lambda: os.environ.get("BRAVE_SEARCH_API_KEY", ""))
 
+    # gets used
+    llm_api_key: str = Field(default_factory=lambda: os.environ.get("LLM_API_KEY", os.environ.get("OPENAI_API_KEY", "")))
+    llm_base_url: str = Field(default_factory=lambda: os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1"))
+
     # Agent settings
-    model: str = "gpt-4o-mini"
-    temperature: float = 0.3
+    model: str = Field(default_factory=lambda: os.environ.get("MODEL", "openai/gpt-4o-mini"))
+    temperature: float = Field(default_factory=lambda: float(os.environ.get("TEMPERATURE", "0.3")))
     max_turns: int = Field(default_factory=lambda: int(os.environ.get("MAX_TURNS", "10")))
 
     # Logging

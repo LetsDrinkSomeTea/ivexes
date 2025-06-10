@@ -1,22 +1,22 @@
 import re
 from time import sleep
-
-from openai import RateLimitError
+from typing import cast
 
 from config.settings import settings
 import config.log
+from modules.printer.printer import print_result
 logger = config.log.get(__name__)
+from config.run import get_config
 
 from modules.sandbox.tools import sandbox_tools
 from modules.vector_db.tools import cwe_capec_tools
 from modules.code_browser.tools import code_browser_tools
 
-from modules.sandbox.tools import sandbox
 
-from agents import Agent, ItemHelpers, MessageOutputItem, Runner, ModelSettings, TResponseInputItem, ToolCallItem, \
-    trace, MaxTurnsExceeded
+from openai import RateLimitError
+from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExceeded
 
-tools = sandbox_tools + cwe_capec_tools + code_browser_tools
+tools: list[Tool] = cast(list[Tool], sandbox_tools + cwe_capec_tools + code_browser_tools)
 
 system_msg = \
 """
@@ -40,17 +40,10 @@ Always create a file in the sandbox with the PoC exploit, preferably in bash or 
 The vulnerable version is installed in the sandbox.
 """
 
-model_settings = ModelSettings(
-    temperature=0.3,
-)
-if settings.model.startswith('o'):
-    model_settings = ModelSettings() # o*-models do not support temperature
-
 agent = Agent(
     name="Exploiter",
     instructions=system_msg,
     model=settings.model,
-    model_settings=model_settings,
     tools=tools,
 
 )
@@ -63,16 +56,8 @@ def main(user_msg: str):
         while True:
             input_items.append({'content': user_msg, 'role': 'user'})
             try:
-                result = Runner.run_sync(agent, input_items, max_turns=settings.max_turns)
-
-                for new_item in result.new_items:
-                    if isinstance(new_item, MessageOutputItem):
-                        print(f'Agent: {ItemHelpers.text_message_output(new_item)}')
-                    elif isinstance(new_item, ToolCallItem):
-                        print(f'Tool Call')
-                    else:
-                        print(f'Skipping item: {new_item.__class__.__name__}')
-                input_items = result.to_input_list()
+                result = Runner.run_sync(agent, input_items, max_turns=settings.max_turns, run_config=get_config())
+                input_items = print_result(result)
                 user_msg = input("User: ")
                 if user_msg in ['q', 'quit', 'exit']:
                     exit(0)
@@ -99,11 +84,3 @@ f"""
 {code_browser.get_diff()}
 """
     main(user_msg)
-
-
-    # Cleanup
-    logger.info("Cleaning up...")
-    code_browser.container.stop()
-    logger.info("Code browser container stopped and removed.")
-    sandbox.close()
-
