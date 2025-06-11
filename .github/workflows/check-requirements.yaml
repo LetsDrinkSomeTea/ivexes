@@ -17,7 +17,7 @@ jobs:
           docker compose build
       - name: run app
         run: |
-          python3 manual.py --help
+          python3 src/ivexes/manual.py --help
       - name: query vectordb
         run: |
-          python3 manual.py vector-db query test-value
+          python3 src/ivexes/manual.py vector-db query test-value
