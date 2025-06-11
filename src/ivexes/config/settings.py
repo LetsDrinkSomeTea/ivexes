@@ -1,5 +1,5 @@
 import os
-from config.components import banner
+from ivexes.config.components import banner
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings

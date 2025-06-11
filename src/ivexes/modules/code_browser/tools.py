@@ -1,9 +1,9 @@
 from agents import function_tool
-from config.settings import settings
-from modules.code_browser.code_browser import CodeBrowser
+from ivexes.config.settings import settings
+from ivexes.modules.code_browser.code_browser import CodeBrowser
 
-import config.log
-logger = config.log.get(__name__)
+import ivexes.config.log as log
+logger = log.get(__name__)
 
 if settings.codebase_path and settings.vulnerable_folder and settings.patched_folder:
     code_browser = CodeBrowser(settings.codebase_path, settings.vulnerable_folder, settings.patched_folder)

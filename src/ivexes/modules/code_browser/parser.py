@@ -1,8 +1,8 @@
 import re
 
-import config.log
+import ivexes.config.log as log
 
-logger = config.log.get(__name__)
+logger = log.get(__name__)
 # Compile once at module load
 _SYMBOL_PATTERN = re.compile(
     r'''

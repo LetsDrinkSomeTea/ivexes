@@ -1,0 +1,24 @@
+[project]
+name = "ivexes"
+version = "0.1.0"
+description = "A Python package for automating vulnerability analysis and exploit generation"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+dependencies = [
+  "dotenv",
+  "pydantic",
+  "pydantic_settings",
+  "paramiko",
+  "chromadb",
+  "pynvim",
+  "docker",
+  "chardet",
+  "openai",
+  "openai-agents",
+  "python-dotenv",
+  "click",
+  "tiktoken",
+]
+
+[project.urls]
+Repository = "https://github.com/LetsDrinkSomeTea/ivexes"

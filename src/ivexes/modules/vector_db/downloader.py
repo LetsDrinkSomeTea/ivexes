@@ -3,9 +3,9 @@ import urllib.request
 import xml.etree.ElementTree as ElementTree
 import zipfile
 
-import config.log
+import ivexes.config.log as log
 
-logger = config.log.get(__name__)
+logger = log.get(__name__)
 
 CAPEC_URL = "https://capec.mitre.org/data/xml/capec_latest.xml"
 CWE_URL = "https://cwe.mitre.org/data/xml/cwec_latest.xml.zip"

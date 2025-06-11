@@ -1,10 +1,10 @@
 import chromadb
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 
-import config.log as log
-from config.settings import settings
-from modules.vector_db.downloader import get_cwe_tree, get_capec_tree
-from modules.vector_db.parser import insert_capec, insert_cwe
+import ivexes.config.log as log
+from ivexes.config.settings import settings
+from ivexes.modules.vector_db.downloader import get_cwe_tree, get_capec_tree
+from ivexes.modules.vector_db.parser import insert_capec, insert_cwe
 
 logger = log.get(__name__)
 

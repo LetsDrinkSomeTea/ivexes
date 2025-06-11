@@ -1,11 +1,11 @@
 from agents import Model, ModelProvider, ModelSettings, OpenAIChatCompletionsModel, RunConfig
 from openai import AsyncOpenAI
-from config.settings import settings
-import config.log
+from ivexes.config.settings import settings
+import ivexes.config.log as log
 import pprint
 
 def get_config() -> RunConfig:
-    logger = config.log.get(__name__)
+    logger = log.get(__name__)
 
     client = AsyncOpenAI(base_url=settings.llm_base_url, api_key=settings.llm_api_key)
 

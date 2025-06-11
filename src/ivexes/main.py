@@ -2,15 +2,15 @@ import re
 from time import sleep
 from typing import cast
 
-from config.settings import settings
-import config.log
-from modules.printer.printer import print_result
-logger = config.log.get(__name__)
-from config.run import get_config
+from ivexes.config.settings import settings
+import ivexes.config.log
+from ivexes.modules.printer.printer import print_result
+logger = ivexes.config.log.get(__name__)
+from ivexes.config.run import get_config
 
-from modules.sandbox.tools import sandbox_tools
-from modules.vector_db.tools import cwe_capec_tools
-from modules.code_browser.tools import code_browser_tools
+from ivexes.modules.sandbox.tools import sandbox_tools
+from ivexes.modules.vector_db.tools import cwe_capec_tools
+from ivexes.modules.code_browser.tools import code_browser_tools
 
 
 from openai import RateLimitError
@@ -78,7 +78,7 @@ def main(user_msg: str):
 
 
 if __name__ == "__main__":
-    from modules.code_browser.tools import code_browser
+    from ivexes.modules.code_browser.tools import code_browser
     user_msg = \
 f"""
 {code_browser.get_diff()}

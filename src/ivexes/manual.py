@@ -2,13 +2,11 @@
 import click
 import os
 
-from modules.code_browser.code_browser import CodeBrowser
-from modules.code_browser.tools import code_browser as cb
-from modules.sandbox.sandbox import Sandbox
-from modules.vector_db.embed import CweCapecDatabase
+from ivexes.modules.code_browser.tools import code_browser as cb
+from ivexes.modules.vector_db.embed import CweCapecDatabase
 
-import config.log
-logger = config.log.get(__name__)
+import ivexes.config.log as log
+logger = log.get(__name__)
 
 @click.group()
 def cli() -> None:
@@ -26,7 +24,7 @@ def tokenize(path: str) -> None:
     Tokenize a file and print the number of tokens, characters, and words.
 
     """
-    import modules.token.count as count
+    import ivexes.modules.token.count as count
     res = (0, 0, 0)  # Default result in case of error
     if os.path.isdir(path):
         res = count.get_directory_statistics(path)
@@ -224,7 +222,7 @@ def cmd_run(command: str) -> None:
         command: The command to run in the sandbox
 
     """
-    from modules.sandbox.tools import sandbox as sb
+    from ivexes.modules.sandbox.tools import sandbox as sb
     if not sb.connect():
         click.echo("Failed to connect to sandbox")
         return
@@ -234,7 +232,7 @@ def cmd_run(command: str) -> None:
 @sandbox.command('create-file')
 @click.argument('path')
 @click.argument('content')
-def cmd_run(path: str, content: str) -> None:
+def create_file(path: str, content: str) -> None:
     """
     Run a command in a sandbox environment.
     Args:
@@ -242,12 +240,12 @@ def cmd_run(path: str, content: str) -> None:
         command: The command to run in the sandbox
 
     """
-    from modules.sandbox.tools import sandbox as sb
+    from ivexes.modules.sandbox.tools import sandbox as sb
     if not sb.connect():
         click.echo("Failed to connect to sandbox")
         return
     command = f'cat > {path} << EOL\n{content}\nEOL\n'
-    return sb.write_to_shell(command.encode())
+    result = sb.write_to_shell(command.encode())
     click.echo(result)
 
 

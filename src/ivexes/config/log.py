@@ -1,7 +1,7 @@
 import datetime
 import logging
 
-from config.settings import settings
+from ivexes.config.settings import settings
 
 now = datetime.datetime.now()
 
