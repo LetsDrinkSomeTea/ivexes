@@ -5,7 +5,10 @@ from modules.code_browser.code_browser import CodeBrowser
 import config.log
 logger = config.log.get(__name__)
 
-code_browser = CodeBrowser(settings.codebase_path, settings.vulnerable_folder, settings.patched_folder)
+if settings.codebase_path and settings.vulnerable_folder and settings.patched_folder:
+    code_browser = CodeBrowser(settings.codebase_path, settings.vulnerable_folder, settings.patched_folder)
+else:
+    logger.warning("Skipping code_browser tools because codebase_path, vulnerable_folder or patched_folder is not set in settings.")
 
 @function_tool
 def get_definition(symbol: str) -> str:
@@ -116,6 +119,7 @@ def get_diff():
     else:
         return "No diff found in the codebase."
 
+
 code_browser_tools = [
     get_definition,
     get_references,
@@ -123,4 +127,4 @@ code_browser_tools = [
     get_file_content,
     get_file_structure,
     get_diff,
-]
+] if settings.codebase_path and settings.vulnerable_folder and settings.patched_folder else []

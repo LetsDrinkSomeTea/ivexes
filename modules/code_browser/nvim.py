@@ -25,7 +25,7 @@ def setup_container(code_base: str, port: str = '8080', renew: bool = False) -> 
         The Docker container object if successful, None otherwise
     """
     client = docker.from_env()
-    container_name = f"nvim-lsp-{settings.vulnerable_folder}"
+    container_name = f"nvim-lsp-{settings.trace_name}"
 
     c = remove_if_exists(client, container_name) if renew else find_existing(client, container_name)
     if c:

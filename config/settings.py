@@ -27,15 +27,15 @@ class Settings(BaseSettings):
 
     # Logging
     log_level: str = Field(default_factory=lambda: os.environ.get("LOG_LEVEL", "INFO"))
-    trace_name: str = Field(default_factory=lambda: os.environ.get("TRACE_NAME", "ivexes"))
+    trace_name: str = Field(default_factory=lambda: os.environ.get("TRACE_NAME", "ivexes").lower())
 
     # Sandbox settings
     setup_archive: str = Field(default_factory=lambda: os.environ.get("SETUP_ARCHIVE", ""))
 
     # Codebase settings
-    codebase_path: str = Field(default_factory=lambda: os.environ.get("CODEBASE_PATH", ""))
-    vulnerable_folder: str = Field(default_factory=lambda: os.environ.get("VULNERABLE_CODEBASE_FOLDER", ""))
-    patched_folder: str = Field(default_factory=lambda: os.environ.get("PATCHED_CODEBASE_FOLDER", ""))
+    codebase_path: str | None = Field(default_factory=lambda: os.environ.get("CODEBASE_PATH", None))
+    vulnerable_folder: str | None = Field(default_factory=lambda: os.environ.get("VULNERABLE_CODEBASE_FOLDER", None))
+    patched_folder: str | None = Field(default_factory=lambda: os.environ.get("PATCHED_CODEBASE_FOLDER", None))
 
     # Embedding settings
     embedding_model: str = Field(default_factory=lambda: os.environ.get("EMBEDDING_MODEL", "builtin"))

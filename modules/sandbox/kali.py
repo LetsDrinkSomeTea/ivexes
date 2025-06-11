@@ -19,7 +19,7 @@ def setup_container(setup_archive: str, port: int = 2222, renew: bool = True) ->
     assert setup_archive.endswith('.tar') or setup_archive.endswith('.tgz'), "Executable archive must be a .tar or .tgz file"
     assert isinstance(port, int), f"port must be number, got {type(port)}"
     client = docker.from_env()
-    container_name = f"kali-{settings.vulnerable_folder}"
+    container_name = f"kali-{settings.trace_name}"
 
     c = remove_if_exists(client, container_name) if renew else find_existing(client, container_name)
     if c:

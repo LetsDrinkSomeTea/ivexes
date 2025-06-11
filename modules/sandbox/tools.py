@@ -21,7 +21,6 @@ def setup_sandbox() -> str:
     r += sandbox.write_to_shell(b"whoami")
     r += sandbox.write_to_shell(b"pwd")
     r += sandbox.write_to_shell(b"ls -la")
-    r += sandbox.write_to_shell(b"screen --version")
     return r
 
 
