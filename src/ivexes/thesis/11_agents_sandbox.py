@@ -1,6 +1,7 @@
 from typing import cast
 from agents import Agent, Runner, TResponseInputItem, Tool, trace
 import dotenv
+dotenv.load_dotenv('thesis/11_agents_sandbox.env', override=True)
 from ivexes.config.run import get_config
 from ivexes.modules.printer.printer import print_result
 from ivexes.modules.sandbox.tools import sandbox_tools
@@ -9,7 +10,6 @@ from ivexes.config.settings import settings
 import ivexes.config.log as log
 logger = log.get(__name__)
 
-dotenv.load_dotenv('11_agents_sandbox.env', override=True)
 
 system_msg = \
 """
