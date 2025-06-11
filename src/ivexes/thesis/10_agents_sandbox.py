@@ -3,6 +3,8 @@ from agents import Agent, Runner, TResponseInputItem, Tool, trace
 from ivexes.config.run import get_config
 from ivexes.modules.printer.printer import print_result
 from ivexes.modules.sandbox.tools import sandbox_tools
+
+from ivexes.config.settings import settings
 import ivexes.config.log as log
 logger = log.get(__name__)
 
@@ -36,7 +38,7 @@ agent = Agent(
 )
 
 if __name__ == "__main__":
-    with trace(f"IVExES (Single Agent Sandbox)"):
+    with trace(f"IVExES (Single Agent Sandbox ({settings.trace_name}))"):
         input_items: list[TResponseInputItem] = [{'content': usr_msg, 'role': 'user'}]
         result = Runner.run_sync(agent, input_items, run_config=get_config(), max_turns=MAX_TURNS)
         input_items = print_result(result)

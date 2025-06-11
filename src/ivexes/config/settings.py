@@ -5,7 +5,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 load_dotenv(verbose=True)
-
+load_dotenv(verbose=True, dotenv_path=".secrets.env")
 
 class Settings(BaseSettings):
     """
