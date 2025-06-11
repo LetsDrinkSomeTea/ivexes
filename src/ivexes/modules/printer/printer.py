@@ -17,8 +17,10 @@ def print_items(items: list[RunItem]):
             print(f'{"Agent":=^80}\n{ItemHelpers.text_message_output(item)}\n')
         if isinstance(item, ToolCallItem):
             string = item.raw_item
-            if isinstance(item, ResponseFunctionToolCall):
+            try: 
                 string = f'{item.name}({", ".join([f'{k}={v}' for k,v in json.loads(item.arguments)])})'
+            except Exception:
+                logger.warning(f'Failed to parse tool call arguments: {item.raw_item}')
             print(f'{"Tool Call":=^80}\n{string}\n')
         if isinstance(item, ToolCallOutputItem):
             print(f'{"Tool Output":=^80}\n{item.output}\n')

@@ -22,7 +22,7 @@ def get_config() -> RunConfig:
         ),
     )
 
-    logger.info(f"Runnning with {settings.llm_base_url=} and {settings.llm_api_key[:20]=}")
+    logger.info(f"Runnning with {settings.llm_base_url=} and {settings.llm_api_key[:10]=}")
     logger.debug(f"run_config=\n{pprint.pformat(run_config)}")
 
     return run_config
