@@ -3,9 +3,9 @@ import xml.etree.ElementTree as ElementTree
 import chromadb
 import click
 
-import config.log
+import ivexes.config.log as log
 
-logger = config.log.get(__name__)
+logger = log.get(__name__)
 
 
 def insert_cwe(collection: chromadb.Collection, xml_data):

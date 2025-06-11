@@ -1,10 +1,10 @@
 from typing import cast
 from agents import Agent, Runner, TResponseInputItem, Tool, trace
-from config.run import get_config
-from modules.printer.printer import print_result
-from modules.sandbox.tools import sandbox_tools
-import config.log
-logger = config.log.get(__name__)
+from ivexes.config.run import get_config
+from ivexes.modules.printer.printer import print_result
+from ivexes.modules.sandbox.tools import sandbox_tools
+import ivexes.config.log as log
+logger = log.get(__name__)
 
 MAX_TURNS = 15
 system_msg = \

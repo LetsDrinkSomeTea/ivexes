@@ -1,10 +1,9 @@
-import os
-import config.log
-logger = config.log.get(__name__)
+import ivexes.config.log as log
+logger = log.get(__name__)
 
 def get_text_statistics(string: str) -> tuple[int, int, int]:
     import tiktoken
-    from config.settings import settings
+    from ivexes.config.settings import settings
     """
     get_text_statistics returns the number of tokens, characters, and words in a given string.
 

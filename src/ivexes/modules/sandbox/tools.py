@@ -1,8 +1,8 @@
 from agents import function_tool
-from modules.sandbox.sandbox import Sandbox
-from config.settings import settings
-import config.log
-logger = config.log.get(__name__)
+from ivexes.modules.sandbox.sandbox import Sandbox
+from ivexes.config.settings import settings
+import ivexes.config.log as log
+logger = log.get(__name__)
 sandbox = Sandbox(settings.setup_archive)
 
 @function_tool

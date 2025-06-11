@@ -2,13 +2,10 @@
 import click
 import os
 
-from modules.code_browser.code_browser import CodeBrowser
-from modules.code_browser.tools import code_browser as cb
-from modules.sandbox.sandbox import Sandbox
-from modules.vector_db.embed import CweCapecDatabase
+from ivexes.modules.vector_db.embed import CweCapecDatabase
 
-import config.log
-logger = config.log.get(__name__)
+import ivexes.config.log as log
+logger = log.get(__name__)
 
 @click.group()
 def cli() -> None:
@@ -26,7 +23,7 @@ def tokenize(path: str) -> None:
     Tokenize a file and print the number of tokens, characters, and words.
 
     """
-    import modules.token.count as count
+    import ivexes.modules.token.count as count
     res = (0, 0, 0)  # Default result in case of error
     if os.path.isdir(path):
         res = count.get_directory_statistics(path)
@@ -128,6 +125,7 @@ def cmd_get_definition(symbol: str) -> None:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find the definition for
     """
+    from ivexes.modules.code_browser.tools import code_browser as cb
     result = cb.get_definition(symbol)
     if result:
         definition, file, from_line, to_line = result
@@ -145,6 +143,7 @@ def cmd_get_references(symbol: str) -> None:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find references for
     """
+    from ivexes.modules.code_browser.tools import code_browser as cb
     results = cb.get_references(symbol)
     if results:
         click.echo(f"Found {len(results)} references:")
@@ -164,6 +163,7 @@ def cmd_get_symbols(file: str) -> None:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to analyze
     """
+    from ivexes.modules.code_browser.tools import code_browser as cb
     symbols = cb.get_symbols(file)
     for symbol in symbols:
         click.echo(symbol)
@@ -178,6 +178,7 @@ def cmd_get_file(file: str) -> None:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to retrieve
     """
+    from ivexes.modules.code_browser.tools import code_browser as cb
     content = cb.get_file_content(file)
     click.echo(content)
 
@@ -191,6 +192,7 @@ def cmd_get_tree(count: int) -> None:
         path_to_codebase: Path to the codebase directory
         count: Maximum depth level for the directory tree
     """
+    from ivexes.modules.code_browser.tools import code_browser as cb
     content = cb.get_codebase_structure(n=count)
     click.echo(content)
 
@@ -224,7 +226,7 @@ def cmd_run(command: str) -> None:
         command: The command to run in the sandbox
 
     """
-    from modules.sandbox.tools import sandbox as sb
+    from ivexes.modules.sandbox.tools import sandbox as sb
     if not sb.connect():
         click.echo("Failed to connect to sandbox")
         return
@@ -234,7 +236,7 @@ def cmd_run(command: str) -> None:
 @sandbox.command('create-file')
 @click.argument('path')
 @click.argument('content')
-def cmd_run(path: str, content: str) -> None:
+def create_file(path: str, content: str) -> None:
     """
     Run a command in a sandbox environment.
     Args:
@@ -242,12 +244,12 @@ def cmd_run(path: str, content: str) -> None:
         command: The command to run in the sandbox
 
     """
-    from modules.sandbox.tools import sandbox as sb
+    from ivexes.modules.sandbox.tools import sandbox as sb
     if not sb.connect():
         click.echo("Failed to connect to sandbox")
         return
     command = f'cat > {path} << EOL\n{content}\nEOL\n'
-    return sb.write_to_shell(command.encode())
+    result = sb.write_to_shell(command.encode())
     click.echo(result)
 
 

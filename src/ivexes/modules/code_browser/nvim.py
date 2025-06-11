@@ -1,15 +1,14 @@
-import os
 import time
 
 import docker
 from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
-import config.log
-from config.settings import settings
-from container.utils import find_existing, remove_if_exists
+import ivexes.config.log as log
+from ivexes.config.settings import settings
+from ivexes.container.utils import find_existing, remove_if_exists
 
-logger = config.log.get(__name__)
+logger = log.get(__name__)
 
 
 def setup_container(code_base: str, port: str = '8080', renew: bool = False) -> Container | None:

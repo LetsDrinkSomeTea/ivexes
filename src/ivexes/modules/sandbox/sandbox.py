@@ -2,10 +2,10 @@ import time
 
 import paramiko
 
-import config.log
-from modules.sandbox.kali import setup_container
+import ivexes.config.log as log
+from ivexes.modules.sandbox.kali import setup_container
 
-logger = config.log.get(__name__)
+logger = log.get(__name__)
 
 
 class Sandbox:
