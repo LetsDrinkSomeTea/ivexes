@@ -2,7 +2,6 @@
 import click
 import os
 
-from ivexes.modules.code_browser.tools import code_browser as cb
 from ivexes.modules.vector_db.embed import CweCapecDatabase
 
 import ivexes.config.log as log
@@ -126,6 +125,7 @@ def cmd_get_definition(symbol: str) -> None:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find the definition for
     """
+    from ivexes.modules.code_browser.tools import code_browser as cb
     result = cb.get_definition(symbol)
     if result:
         definition, file, from_line, to_line = result
@@ -143,6 +143,7 @@ def cmd_get_references(symbol: str) -> None:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find references for
     """
+    from ivexes.modules.code_browser.tools import code_browser as cb
     results = cb.get_references(symbol)
     if results:
         click.echo(f"Found {len(results)} references:")
@@ -162,6 +163,7 @@ def cmd_get_symbols(file: str) -> None:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to analyze
     """
+    from ivexes.modules.code_browser.tools import code_browser as cb
     symbols = cb.get_symbols(file)
     for symbol in symbols:
         click.echo(symbol)
@@ -176,6 +178,7 @@ def cmd_get_file(file: str) -> None:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to retrieve
     """
+    from ivexes.modules.code_browser.tools import code_browser as cb
     content = cb.get_file_content(file)
     click.echo(content)
 
@@ -189,6 +192,7 @@ def cmd_get_tree(count: int) -> None:
         path_to_codebase: Path to the codebase directory
         count: Maximum depth level for the directory tree
     """
+    from ivexes.modules.code_browser.tools import code_browser as cb
     content = cb.get_codebase_structure(n=count)
     click.echo(content)
 
