@@ -3,6 +3,8 @@ LABEL authors="julian"
 
 RUN apt update && apt -y install kali-linux-headless
 
+RUN apt update && apt install -y strace
+
 RUN echo 'root:passwd' | chpasswd
 
 # Force enabling root login and password authentication
