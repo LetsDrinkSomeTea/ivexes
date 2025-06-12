@@ -75,7 +75,7 @@ class Sandbox:
         Send a command to the interactive shell and return the output.
 
         Args:
-            command (str): The command to send.
+            command (str): The command to send (make sure to append \\n).
             wait (float): Seconds to wait for output before reading.
 
         Returns:
@@ -83,7 +83,7 @@ class Sandbox:
         """
         shell = self.get_shell()
         logger.debug(f"Sending command: {command}")
-        shell.send(command + b"\n")
+        shell.send(command)
         # Wait a bit for the command to produce output.
         time.sleep(wait)
         output = ""
