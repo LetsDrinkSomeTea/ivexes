@@ -59,7 +59,7 @@ class Sandbox:
         Get an interactive shell channel. Creates one if it does not exist.
         """
         if self.shell is None or self.shell.closed:
-            self.shell = self.client.invoke_shell(term="dumb")
+            self.shell = self.client.invoke_shell(term="xterm-mono") # try dumb, linux-m
             logger.info("Interactive shell started.")
             # Optionally, wait for the shell to be ready
             time.sleep(1)
@@ -82,18 +82,22 @@ class Sandbox:
             str: The output received after sending the command.
         """
         shell = self.get_shell()
-        logger.info(f"Sending command: {command}")
+        logger.debug(f"Sending command: {command}")
         shell.send(command + b"\n")
         # Wait a bit for the command to produce output.
         time.sleep(wait)
-        output = b""
+        output = ""
         while shell.recv_ready():
-            output_chunk = shell.recv(4096)
+            output_chunk = shell.recv(4096).decode('utf-8')
             output += output_chunk
             time.sleep(wait)  # Slight delay in reading further chunks
-        output = self.prompt_string + output.decode('utf-8')
-        self.prompt_string = output.splitlines()[-1]
-        return "\n".join(output.splitlines()[:-1]).strip()
+        output = output.strip()
+        # Formatting the output to use the latest prompt_string as prefix
+        new_prompt = output.splitlines()[-1]
+        stripped_output = "".join(output.splitlines(keepends=True)[:-1])
+        ret = self.prompt_string + stripped_output
+        self.prompt_string = new_prompt
+        return ret
 
     def close(self):
         """

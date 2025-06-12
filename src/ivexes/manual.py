@@ -216,6 +216,21 @@ def sandbox() -> None:
     """
     pass
 
+@sandbox.command('start')
+def cmd_start() -> None:
+    """
+    Starts interactive shell in a sandbox environment.
+    """
+    from ivexes.modules.sandbox.tools import sandbox as sb
+    if not sb.connect():
+        click.echo("Failed to connect to sandbox")
+        return
+    command = 'pwd'
+    while command not in ['exit']:
+        result = sb.write_to_shell(command.encode())
+        click.echo(result)
+        command = input("\n Next command ('exit' to exit): ")
+
 @sandbox.command('run')
 @click.argument('command')
 def cmd_run(command: str) -> None:
