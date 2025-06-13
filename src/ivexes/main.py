@@ -1,10 +1,9 @@
-import re
-from time import sleep
+import asyncio
 from typing import cast
 
 from ivexes.config.settings import settings
 import ivexes.config.log
-from ivexes.modules.printer.printer import print_result
+from ivexes.modules.printer.printer import stream_result
 logger = ivexes.config.log.get(__name__)
 from ivexes.config.run import get_config
 
@@ -13,7 +12,6 @@ from ivexes.modules.vector_db.tools import cwe_capec_tools
 from ivexes.modules.code_browser.tools import code_browser_tools
 
 
-from openai import RateLimitError
 from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExceeded
 
 tools: list[Tool] = cast(list[Tool], sandbox_tools + cwe_capec_tools + code_browser_tools)
@@ -49,33 +47,17 @@ agent = Agent(
 )
 
 
-def main(user_msg: str):
-    input_items: list[TResponseInputItem] = []
-    workflow_name = f'Ivexes ({settings.trace_name} Single Agent({settings.model}))'
-    with trace(workflow_name):
-        while True:
+async def main(user_msg, agent):
+    with trace(f"IVExES (Single Agent Sandbox ({settings.trace_name}))"):
+        input_items: list[TResponseInputItem] = []
+        while user_msg not in ['exit', 'quit', 'q']:
             input_items.append({'content': user_msg, 'role': 'user'})
             try:
-                result = Runner.run_sync(agent, input_items, max_turns=settings.max_turns, run_config=get_config())
-                input_items = print_result(result)
-                user_msg = input("User: ")
-                if user_msg in ['q', 'quit', 'exit']:
-                    exit(0)
-            except RateLimitError as e:
-                logger.warning(f"Got RateLimitError")
-                m = re.search(r'(\d+(?:\.\d+)?)', e.message)
-                if m:
-                    try_again_in = int(m.group(1))
-                    logger.info(f"Sleeping {try_again_in + 1} seconds to avoid rate limit")
-                    sleep(try_again_in + 1)
+                result = Runner.run_streamed(agent, input_items, run_config=get_config(), max_turns=settings.max_turns)
+                input_items = await stream_result(result)
             except MaxTurnsExceeded as e:
-                logger.error(f"Max turns exceeded: {e}")
-                print("Max turns exceeded, exiting.")
-                break
-            except Exception as e:
-                logger.error(f"Got Exception of type {type(e)=}:\n{e}")
-                logger.debug(f"{agent=}\n")
-
+                print(f"MaxTurnsExceeded: {e}")
+            user_msg = input("User: ")
 
 if __name__ == "__main__":
     from ivexes.modules.code_browser.tools import code_browser
@@ -83,4 +65,4 @@ if __name__ == "__main__":
 f"""
 {code_browser.get_diff()}
 """
-    main(user_msg)
+    asyncio.run(main(user_msg, agent))

@@ -9,7 +9,7 @@ def find_existing(client, container_name: str) -> Container | None:
     """
 
     """
-    c = [c for c in client.containers.list() if c.name == container_name]
+    c = [c for c in client.containers.list(all=True) if c.name == container_name]
     if len(c) > 0 and c[0]:
         # container already exists, ask for removal
         logger.info(f"Container {c[0].name} found exists.")

@@ -9,7 +9,7 @@ logger = log.get(__name__)
 
 
 class Sandbox:
-    def __init__(self, setup_archive: str, username: str = "root", password: str = "passwd",
+    def __init__(self, setup_archive: str, username: str = "user", password: str = "passwd",
                  host: str = "localhost", port: int = 2222):
         """
         Initialize the SSH client.
@@ -75,13 +75,15 @@ class Sandbox:
         Send a command to the interactive shell and return the output.
 
         Args:
-            command (str): The command to send (make sure to append \\n).
+            command (str): The command to send
             wait (float): Seconds to wait for output before reading.
 
         Returns:
             str: The output received after sending the command.
         """
         shell = self.get_shell()
+        if not command.endswith(b'\n'):
+            command += b'\n'  # Ensure command ends with newline
         logger.debug(f"Sending command: {command}")
         shell.send(command)
         # Wait a bit for the command to produce output.

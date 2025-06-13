@@ -41,8 +41,8 @@ def setup_container(setup_archive: str, port: int = 2222, renew: bool = True) ->
         data = open(setup_archive, 'rb').read()
         container.put_archive("/tmp", data)
         logger.info(f"Setup archive {setup_archive} uploaded to container {container.name}")
-        container.exec_run("chmod +x /tmp/setup.sh")
-        ret = container.exec_run("bash /tmp/setup.sh")
+        container.exec_run("chmod a+x /tmp/setup.sh")
+        ret = container.exec_run("sudo -u user bash /tmp/setup.sh")
         logger.debug(f"Setup script output: {ret.output.decode()}")
         return container
     except ContainerError as e:

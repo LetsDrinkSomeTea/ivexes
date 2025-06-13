@@ -16,7 +16,7 @@ def print_items(items: list[RunItem]):
         if isinstance(item, ToolCallItem):
             ret_val = item.raw_item
             if isinstance(ret_val, ResponseFunctionToolCall):
-                formatted_args = ', '.join(f'{k}={v}' for k, v in json.loads(ret_val.arguments).items())
+                formatted_args = ', '.join(f'{k}={repr(v)}' for k, v in json.loads(ret_val.arguments).items())
                 ret_val = f'{ret_val.name}({formatted_args})'
             print(f'{"Tool Call":=^80}\n{ret_val}\n')
         if isinstance(item, ToolCallOutputItem):
@@ -38,14 +38,17 @@ async def stream_result(result: RunResultStreaming):
             if event.item.type == "tool_call_item":
                 ret_val = event.item.raw_item
                 if isinstance(ret_val, ResponseFunctionToolCall):
-                    formatted_args = ', '.join(f'{k}={v}' for k, v in json.loads(ret_val.arguments).items())
+                    formatted_args = ', '.join(f'{k}={repr(v)}' for k, v in json.loads(ret_val.arguments).items())
                     ret_val = f'{ret_val.name}({formatted_args})'
-                print(f'{"Tool Call":=^80}\n{ret_val}\n')
+                print(f'[{result.current_turn}]{"Tool Call":=^80}\n{ret_val}\n')
             elif event.item.type == "tool_call_output_item":
-                print(f'{"Tool Output":=^80}\n{event.item.output}\n')
+                lines = event.item.output.splitlines()
+                if len(lines) > 10:
+                    lines = lines [:10] + [f'... truncated {len(lines) - 10} lines']
+                print(f'[{result.current_turn}]{"Tool Output":=^80}\n{"\n".join(lines)}\n')
             elif event.item.type == "message_output_item":
-                print(f'{"Agent":=^80}\n{ItemHelpers.text_message_output(event.item)}\n')
+                print(f'[{result.current_turn}]{"Agent":=^80}\n{ItemHelpers.text_message_output(event.item)}\n')
             else:
-                print(f'{f"Unknown Item {event.item.type}":=^80}\n{event.item}\n')
+                print(f'[{result.current_turn}]{f"Unknown Item {event.item.type}":=^80}\n{event.item}\n')
     return result.to_input_list()
 

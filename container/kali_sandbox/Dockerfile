@@ -6,6 +6,8 @@ RUN apt update && apt -y install kali-linux-headless
 RUN apt update && apt install -y strace
 
 RUN echo 'root:passwd' | chpasswd
+RUN useradd -m -s /bin/bash user && echo 'user:passwd' | chpasswd
+RUN echo 'user  ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/user
 
 # Force enabling root login and password authentication
 RUN sed -i 's/#PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config \

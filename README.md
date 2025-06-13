@@ -72,3 +72,8 @@ IVEXES is a tool for security research and education. Use it responsibly and in
 accordance with the law. Always obtain permission before scanning or exploiting
 systems, and follow responsible disclosure practices when reporting
 vulnerabilities.
+
+## Total Cost:
+
+- OpenAI: 5,65€ + 53,93€ = 59,58€
+- Anthropic: 5,44€ + 52,99€ = 58,43€

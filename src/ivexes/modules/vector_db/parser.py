@@ -48,6 +48,9 @@ def insert_cwe(collection: chromadb.Collection, xml_data):
                 "type": "cwe"
             }
             logger.debug(f"Adding CWE-{wid:<4}: {name[:50]:<50}: {desc_text[:50]}...")
+            if name and 'DEPRECATED' in name:
+                logger.warning(f"Skipping deprecated CWE-{wid}: {name}")
+                continue
             collection.add(
                 ids=[wid],
                 documents=[doc],

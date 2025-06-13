@@ -47,4 +47,5 @@ print(banner(
     model=settings.model,
     temperature=settings.temperature,
     max_turns=settings.max_turns,
+    program_name=settings.trace_name,
 ))
