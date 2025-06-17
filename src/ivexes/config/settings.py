@@ -1,5 +1,5 @@
 import os
-from ivexes.config.components import banner
+from ivexes.modules.printer.printer import print_banner
 from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -43,9 +43,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-print(banner(
+print_banner(
     model=settings.model,
     temperature=settings.temperature,
     max_turns=settings.max_turns,
     program_name=settings.trace_name,
-))
+)

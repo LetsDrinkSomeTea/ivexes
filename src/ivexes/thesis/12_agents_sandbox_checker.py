@@ -2,7 +2,7 @@ import asyncio
 from typing import cast
 from agents import Agent, MaxTurnsExceeded, Runner, TResponseInputItem, Tool, trace
 import dotenv
-dotenv.load_dotenv('thesis/12_agents_sandbox.env', override=True)
+dotenv.load_dotenv('thesis/12_agents_sandbox_checker.env', override=True)
 from ivexes.config.run import get_config
 from ivexes.modules.printer.printer import stream_result
 from ivexes.modules.sandbox.tools import sandbox_tools
@@ -35,4 +35,6 @@ async def main(user_msg, agent):
 
 if __name__ == "__main__":
     asyncio.run(main(user_msg, agent))
+
+
 

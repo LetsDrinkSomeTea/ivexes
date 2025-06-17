@@ -1,7 +1,7 @@
 from typing import cast
 from agents import Agent, Runner, TResponseInputItem, Tool, trace
 import dotenv
-dotenv.load_dotenv('thesis/10_agents_sandbox.env', override=True)
+dotenv.load_dotenv('thesis/10_agents_sandbox_spookypass.env', override=True)
 from ivexes.config.run import get_config
 from ivexes.modules.printer.printer import print_result
 from ivexes.modules.sandbox.tools import sandbox_tools
