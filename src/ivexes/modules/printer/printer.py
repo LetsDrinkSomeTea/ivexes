@@ -1,20 +1,20 @@
 from agents import RunItem
 from agents.items import HandoffCallItem, HandoffOutputItem, ItemHelpers, MessageOutputItem, ReasoningItem, ToolCallItem, ToolCallOutputItem
 from agents.result import RunResult, RunResultStreaming
-from openai.types.responses import ResponseFunctionToolCall
+from openai.types.responses import ResponseFunctionToolCall, ResponseOutputItemAddedEvent, ResponseOutputItemDoneEvent, ResponseTextDeltaEvent
 import json
 import time
 
 from ivexes.modules.printer.components import banner
 TIME_STRING = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
-def print_and_write_to_file(text: str):
+def print_and_write_to_file(text: str, truncate: bool = True, end="\n"):
     lines = text.splitlines()
-    if len(lines) > 10:
+    if truncate and len(lines) > 10:
         lines = lines [:10] + [f'... truncated {len(lines) - 10} lines']
-    print('\n'.join(lines))
+    print('\n'.join(lines), end=end)
     with open(f'output-{TIME_STRING}.txt', 'a') as f:
-        f.write(text + '\n')
+        f.write(text + end)
 
 
 def print_result(result: RunResult):
@@ -73,6 +73,7 @@ def print_banner(
                temperature=temperature,
                max_turns=max_turns,
                program_name=program_name
-               )
+               ),
+        truncate=False
     )
 

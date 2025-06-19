@@ -2,6 +2,7 @@
 import click
 import os
 
+from ivexes.config import settings
 from ivexes.modules.vector_db.embed import CweCapecDatabase
 
 import ivexes.config.log as log
@@ -259,13 +260,13 @@ def create_file(path: str, content: str) -> None:
         command: The command to run in the sandbox
 
     """
-    from ivexes.modules.sandbox.tools import sandbox as sb
+    from ivexes.modules.sandbox.sandbox import Sandbox
+    sb = Sandbox(setup_archive=settings.settings.setup_archive)
     if not sb.connect():
         click.echo("Failed to connect to sandbox")
         return
-    command = f'cat > {path} << EOL\n{content}\nEOL\n'
-    result = sb.write_to_shell(command.encode())
-    click.echo(result)
+    click.echo(sb.create_file("test", "multi\nlinie\ntext ```’’’\\\\´´"))
+    click.echo(sb.create_file(path, content=content))
 
 
 if __name__ == '__main__':

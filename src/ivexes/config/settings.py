@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     trace_name: str = Field(default_factory=lambda: os.environ.get("TRACE_NAME", "ivexes").lower())
 
     # Sandbox settings
+    sandbox_image: str = Field(default_factory=lambda: os.environ.get("SANDBOX_IMAGE", "kali-ssh:latest"))
     setup_archive: str = Field(default_factory=lambda: os.environ.get("SETUP_ARCHIVE", ""))
 
     # Codebase settings

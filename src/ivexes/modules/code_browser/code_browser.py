@@ -71,12 +71,14 @@ class CodeBrowser:
         logger.info(f"Found at: {file_path=} {line=} {col=}")
         return file_path, line, col
 
-    def get_file_content(self, file: str) -> str | None:
+    def get_file_content(self, file: str, from_line: int = 0, to_line: int = -1) -> str | None:
         """
         Get the content of a file from the container.
 
         Args:
             file: Path to the file within the container
+            from_line: Start line number (0-indexed, default: 0)
+            to_line: End line number (0-indexed, -1 for all lines, default: -1)
 
         Returns:
             The content of the file as a string
@@ -97,7 +99,11 @@ class CodeBrowser:
         logger.debug(f"Detected encoding '{encoding}' with confidence {confidence:.2f} for file {file}")
 
         try:
-            return raw_bytes.decode(encoding)
+            content_lines = raw_bytes.decode(encoding).splitlines()[:]
+            if to_line != -1 and to_line < len(content_lines):
+                content_lines = content_lines[:to_line]
+            content = "\n".join(content_lines[from_line:])
+            return content
         except UnicodeDecodeError as e:
             logger.error(f"Failed to decode with detected encoding {encoding}: {e}")
             return None

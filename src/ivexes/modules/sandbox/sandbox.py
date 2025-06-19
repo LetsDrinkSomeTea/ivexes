@@ -3,7 +3,7 @@ import time
 import paramiko
 
 import ivexes.config.log as log
-from ivexes.modules.sandbox.kali import setup_container
+from ivexes.modules.sandbox.container import setup_container
 
 logger = log.get(__name__)
 
@@ -100,6 +100,28 @@ class Sandbox:
         ret = self.prompt_string + stripped_output
         self.prompt_string = new_prompt
         return ret
+
+    def create_file(self, filename: str, content: str) -> bool:
+        """
+        Create a file in the sandbox with the given content.
+
+        Args:
+            filename (str): The name of the file to create.
+            content (str): The content to write to the file.
+
+        Returns:
+            bool: True if the file was created successfully, False otherwise.
+        """
+        sftp_client = self.client.open_sftp()
+        success = True
+        try:
+            with sftp_client.file(filename=filename, mode="w") as f:
+                f.write(content)
+        except IOError as e:
+            logger.error(f"Failed to create file {filename}: {e}")
+            success = False
+        sftp_client.close()
+        return success
 
     def close(self):
         """

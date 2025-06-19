@@ -11,15 +11,14 @@ else:
     logger.warning("Skipping code_browser tools because codebase_path, vulnerable_folder or patched_folder is not set in settings.")
 
 @function_tool
-def get_definition(symbol: str) -> str:
+def code_get_definition(symbol: str) -> str:
     """
     Find the definition of a symbol in the codebase.
 
     Args:
         symbol: The symbol name to find the definition for
-        vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
-    logger.info(f'running get_definition({symbol=})')
+    logger.info(f'running code_get_definition({symbol=})')
     result = code_browser.get_definition(symbol)
     if result:
         definition, file, from_line, to_line = result
@@ -32,15 +31,14 @@ def get_definition(symbol: str) -> str:
 
 
 @function_tool
-def get_references(symbol: str) -> str:
+def code_get_references(symbol: str) -> str:
     """
     Find all references to a symbol in the codebase.
 
     Args:
         symbol: The symbol name to find references for
-        vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
-    logger.info(f'running get_references({symbol=})')
+    logger.info(f'running code_get_references({symbol=})')
     results = code_browser.get_references(symbol)
     if results:
         references = []
@@ -54,15 +52,14 @@ def get_references(symbol: str) -> str:
 
 
 @function_tool
-def get_symbols(file: str) -> str:
+def code_get_symbols(file: str) -> str:
     """
     Get all symbols (variables, functions, classes) in a file.
 
     Args:
         file: Path to the file within the codebase to analyze
-        vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
-    logger.info(f'running get_symbols({file=})')
+    logger.info(f'running code_get_symbols({file=})')
     results = code_browser.get_symbols(file)
     if results:
         symbols = []
@@ -75,16 +72,17 @@ def get_symbols(file: str) -> str:
 
 
 @function_tool
-def get_file_content(file: str) -> str:
+def code_get_file_content(file: str, from_line: int = 0, to_line: int = -1) -> str:
     """
     Get the content of a file in the codebase.
 
     Args:
         file: Path to the file within the codebase to analyze
-        vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
+        from_line: Start line number (0-indexed, default: 0)
+        to_line: End line number (0-indexed, -1 for all lines, default: -1)
     """
-    logger.info(f'running get_file_content({file=})')
-    result = code_browser.get_file_content(file)
+    logger.info(f'running code_get_file_content({file=})')
+    result = code_browser.get_file_content(file, from_line, to_line)
     if result:
         return f"Content of {file}:\n<code>{result}</code>"
     else:
@@ -92,15 +90,14 @@ def get_file_content(file: str) -> str:
 
 
 @function_tool
-def get_file_structure(depth: int = 3) -> str:
+def code_get_file_structure(depth: int = 3) -> str:
     """
     Get the tree of files in the codebase.
 
     Args:
         depth: Maximum depth level of the tree (default: 3)
-        vulnerable_version: If True, search in the vulnerable codebase; otherwise, search in the patched codebase (default: True)
     """
-    logger.info(f'running get_file_structure({depth=})')
+    logger.info(f'running code_get_file_structure({depth=})')
     result = code_browser.get_codebase_structure(depth)
     if result:
         return f"Tree of the codebase:\n<tree>{result}</tree>"
@@ -108,11 +105,11 @@ def get_file_structure(depth: int = 3) -> str:
         return "No files found in the codebase."
 
 @function_tool
-def get_diff():
+def code_get_diff():
     """
     Get the diff of the codebase.
     """
-    logger.info(f'running get_diff()')
+    logger.info(f'running code_get_diff()')
     result = code_browser.get_diff()
     if result:
         return f"Diff of the codebase:\n<diff>{result}</diff>"
@@ -121,10 +118,10 @@ def get_diff():
 
 
 code_browser_tools = [
-    get_definition,
-    get_references,
-    get_symbols,
-    get_file_content,
-    get_file_structure,
-    get_diff,
+    code_get_definition,
+    code_get_references,
+    code_get_symbols,
+    code_get_file_content,
+    code_get_file_structure,
+    code_get_diff,
 ] if settings.codebase_path and settings.vulnerable_folder and settings.patched_folder else []

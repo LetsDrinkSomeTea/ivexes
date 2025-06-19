@@ -1,24 +1,30 @@
 import asyncio
 from typing import cast
-from agents import Agent, MaxTurnsExceeded, Runner, TResponseInputItem, Tool, trace
+from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExceeded
+
 import dotenv
-dotenv.load_dotenv('thesis/12_agents_sandbox_checker.env', override=True)
+dotenv.load_dotenv('thesis/60_single_agent_screen.env', override=True)
 from ivexes.config.run import get_config
 from ivexes.modules.printer.printer import stream_result
-from ivexes.modules.sandbox.tools import sandbox_tools
-from ivexes.prompts.htb_reversing import system_msg, user_msg
+from ivexes.prompts.single_agent import system_msg, user_msg
 from ivexes.config.settings import settings
+from ivexes.modules.sandbox.tools import sandbox_tools
+from ivexes.modules.code_browser.tools import code_browser_tools, code_browser
+from ivexes.modules.vector_db.tools import cwe_capec_tools
 
 user_msg = user_msg.format(
-    program='checker',
-    challenge='Crack the Code, Unlock the File: Dive into a C-based encryption puzzle, reverse-engineer the encrypted binary, and uncover the original executable. Can you break the cipher and execute the hidden file?'
+    codebase_structure=code_browser.get_codebase_structure(),
+    diff=code_browser.get_diff(),
+    bin_path="/usr/bin/screen"
 )
 
-tools = cast(list[Tool], sandbox_tools)
+tools: list[Tool] = cast(list[Tool], sandbox_tools + code_browser_tools + cwe_capec_tools)
 agent = Agent(
-    name='Exploiter',
+    name="Exploiter",
     instructions=system_msg,
+    model=settings.model,
     tools=tools,
+
 )
 
 async def main(user_msg, agent):
@@ -35,6 +41,3 @@ async def main(user_msg, agent):
 
 if __name__ == "__main__":
     asyncio.run(main(user_msg, agent))
-
-
-

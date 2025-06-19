@@ -53,9 +53,12 @@ def setup_container(code_base: str, port: str = '8080', renew: bool = False) -> 
         return container
     except ContainerError as e:
         logger.error(f"Container error: {e}")
+        exit(1)
     except ImageNotFound as e:
         logger.error(f"Image not found: {e}")
+        exit(1)
     except Exception as e:
         logger.error(f"An error occurred: {e}")
+        exit(1)
 
     return None

@@ -11,14 +11,16 @@ from ivexes.container.utils import find_existing, remove_if_exists
 logger = log.get(__name__)
 
 
-def setup_container(setup_archive: str, port: int = 2222, renew: bool = True) -> Container | None:
+def setup_container(setup_archive: str, docker_image: str | None = None, port: int = 2222, renew: bool = True) -> Container | None:
     """
 
     """
     assert setup_archive.endswith('.tar') or setup_archive.endswith('.tgz'), "Executable archive must be a .tar or .tgz file"
     assert isinstance(port, int), f"port must be number, got {type(port)}"
     client = docker.from_env()
-    container_name = f"kali-{settings.trace_name}"
+    if docker_image is None:
+        docker_image = settings.sandbox_image
+    container_name = f"ivexes{docker_image.split(':')[0]}-{settings.trace_name}"
 
     c = remove_if_exists(client, container_name) if renew else find_existing(client, container_name)
     if c:
@@ -28,7 +30,7 @@ def setup_container(setup_archive: str, port: int = 2222, renew: bool = True) ->
     try:
         logger.info(f"Starting container {container_name} with {setup_archive=}")
         container: Container = client.containers.run(
-            image="kali-ssh:latest",
+            image=docker_image,
             name=container_name,
             detach=True,
             ports={
@@ -47,9 +49,12 @@ def setup_container(setup_archive: str, port: int = 2222, renew: bool = True) ->
         return container
     except ContainerError as e:
         logger.error(f"Container error: {e}")
+        exit(1)
     except ImageNotFound as e:
         logger.error(f"Image not found: {e}")
+        exit(1)
     except Exception as e:
         logger.error(f"An error occurred: {e}")
+        exit(1)
 
     return None
