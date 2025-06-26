@@ -23,7 +23,7 @@ RUN pacman -S --noconfirm \
       npm \
       ripgrep \
       tree \
-      diff
+      diffutils
 
 # nvim-Config für LSP (z.B. pyright bei Python)
 RUN mkdir -p /root/.config/nvim

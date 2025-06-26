@@ -22,3 +22,7 @@ dependencies = [
 
 [project.urls]
 Repository = "https://github.com/LetsDrinkSomeTea/ivexes"
+
+[tool.ruff.format]
+skip-magic-trailing-comma = true
+quote-style = "single"
