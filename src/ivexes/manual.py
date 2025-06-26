@@ -3,7 +3,7 @@ import click
 import os
 
 from ivexes.config import settings
-from ivexes.modules.vector_db.embed import CweCapecDatabase
+from ivexes.modules.vector_db.embed import CweCapecAttackDatabase
 
 import ivexes.config.log as log
 
@@ -58,9 +58,23 @@ def cmd_clear() -> None:
 
     This command removes all entries from the vector database.
     """
-    db = CweCapecDatabase()
+    db = CweCapecAttackDatabase()
     db.clear()
     click.echo('Database cleared successfully')
+
+
+@vector_db.command('init')
+@click.argument('type_of_data', type=click.Choice(['cwe', 'capec', 'attack', 'all']))
+def init_verctor_db(type_of_data: str):
+    db = CweCapecAttackDatabase()
+    if type_of_data == 'cwe':
+        db.initialize_cwe()
+    elif type_of_data == 'capec':
+        db.initialize_capec()
+    elif type_of_data == 'attack':
+        db.initialize_attack()
+    elif type_of_data == 'all':
+        db.initialize()
 
 
 @vector_db.command('query')
@@ -78,7 +92,7 @@ def cmd_query(query_text: str, type: str, count: int) -> None:
         type: Filter results by entry type (cwe or capec)
         count: Maximum number of results to return
     """
-    db = CweCapecDatabase()
+    db = CweCapecAttackDatabase()
     types = [type] if type else None
     results = db.query(query_text, types, count)
     for result in results:
@@ -96,7 +110,7 @@ def cmd_query_cwe(query_text: str, count: int) -> None:
         query_text: The text to search for in CWE entries
         count: Maximum number of results to return
     """
-    db = CweCapecDatabase()
+    db = CweCapecAttackDatabase()
     results = db.query_cwe(query_text, count)
     for result in results:
         click.echo(result)
@@ -113,7 +127,7 @@ def cmd_query_capec(query_text: str, count: int) -> None:
         query_text: The text to search for in CAPEC entries
         count: Maximum number of results to return
     """
-    db = CweCapecDatabase()
+    db = CweCapecAttackDatabase()
     results = db.query_capec(query_text, count)
     for result in results:
         click.echo(result)

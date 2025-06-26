@@ -18,6 +18,7 @@ dependencies = [
   "python-dotenv",
   "click",
   "tiktoken",
+  "mitreattack-python",
 ]
 
 [project.urls]
