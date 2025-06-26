@@ -5,6 +5,7 @@
 .junie/
 # Visual Studio Code
 .vscode/
+.claude
 
 # chromadb
 chroma/
