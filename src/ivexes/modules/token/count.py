@@ -1,9 +1,12 @@
 import ivexes.config.log as log
+
 logger = log.get(__name__)
+
 
 def get_text_statistics(string: str) -> tuple[int, int, int]:
     import tiktoken
     from ivexes.config.settings import settings
+
     """
     get_text_statistics returns the number of tokens, characters, and words in a given string.
 
@@ -49,6 +52,7 @@ def get_directory_statistics(directory_path: str) -> tuple[int, int, int]:
         tuple[int, int, int]: A tuple containing the total number of tokens, characters, and words.
     """
     import os
+
     total_tokens = 0
     total_characters = 0
     total_words = 0
@@ -66,5 +70,5 @@ def get_directory_statistics(directory_path: str) -> tuple[int, int, int]:
                 total_characters += characters
                 total_words += words
 
-    logger.warning(f"Skipped files {'; '.join(skipped_files)} due to encoding issues.")
+    logger.warning(f'Skipped files {"; ".join(skipped_files)} due to encoding issues.')
     return total_tokens, total_characters, total_words

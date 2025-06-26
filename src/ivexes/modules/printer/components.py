@@ -1,19 +1,17 @@
 ART = [
-    r"o-O-o o   o o--o     o--o  o-o ",
-    r"  |   |   | |        |    |    ",
-    r"  |   o   o O-o  \ / O-o   o-o ",
-    r"  |    \ /  |     o  |        |",
-    r"o-O-o   o   o--o / \ o--o o--o ",
-    r"",
-    r"Intelligent Vulnerability Extraction",
-    r"& Exploit Synthesis",
+    r'o-O-o o   o o--o     o--o  o-o ',
+    r'  |   |   | |        |    |    ',
+    r'  |   o   o O-o  \ / O-o   o-o ',
+    r'  |    \ /  |     o  |        |',
+    r'o-O-o   o   o--o / \ o--o o--o ',
+    r'',
+    r'Intelligent Vulnerability Extraction',
+    r'& Exploit Synthesis',
 ]
 
+
 def _create_box(
-    lines: list[str],
-    horizontal: str = '-',
-    vertical: str = '|',
-    corner: str = '+'
+    lines: list[str], horizontal: str = '-', vertical: str = '|', corner: str = '+'
 ) -> list[str]:
     """
     Wrap a list of text lines in a box border.
@@ -28,41 +26,36 @@ def _create_box(
     # Side borders with padding to align content
     boxed = [border_line]
     for line in lines:
-        boxed.append(f"{vertical} {line.ljust(width)} {vertical}")
+        boxed.append(f'{vertical} {line.ljust(width)} {vertical}')
     boxed.append(border_line)
     return boxed
 
 
-def banner(
-    model: str,
-    temperature: float,
-    max_turns: int,
-    program_name: str
-) -> str:
+def banner(model: str, temperature: float, max_turns: int, program_name: str) -> str:
     # Sanitize inputs
     program_name = program_name.strip()
     model = model.strip()
     try:
         temperature = float(temperature)
     except (TypeError, ValueError):
-        raise ValueError(f"Invalid temperature: {temperature}")
+        raise ValueError(f'Invalid temperature: {temperature}')
     try:
         max_turns = int(max_turns)
     except (TypeError, ValueError):
-        raise ValueError(f"Invalid max_turns: {max_turns}")
+        raise ValueError(f'Invalid max_turns: {max_turns}')
 
     # Prepare key-value pairs for config
     items = [
-        ("program", program_name),
-        ("model", model),
-        ("temperature", str(temperature)),
-        ("max turns", str(max_turns)),
+        ('program', program_name),
+        ('model', model),
+        ('temperature', str(temperature)),
+        ('max turns', str(max_turns)),
     ]
     # Compute widths for padding
     key_width = max(len(k) for k, _ in items)
     val_width = max(len(v) for _, v in items)
     # Create config lines with right-padded values
-    cfg = [f"{k:.<{key_width}}....{v:.>{val_width}}" for k, v in items]
+    cfg = [f'{k:.<{key_width}}....{v:.>{val_width}}' for k, v in items]
 
     # Combine art and config
     content = ART + [''] + cfg
@@ -72,4 +65,4 @@ def banner(
     final_block = _create_box(content, horizontal='=', vertical='|', corner='+')
 
     # Assemble and return
-    return "\n".join(final_block)
+    return '\n'.join(final_block)

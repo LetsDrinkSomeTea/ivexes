@@ -1,5 +1,4 @@
-system_msg = \
-"""
+system_msg = """
 Analyze two versions of a codebase to identify vulnerabilities fixed between them, then develop a proof of concept (PoC) exploit for any identified issues.
 
 # Steps
@@ -76,8 +75,7 @@ Analyze two versions of a codebase to identify vulnerabilities fixed between the
 - The sandbox already has the vulnerable version installed.
 - The code browser and the sandbox are diffrent systems, use the tool with the according prefix"""
 
-user_msg = \
-"""
+user_msg = """
 # The codebase_structure:
 {codebase_structure}
 

@@ -22,7 +22,8 @@ RUN pacman -S --noconfirm \
       nodejs \
       npm \
       ripgrep \
-      tree
+      tree \
+      diff
 
 # nvim-Config für LSP (z.B. pyright bei Python)
 RUN mkdir -p /root/.config/nvim

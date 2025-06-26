@@ -6,7 +6,9 @@ from ivexes.config import settings
 from ivexes.modules.vector_db.embed import CweCapecDatabase
 
 import ivexes.config.log as log
+
 logger = log.get(__name__)
+
 
 @click.group()
 def cli() -> None:
@@ -17,6 +19,7 @@ def cli() -> None:
     """
     pass
 
+
 @cli.command()
 @click.argument('path', type=click.Path(exists=True))
 def tokenize(path: str) -> None:
@@ -25,13 +28,17 @@ def tokenize(path: str) -> None:
 
     """
     import ivexes.modules.token.count as count
+
     res = (0, 0, 0)  # Default result in case of error
     if os.path.isdir(path):
         res = count.get_directory_statistics(path)
     elif os.path.isfile(path):
         res = count.get_file_statistics(path)
 
-    click.echo(f"===== Result of counting =====\nTokens: {res[0]}\nCharacters: {res[1]}\nWords: {res[2]}")
+    click.echo(
+        f'===== Result of counting =====\nTokens: {res[0]}\nCharacters: {res[1]}\nWords: {res[2]}'
+    )
+
 
 # Vector DB module commands
 @cli.group()
@@ -43,6 +50,7 @@ def vector_db() -> None:
     """
     pass
 
+
 @vector_db.command('clear')
 def cmd_clear() -> None:
     """
@@ -52,13 +60,15 @@ def cmd_clear() -> None:
     """
     db = CweCapecDatabase()
     db.clear()
-    click.echo("Database cleared successfully")
+    click.echo('Database cleared successfully')
+
 
 @vector_db.command('query')
 @click.argument('query_text')
-@click.option('--type', '-t', type=click.Choice(['cwe', 'capec']),
-              help="Type of entries to query")
-@click.option('--count', '-n', default=3, help="Number of results to return")
+@click.option(
+    '--type', '-t', type=click.Choice(['cwe', 'capec']), help='Type of entries to query'
+)
+@click.option('--count', '-n', default=3, help='Number of results to return')
 def cmd_query(query_text: str, type: str, count: int) -> None:
     """
     Query the vector database for matching entries.
@@ -74,9 +84,10 @@ def cmd_query(query_text: str, type: str, count: int) -> None:
     for result in results:
         click.echo(result)
 
+
 @vector_db.command('query-cwe')
 @click.argument('query_text')
-@click.option('--count', '-n', default=3, help="Number of results to return")
+@click.option('--count', '-n', default=3, help='Number of results to return')
 def cmd_query_cwe(query_text: str, count: int) -> None:
     """
     Query only CWE entries in the vector database.
@@ -90,9 +101,10 @@ def cmd_query_cwe(query_text: str, count: int) -> None:
     for result in results:
         click.echo(result)
 
+
 @vector_db.command('query-capec')
 @click.argument('query_text')
-@click.option('--count', '-n', default=3, help="Number of results to return")
+@click.option('--count', '-n', default=3, help='Number of results to return')
 def cmd_query_capec(query_text: str, count: int) -> None:
     """
     Query only CAPEC entries in the vector database.
@@ -106,6 +118,7 @@ def cmd_query_capec(query_text: str, count: int) -> None:
     for result in results:
         click.echo(result)
 
+
 # Code Browser module commands
 @cli.group()
 def code_browser() -> None:
@@ -115,6 +128,7 @@ def code_browser() -> None:
     This group contains commands for browsing and analyzing code using LSP.
     """
     pass
+
 
 @code_browser.command('get-definition')
 @click.argument('symbol')
@@ -127,12 +141,16 @@ def cmd_get_definition(symbol: str) -> None:
         symbol: The symbol name to find the definition for
     """
     from ivexes.modules.code_browser.tools import code_browser as cb
+
     result = cb.get_definition(symbol)
     if result:
         definition, file, from_line, to_line = result
-        click.echo(f"Found definition in file {file} from line {from_line} to {to_line} \n{definition}")
+        click.echo(
+            f'Found definition in file {file} from line {from_line} to {to_line} \n{definition}'
+        )
     else:
-        click.echo("No definition found")
+        click.echo('No definition found')
+
 
 @code_browser.command('get-references')
 @click.argument('symbol')
@@ -145,14 +163,16 @@ def cmd_get_references(symbol: str) -> None:
         symbol: The symbol name to find references for
     """
     from ivexes.modules.code_browser.tools import code_browser as cb
+
     results = cb.get_references(symbol)
     if results:
-        click.echo(f"Found {len(results)} references:")
+        click.echo(f'Found {len(results)} references:')
         for result in results:
             file, code, line, (col_s, col_e) = result
-            click.echo(f"{file}:{line}:{col_s}-{col_e}\t{code}")
+            click.echo(f'{file}:{line}:{col_s}-{col_e}\t{code}')
     else:
-        click.echo("No References found")
+        click.echo('No References found')
+
 
 @code_browser.command('get-symbols')
 @click.argument('file')
@@ -165,9 +185,11 @@ def cmd_get_symbols(file: str) -> None:
         file: Path to the file within the codebase to analyze
     """
     from ivexes.modules.code_browser.tools import code_browser as cb
+
     symbols = cb.get_symbols(file)
     for symbol in symbols:
         click.echo(symbol)
+
 
 @code_browser.command('get-file')
 @click.argument('file')
@@ -180,11 +202,13 @@ def cmd_get_file(file: str) -> None:
         file: Path to the file within the codebase to retrieve
     """
     from ivexes.modules.code_browser.tools import code_browser as cb
+
     content = cb.get_file_content(file)
     click.echo(content)
 
+
 @code_browser.command('get-tree')
-@click.option('--count', '-n', default=3, help="Number of recursive levels")
+@click.option('--count', '-n', default=3, help='Number of recursive levels')
 def cmd_get_tree(count: int) -> None:
     """
     Get the directory structure of the codebase.
@@ -194,8 +218,10 @@ def cmd_get_tree(count: int) -> None:
         count: Maximum depth level for the directory tree
     """
     from ivexes.modules.code_browser.tools import code_browser as cb
+
     content = cb.get_codebase_structure(n=count)
     click.echo(content)
+
 
 # Diff module commands
 @cli.group()
@@ -205,7 +231,8 @@ def diff() -> None:
 
     This group contains commands for comparing code versions and analyzing differences.
     """
-    click.echo("Diff module not yet implemented")
+    click.echo('Diff module not yet implemented')
+
 
 # Sandbox module commands
 @cli.group()
@@ -217,20 +244,24 @@ def sandbox() -> None:
     """
     pass
 
+
 @sandbox.command('start')
 def cmd_start() -> None:
     """
     Starts interactive shell in a sandbox environment.
     """
-    from ivexes.modules.sandbox.tools import sandbox as sb
+    from ivexes.modules.sandbox.sandbox import Sandbox
+
+    sb = Sandbox(setup_archive=settings.settings.setup_archive)
     if not sb.connect():
-        click.echo("Failed to connect to sandbox")
+        click.echo('Failed to connect to sandbox')
         return
     command = 'pwd'
     while command not in ['exit']:
         result = sb.write_to_shell(command.encode())
         click.echo(result)
         command = input("\n Next command ('exit' to exit): ")
+
 
 @sandbox.command('run')
 @click.argument('command')
@@ -242,12 +273,15 @@ def cmd_run(command: str) -> None:
         command: The command to run in the sandbox
 
     """
-    from ivexes.modules.sandbox.tools import sandbox as sb
+    from ivexes.modules.sandbox.sandbox import Sandbox
+
+    sb = Sandbox(setup_archive=settings.settings.setup_archive)
     if not sb.connect():
-        click.echo("Failed to connect to sandbox")
+        click.echo('Failed to connect to sandbox')
         return
     result = sb.write_to_shell(command.encode())
     click.echo(result)
+
 
 @sandbox.command('create-file')
 @click.argument('path')
@@ -261,11 +295,12 @@ def create_file(path: str, content: str) -> None:
 
     """
     from ivexes.modules.sandbox.sandbox import Sandbox
+
     sb = Sandbox(setup_archive=settings.settings.setup_archive)
     if not sb.connect():
-        click.echo("Failed to connect to sandbox")
+        click.echo('Failed to connect to sandbox')
         return
-    click.echo(sb.create_file("test", "multi\nlinie\ntext ```’’’\\\\´´"))
+    click.echo(sb.create_file('test', 'multi\nlinie\ntext ```’’’\\\\´´'))
     click.echo(sb.create_file(path, content=content))
 
 

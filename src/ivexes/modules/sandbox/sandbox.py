@@ -9,8 +9,14 @@ logger = log.get(__name__)
 
 
 class Sandbox:
-    def __init__(self, setup_archive: str, username: str = "user", password: str = "passwd",
-                 host: str = "localhost", port: int = 2222):
+    def __init__(
+        self,
+        setup_archive: str,
+        username: str = 'user',
+        password: str = 'passwd',
+        host: str = 'localhost',
+        port: int = 2222,
+    ):
         """
         Initialize the SSH client.
 
@@ -25,7 +31,7 @@ class Sandbox:
         self.username = username
         self.password = password
 
-        self.prompt_string = ""  # saved last prompt string for better formatting
+        self.prompt_string = ''  # saved last prompt string for better formatting
 
         self.setup_archive = setup_archive
 
@@ -46,12 +52,12 @@ class Sandbox:
                 port=self.port,
                 username=self.username,
                 password=self.password,
-                timeout=10
+                timeout=10,
             )
-            logger.debug(f"Connected to {self.host}:{self.port} as {self.username}")
+            logger.debug(f'Connected to {self.host}:{self.port} as {self.username}')
             return True
         except Exception as e:
-            logger.error(f"Failed to connect: {e}")
+            logger.error(f'Failed to connect: {e}')
             return False
 
     def get_shell(self):
@@ -59,14 +65,16 @@ class Sandbox:
         Get an interactive shell channel. Creates one if it does not exist.
         """
         if self.shell is None or self.shell.closed:
-            self.shell = self.client.invoke_shell(term="xterm-mono") # try dumb, linux-m
-            logger.info("Interactive shell started.")
+            self.shell = self.client.invoke_shell(
+                term='xterm-mono'
+            )  # try dumb, linux-m
+            logger.info('Interactive shell started.')
             # Optionally, wait for the shell to be ready
             time.sleep(1)
             # Flush any initial output
             if self.shell.recv_ready():
                 initial_output = self.shell.recv(4096).decode('utf-8')
-                logger.debug(f"Initial shell output: {initial_output}")
+                logger.debug(f'Initial shell output: {initial_output}')
                 self.prompt_string = initial_output.splitlines()[-1]
         return self.shell
 
@@ -84,11 +92,11 @@ class Sandbox:
         shell = self.get_shell()
         if not command.endswith(b'\n'):
             command += b'\n'  # Ensure command ends with newline
-        logger.debug(f"Sending command: {command}")
+        logger.debug(f'Sending command: {command}')
         shell.send(command)
         # Wait a bit for the command to produce output.
         time.sleep(wait)
-        output = ""
+        output = ''
         while shell.recv_ready():
             output_chunk = shell.recv(4096).decode('utf-8')
             output += output_chunk
@@ -96,7 +104,7 @@ class Sandbox:
         output = output.strip()
         # Formatting the output to use the latest prompt_string as prefix
         new_prompt = output.splitlines()[-1]
-        stripped_output = "".join(output.splitlines(keepends=True)[:-1])
+        stripped_output = ''.join(output.splitlines(keepends=True)[:-1])
         ret = self.prompt_string + stripped_output
         self.prompt_string = new_prompt
         return ret
@@ -115,10 +123,10 @@ class Sandbox:
         sftp_client = self.client.open_sftp()
         success = True
         try:
-            with sftp_client.file(filename=filename, mode="w") as f:
+            with sftp_client.file(filename=filename, mode='w') as f:
                 f.write(content)
         except IOError as e:
-            logger.error(f"Failed to create file {filename}: {e}")
+            logger.error(f'Failed to create file {filename}: {e}')
             success = False
         sftp_client.close()
         return success
@@ -130,9 +138,9 @@ class Sandbox:
         if self.shell:
             self.shell.close()
         self.client.close()
-        logger.debug("SSH connection closed.")
+        logger.debug('SSH connection closed.')
         if self.container:
             self.container.stop()
-        logger.debug("Container stopped.")
-        logger.info("Sandbox closed.")
+        logger.debug('Container stopped.')
+        logger.info('Sandbox closed.')
         return True

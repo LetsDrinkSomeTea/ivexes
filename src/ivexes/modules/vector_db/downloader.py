@@ -7,8 +7,8 @@ import ivexes.config.log as log
 
 logger = log.get(__name__)
 
-CAPEC_URL = "https://capec.mitre.org/data/xml/capec_latest.xml"
-CWE_URL = "https://cwe.mitre.org/data/xml/cwec_latest.xml.zip"
+CAPEC_URL = 'https://capec.mitre.org/data/xml/capec_latest.xml'
+CWE_URL = 'https://cwe.mitre.org/data/xml/cwec_latest.xml.zip'
 
 
 def download_capec():
@@ -18,14 +18,14 @@ def download_capec():
     Returns:
         str: The CAPEC XML content
     """
-    logger.info(f"Downloading CAPEC XML from {CAPEC_URL}")
+    logger.info(f'Downloading CAPEC XML from {CAPEC_URL}')
     try:
         with urllib.request.urlopen(CAPEC_URL) as response:
             xml_content = response.read().decode('utf-8')
-            logger.info("Successfully downloaded CAPEC XML")
+            logger.info('Successfully downloaded CAPEC XML')
             return xml_content
     except Exception as e:
-        logger.error(f"Failed to download CAPEC XML: {e}")
+        logger.error(f'Failed to download CAPEC XML: {e}')
         raise
 
 
@@ -36,7 +36,7 @@ def download_cwe():
     Returns:
         str: The CWE XML content
     """
-    logger.info(f"Downloading CWE XML from {CWE_URL}")
+    logger.info(f'Downloading CWE XML from {CWE_URL}')
     try:
         # Download the zip file
         with urllib.request.urlopen(CWE_URL) as response:
@@ -47,13 +47,13 @@ def download_cwe():
             # Get the first XML file in the archive
             xml_files = [name for name in zip_file.namelist() if name.endswith('.xml')]
             if not xml_files:
-                raise ValueError("No XML file found in the zip archive")
+                raise ValueError('No XML file found in the zip archive')
 
             xml_content = zip_file.read(xml_files[0]).decode('utf-8')
-            logger.info(f"Successfully extracted CWE XML from {xml_files[0]}")
+            logger.info(f'Successfully extracted CWE XML from {xml_files[0]}')
             return xml_content
     except Exception as e:
-        logger.error(f"Failed to download or extract CWE XML: {e}")
+        logger.error(f'Failed to download or extract CWE XML: {e}')
         raise
 
 

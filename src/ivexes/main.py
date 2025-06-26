@@ -4,6 +4,7 @@ from typing import cast
 from ivexes.config.settings import settings
 import ivexes.config.log
 from ivexes.modules.printer.printer import stream_result
+
 logger = ivexes.config.log.get(__name__)
 from ivexes.config.run import get_config
 
@@ -14,10 +15,11 @@ from ivexes.modules.code_browser.tools import code_browser_tools
 
 from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExceeded
 
-tools: list[Tool] = cast(list[Tool], sandbox_tools + cwe_capec_tools + code_browser_tools)
+tools: list[Tool] = cast(
+    list[Tool], sandbox_tools + cwe_capec_tools + code_browser_tools
+)
 
-system_msg = \
-"""
+system_msg = """
 You are an expert at analyzing codebases and finding vulnerabilities.
 You are also an expert at generating proof of concept (PoC) exploits for the vulnerabilities you find.
 
@@ -39,30 +41,32 @@ The vulnerable version is installed in the sandbox.
 """
 
 agent = Agent(
-    name="Exploiter",
-    instructions=system_msg,
-    model=settings.model,
-    tools=tools,
-
+    name='Exploiter', instructions=system_msg, model=settings.model, tools=tools
 )
 
 
 async def main(user_msg, agent):
-    with trace(f"IVExES (Single Agent Sandbox ({settings.trace_name}))"):
+    with trace(f'IVExES (Single Agent Sandbox ({settings.trace_name}))'):
         input_items: list[TResponseInputItem] = []
         while user_msg not in ['exit', 'quit', 'q']:
             input_items.append({'content': user_msg, 'role': 'user'})
             try:
-                result = Runner.run_streamed(agent, input_items, run_config=get_config(), max_turns=settings.max_turns)
+                result = Runner.run_streamed(
+                    agent,
+                    input_items,
+                    run_config=get_config(),
+                    max_turns=settings.max_turns,
+                )
                 input_items = await stream_result(result)
             except MaxTurnsExceeded as e:
-                print(f"MaxTurnsExceeded: {e}")
-            user_msg = input("User: ")
+                print(f'MaxTurnsExceeded: {e}')
+            user_msg = input('User: ')
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     from ivexes.modules.code_browser.tools import code_browser
-    user_msg = \
-f"""
+
+    user_msg = f"""
 {code_browser.get_diff()}
 """
     asyncio.run(main(user_msg, agent))

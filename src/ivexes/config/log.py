@@ -5,6 +5,7 @@ from ivexes.config.settings import settings
 
 now = datetime.datetime.now()
 
+
 def get(name: str) -> logging.Logger:
     """
     Set up and return a logger with the given name and level.
@@ -21,8 +22,8 @@ def get(name: str) -> logging.Logger:
     logger.setLevel(settings.log_level)
     logger.handlers.clear()
 
-    log_format = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
-    date_format = "%Y-%m-%d %H:%M:%S"
+    log_format = '%(asctime)s | %(name)s | %(levelname)s | %(message)s'
+    date_format = '%Y-%m-%d %H:%M:%S'
     formatter = logging.Formatter(log_format, date_format)
 
     console_handler = logging.StreamHandler()

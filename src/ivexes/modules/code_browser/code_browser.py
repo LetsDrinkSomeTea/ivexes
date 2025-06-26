@@ -17,7 +17,13 @@ NVIM_DELAY = 0.5
 class CodeBrowser:
     """Code Browser for Neovim LSP."""
 
-    def __init__(self, codebase: str, vulnerable_folder: str, patched_folder: str, port: int = 8080) -> None:
+    def __init__(
+        self,
+        codebase: str,
+        vulnerable_folder: str,
+        patched_folder: str,
+        port: int = 8080,
+    ) -> None:
         """
         Initialize the CodeBrowser with a codebase path and port.
 
@@ -28,15 +34,15 @@ class CodeBrowser:
         self.path = os.path.abspath(codebase)
         self.vulnerable_folder = os.path.basename(vulnerable_folder)
         self.patched_folder = os.path.basename(patched_folder)
-        logger.info(f"Codebase: {self.path} starting container ...")
+        logger.info(f'Codebase: {self.path} starting container ...')
         logger.debug(f'{self.vulnerable_folder=}')
         logger.debug(f'{self.patched_folder=}')
         self.container = setup_container(self.path)
         try:
-            self.nvim = pynvim.attach("tcp", address="127.0.0.1", port=port)
-            logger.info(f"Connected to Neovim with {self.path}")
+            self.nvim = pynvim.attach('tcp', address='127.0.0.1', port=port)
+            logger.info(f'Connected to Neovim with {self.path}')
         except Exception as e:
-            logger.error(f"Error connecting to Neovim (127.0.0.1:{port}): {e}")
+            logger.error(f'Error connecting to Neovim (127.0.0.1:{port}): {e}')
             sys.exit(1)
 
     def _search_symbol(self, symbol: str) -> tuple[str, int, int] | None:
@@ -49,29 +55,34 @@ class CodeBrowser:
         Returns:
             A tuple containing (file_path, line_number, column_number) of the first occurrence
         """
-        cmd = ["rg", "--vimgrep", fr"\b{symbol}\b",  # exakter Wortbeginn/-ende
-               '/codebase',  # Arbeitsverzeichnis
-               ]
-        logger.debug(f"Running: {' '.join(cmd)}")
+        cmd = [
+            'rg',
+            '--vimgrep',
+            rf'\b{symbol}\b',  # exakter Wortbeginn/-ende
+            '/codebase',  # Arbeitsverzeichnis
+        ]
+        logger.debug(f'Running: {" ".join(cmd)}')
         res = self.container.exec_run(cmd)
 
         if res.exit_code != 0:
-            logger.error(f"Error running command: {res.output}")
+            logger.error(f'Error running command: {res.output}')
             return None
         # Format: file:line:col:match
         hits = []
         for line in res.output.splitlines():
-            parts = line.split(b":", 3)
+            parts = line.split(b':', 3)
             file_path, lineno, col = parts[0], int(parts[1]), int(parts[2])
             hits.append((file_path.decode(), lineno, col))
-        logger.debug(f"Found {len(hits)} hits")
+        logger.debug(f'Found {len(hits)} hits')
 
         # Using any of the hits
         file_path, line, col = hits[0]
-        logger.info(f"Found at: {file_path=} {line=} {col=}")
+        logger.info(f'Found at: {file_path=} {line=} {col=}')
         return file_path, line, col
 
-    def get_file_content(self, file: str, from_line: int = 0, to_line: int = -1) -> str | None:
+    def get_file_content(
+        self, file: str, from_line: int = 0, to_line: int = -1
+    ) -> str | None:
         """
         Get the content of a file from the container.
 
@@ -83,29 +94,31 @@ class CodeBrowser:
         Returns:
             The content of the file as a string
         """
-        cmd = ["cat", file]
-        logger.info(f"Running: {' '.join(cmd)}")
+        cmd = ['cat', file]
+        logger.info(f'Running: {" ".join(cmd)}')
         res = self.container.exec_run(cmd)
 
         if res.exit_code != 0:
-            logger.error(f"Error running command: {res.output}")
+            logger.error(f'Error running command: {res.output}')
             return None
 
         raw_bytes = res.output
         detected = chardet.detect(raw_bytes)
-        encoding = detected.get("encoding", "utf-8")
-        confidence = detected.get("confidence", 0)
+        encoding = detected.get('encoding', 'utf-8')
+        confidence = detected.get('confidence', 0)
 
-        logger.debug(f"Detected encoding '{encoding}' with confidence {confidence:.2f} for file {file}")
+        logger.debug(
+            f"Detected encoding '{encoding}' with confidence {confidence:.2f} for file {file}"
+        )
 
         try:
             content_lines = raw_bytes.decode(encoding).splitlines()[:]
             if to_line != -1 and to_line < len(content_lines):
                 content_lines = content_lines[:to_line]
-            content = "\n".join(content_lines[from_line:])
+            content = '\n'.join(content_lines[from_line:])
             return content
         except UnicodeDecodeError as e:
-            logger.error(f"Failed to decode with detected encoding {encoding}: {e}")
+            logger.error(f'Failed to decode with detected encoding {encoding}: {e}')
             return None
 
     def get_codebase_structure(self, n: int = 3) -> str | None:
@@ -119,16 +132,17 @@ class CodeBrowser:
             A string representation of the codebase directory structure
         """
         cmd = [
-            "tree",
-            "-L", str(n),
-            "/codebase",  # Arbeitsverzeichnis
+            'tree',
+            '-L',
+            str(n),
+            '/codebase',  # Arbeitsverzeichnis
         ]
-        logger.info(f"Running: {' '.join(cmd)}")
+        logger.info(f'Running: {" ".join(cmd)}')
         res = self.container.exec_run(cmd)
         if res.exit_code != 0:
-            logger.error(f"Error running command: {res.output}")
+            logger.error(f'Error running command: {res.output}')
             return None
-        logger.info(f"Tree got {len(res.output.splitlines())} entries")
+        logger.info(f'Tree got {len(res.output.splitlines())} entries')
         return res.output.decode()
 
     def get_symbols(self, file: str) -> list[tuple[str, str, int, tuple[int, int]]]:
@@ -144,21 +158,23 @@ class CodeBrowser:
             - symbol_type (str): Type of symbol (function, class, variable, etc.)
             - line_number (int): Line number where symbol is defined
             - range (tuple): Symbol range as (start_col, end_col)
-            
-            
+
+
         """
-        self.nvim.command(f"edit {file}")
+        self.nvim.command(f'edit {file}')
         sleep(NVIM_DELAY)
         # Get the symbols from the buffer
         self.nvim.command_output('lua vim.lsp.buf.document_symbol()')
         sleep(NVIM_DELAY)
         symbols = parse_symbols(self.nvim.current.buffer)
 
-        logger.info(f"Found {len(symbols)} symbols in {file}")
+        logger.info(f'Found {len(symbols)} symbols in {file}')
 
         return symbols
 
-    def get_references(self, symbol: str) -> list[tuple[str, str, int, tuple[int, int]]]:
+    def get_references(
+        self, symbol: str
+    ) -> list[tuple[str, str, int, tuple[int, int]]]:
         """
         Get all references to the specified symbol in the codebase using LSP.
 
@@ -173,8 +189,8 @@ class CodeBrowser:
             - range (tuple): Reference range as (start_col, end_col)
         """
         file, line, col = self._search_symbol(symbol)
-        try: 
-            self.nvim.command(f"edit {file}")
+        try:
+            self.nvim.command(f'edit {file}')
             sleep(NVIM_DELAY)
             self.nvim.current.window.cursor = (line, col - 1)
 
@@ -183,10 +199,10 @@ class CodeBrowser:
             sleep(NVIM_DELAY)
             references = parse_references(self.nvim.current.buffer)
 
-            logger.info(f"Found {len(references)} references in {file}")
-            logger.debug(f"{references=}")
+            logger.info(f'Found {len(references)} references in {file}')
+            logger.debug(f'{references=}')
         except Exception as e:
-            logger.error(f"{type(e)=}\n{e}")
+            logger.error(f'{type(e)=}\n{e}')
 
         return references
 
@@ -201,15 +217,15 @@ class CodeBrowser:
             A tuple containing (definition_content, begin_line, end_line)
         """
         file, line, col = self._search_symbol(symbol)
-        logger.info(f"open {file=} at {line=} {col=}")
-        self.nvim.command(f"edit {file}")
+        logger.info(f'open {file=} at {line=} {col=}')
+        self.nvim.command(f'edit {file}')
         sleep(NVIM_DELAY)
         self.nvim.current.window.cursor = (line, col - 1)
 
         self.nvim.command('lua vim.lsp.buf.definition()')
         sleep(NVIM_DELAY)
         (b_line, b_col) = self.nvim.current.window.cursor
-        logger.debug(f"Jumped to definition ({b_line=} {b_col=})")
+        logger.debug(f'Jumped to definition ({b_line=} {b_col=})')
 
         self.nvim.input(b']M')
         sleep(NVIM_DELAY)
@@ -221,27 +237,19 @@ class CodeBrowser:
             (e_line, e_col) = self.nvim.current.window.cursor
             logger.debug(f"'%' -> ({e_line=} {e_col=})")
 
-        res = "\n".join(self.nvim.current.buffer[b_line - 1:e_line])
-        logger.debug(f"{res=}")
+        res = '\n'.join(self.nvim.current.buffer[b_line - 1 : e_line])
+        logger.debug(f'{res=}')
 
         return res, file, b_line, e_line
 
-    def get_diff(self):
-        cmd = [
-            "git", "diff",
-            "-W",  # function context
-            "-w",  # ignore whitespaces
-            "--no-index",
-            "--exit-code",
-            "--no-prefix",
-            self.vulnerable_folder,
-            self.patched_folder
-        ]
-        logger.info(f"Running: {' '.join(cmd)}")
+    def get_diff(self, options: list[str], file1: str, file2: str):
+        cmd = ['diff'] + options + [file1, file2]
+
+        logger.info(f'Running: {" ".join(cmd)}')
         res = self.container.exec_run(cmd)
         if res.exit_code not in [0, 1]:
-            logger.error(f"Error running command: {res.output}")
+            logger.error(f'Error running command: {res.output}')
             return None
-        file_diffs = res.output.decode().split("diff --git ")[1:]
+        file_diffs = res.output.decode().split('diff --git ')[1:]
         logger.info(f'{len(file_diffs)} files altered')
         return file_diffs
