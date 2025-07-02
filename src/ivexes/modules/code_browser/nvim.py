@@ -61,5 +61,3 @@ def setup_container(
     except Exception as e:
         logger.error(f'An error occurred: {e}')
         exit(1)
-
-    return None

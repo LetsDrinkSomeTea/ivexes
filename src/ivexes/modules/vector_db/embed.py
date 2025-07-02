@@ -12,9 +12,6 @@ logger = log.get(__name__)
 
 class CweCapecAttackDatabase:
     def __init__(self) -> None:
-        self.chroma_client = chromadb.PersistentClient(
-            settings=chromadb.config.Settings(allow_reset=True)
-        )
         ef = DefaultEmbeddingFunction()
         if settings.embedding_provider == 'openai':
             from chromadb.utils.embedding_functions.openai_embedding_function import (
@@ -24,7 +21,20 @@ class CweCapecAttackDatabase:
             ef = OpenAIEmbeddingFunction(
                 model_name=settings.embedding_model, api_key=settings.openai_api_key
             )
-        logger.info(f'using {settings.embedding_provider=}')
+        if settings.embedding_provider == 'local':
+            from chromadb.utils.embedding_functions.sentence_transformer_embedding_function import (
+                SentenceTransformerEmbeddingFunction,
+            )
+
+            ef = SentenceTransformerEmbeddingFunction(
+                model_name=settings.embedding_model
+            )
+
+        self.chroma_client = chromadb.PersistentClient(
+            settings=chromadb.config.Settings(allow_reset=True),
+            path=f'./chroma/{settings.embedding_model}',
+        )
+        logger.info(f'using {settings.embedding_provider=} and {ef=}')
         self.collection = self.chroma_client.get_or_create_collection(
             name='collection-local', embedding_function=ef
         )

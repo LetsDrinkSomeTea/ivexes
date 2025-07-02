@@ -242,7 +242,18 @@ class CodeBrowser:
 
         return res, file, b_line, e_line
 
-    def get_diff(self, options: list[str], file1: str, file2: str):
+    def get_diff(
+        self,
+        options: list[str] | None = None,
+        file1: str | None = None,
+        file2: str | None = None,
+    ):
+        if not options:
+            options = ['-u', '-w']
+        if not file1:
+            file1 = f'/codebase/{self.vulnerable_folder}'
+        if not file2:
+            file2 = f'/codebase/{self.patched_folder}'
         cmd = ['diff'] + options + [file1, file2]
 
         logger.info(f'Running: {" ".join(cmd)}')

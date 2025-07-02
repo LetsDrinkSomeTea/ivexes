@@ -63,6 +63,16 @@ def cmd_clear() -> None:
     click.echo('Database cleared successfully')
 
 
+@vector_db.command('size')
+def cmd_size() -> None:
+    """
+    Get the size of the vector database.
+    """
+
+    db = CweCapecAttackDatabase()
+    click.echo(f' Size of DB: {db.collection.count()}')
+
+
 @vector_db.command('init')
 @click.argument('type_of_data', type=click.Choice(['cwe', 'capec', 'attack', 'all']))
 def init_verctor_db(type_of_data: str):

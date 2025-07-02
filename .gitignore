@@ -9,6 +9,8 @@
 
 # chromadb
 chroma/
+chroma-*/
+output-*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
