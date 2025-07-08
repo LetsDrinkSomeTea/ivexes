@@ -9,7 +9,6 @@ from agents import (
     RunConfig,
 )
 from openai import AsyncOpenAI
-from ivexes.config import log
 from ivexes.modules.printer.printer import print_banner
 from dotenv import load_dotenv
 from pydantic import Field
@@ -94,6 +93,8 @@ settings = Settings()
 
 
 def get_run_config() -> RunConfig:
+    from ivexes.config import log
+
     logger = log.get(__name__)
 
     client = AsyncOpenAI(base_url=settings.llm_base_url, api_key=settings.llm_api_key)

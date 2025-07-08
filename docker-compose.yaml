@@ -3,12 +3,9 @@ services:
   nvim-lsp:
     build: ./container/nvim_lsp
     image: nvim-lsp:latest
-    container_name: nvim-lsp
     pull_policy: never
     ports:
       - "8080:8080"
-    volumes:
-      - ./workspace:/workspace:ro
 
   kali:
       build: ./container/kali_sandbox
@@ -16,6 +13,4 @@ services:
       pull_policy: never
       ports:
         - "2222:22"
-      volumes:
-      - ./workspace:/root/workspace:rw
 
