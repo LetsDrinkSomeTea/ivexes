@@ -81,7 +81,7 @@ class CodeBrowser:
         return file_path, line, col
 
     def get_file_content(
-        self, file: str, from_line: int = 0, to_line: int = -1
+        self, file: str, offset: int = 0, limit: int = 50
     ) -> str | None:
         """
         Get the content of a file from the container.
@@ -113,9 +113,9 @@ class CodeBrowser:
 
         try:
             content_lines = raw_bytes.decode(encoding).splitlines()[:]
-            if to_line != -1 and to_line < len(content_lines):
-                content_lines = content_lines[:to_line]
-            content = '\n'.join(content_lines[from_line:])
+            if offset + limit < len(content_lines):
+                content_lines = content_lines[: offset + limit]
+            content = '\n'.join(content_lines[offset:])
             return content
         except UnicodeDecodeError as e:
             logger.error(f'Failed to decode with detected encoding {encoding}: {e}')

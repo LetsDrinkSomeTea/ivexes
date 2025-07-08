@@ -49,7 +49,13 @@ def insert_cwe(collection: chromadb.Collection, xml_data):
                 else 'N/A'
             )
             # Compose document
-            doc = f'{name}:\nDescription: {desc_text}\nExtended: {ext_text}'
+            doc = f"""
+<CWE>
+CWE-{wid} {name}:
+<Description>: {desc_text} </Description>
+<Extended>: {ext_text} </Extended>
+</CWE>
+"""
             meta = {'id': wid, 'name': name, 'type': 'cwe'}
             logger.debug(f'Adding CWE-{wid:<4}: {name[:50]:<50}: {desc_text[:50]}...')
             if name and 'DEPRECATED' in name:
@@ -102,7 +108,13 @@ def insert_capec(collection: chromadb.Collection, xml_data):
                         prereqs.append(p.text.strip())
             prereq_text = ' | '.join(prereqs) if len(prereqs) > 0 else 'N/A'
             # Compose document
-            doc = f'{name}:\nDescription: {desc_text}\nPrerequisites: {prereq_text}'
+            doc = f"""
+<CAPEC>
+CAPEC-{aid} {name}:
+<Description>: {desc_text} </Description>
+<Prerequisites>: {prereq_text} </Prerequisites>
+</CAPEC>
+"""
             meta = {'id': aid, 'name': name, 'type': 'capec'}
             logger.debug(f'Adding CAPEC-{aid:<4}: {name[:50]:<50}: {desc_text[:50]}...')
             collection.add(ids=[aid], documents=[doc], metadatas=[meta])

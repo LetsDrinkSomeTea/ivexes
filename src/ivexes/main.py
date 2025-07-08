@@ -1,22 +1,21 @@
 import asyncio
 from typing import cast
 
-from ivexes.config.settings import settings
-import ivexes.config.log
+from ivexes.config.settings import settings, get_run_config
 from ivexes.modules.printer.printer import stream_result
 
-logger = ivexes.config.log.get(__name__)
-from ivexes.config.run import get_config
-
 from ivexes.modules.sandbox.tools import sandbox_tools
-from ivexes.modules.vector_db.tools import cwe_capec_tools
+from ivexes.modules.vector_db.tools import vectordb_tools
 from ivexes.modules.code_browser.tools import code_browser_tools
-
 
 from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExceeded
 
+import ivexes.config.log
+
+logger = ivexes.config.log.get(__name__)
+
 tools: list[Tool] = cast(
-    list[Tool], sandbox_tools + cwe_capec_tools + code_browser_tools
+    list[Tool], sandbox_tools + vectordb_tools + code_browser_tools
 )
 
 system_msg = """
@@ -54,7 +53,7 @@ async def main(user_msg, agent):
                 result = Runner.run_streamed(
                     agent,
                     input_items,
-                    run_config=get_config(),
+                    run_config=get_run_config(),
                     max_turns=settings.max_turns,
                 )
                 input_items = await stream_result(result)

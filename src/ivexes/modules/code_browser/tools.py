@@ -81,19 +81,17 @@ def codebrowser_get_symbols(file: str) -> str:
 
 
 @function_tool
-def codebrowser_get_file_content(
-    file: str, from_line: int = 0, to_line: int = -1
-) -> str:
+def codebrowser_get_file_content(file: str, offset: int = 0, limit: int = 50) -> str:
     """
     Get the content of a file in the codebase.
 
     Args:
         file: Path to the file within the codebase to analyze
-        from_line: Start line number (0-indexed, default: 0)
-        to_line: End line number (0-indexed, -1 for all lines, default: -1)
+        offset: Optional: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files.
+        limit: Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit).
     """
     logger.info(f'running codebrowser_get_file_content({file=})')
-    result = code_browser.get_file_content(file, from_line, to_line)
+    result = code_browser.get_file_content(file, offset, limit)
     if result:
         return f'Content of {file}:\n<code>{result}</code>'
     else:

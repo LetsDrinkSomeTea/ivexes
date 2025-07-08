@@ -61,7 +61,13 @@ def insert_attack_techniques(collection: chromadb.Collection, attack_data):
             tactics_text = ', '.join(tactics) if tactics else 'N/A'
 
             # Compose document
-            doc = f'{name}:\nDescription: {description}\nTactics: {tactics_text}'
+            doc = f"""
+<ATT&CK-TECHNIQUE>
+{technique_id} {name}:
+<Description>: {description} </Description>
+<Tactics>: {tactics_text} </Tactics>
+</ATT&CK-TECHNIQUE>
+"""
             meta = {
                 'id': technique_id,
                 'name': name,
@@ -111,7 +117,13 @@ def insert_attack_tactics(collection: chromadb.Collection, attack_data):
             shortname = _safe_get(tactic, 'x_mitre_shortname', default='')
 
             # Compose document
-            doc = f'{name}:\nDescription: {description}\nShort Name: {shortname}'
+            doc = f"""
+<ATT&CK-TACTIC>
+{tactic_id} {name}:
+<Description>: {description} </Description>
+<Short_Name>: {shortname} </Short_Name>
+</ATT&CK-TACTIC>
+"""
             meta = {
                 'id': tactic_id,
                 'name': name,
@@ -156,7 +168,12 @@ def insert_attack_mitigations(collection: chromadb.Collection, attack_data):
             description = _safe_get(mitigation, 'description')
 
             # Compose document
-            doc = f'{name}:\nDescription: {description}'
+            doc = f"""
+<ATT&CK-MITIGATION>
+{mitigation_id} {name}:
+<Description>: {description} </Description>
+</ATT&CK-MITIGATION>
+"""
             meta = {'id': mitigation_id, 'name': name, 'type': 'attack-mitigation'}
 
             logger.debug(f'Adding {mitigation_id}: {name[:50]}...')
@@ -200,7 +217,13 @@ def insert_attack_groups(collection: chromadb.Collection, attack_data):
             aliases_text = ', '.join(aliases) if aliases else 'N/A'
 
             # Compose document
-            doc = f'{name}:\nDescription: {description}\nAliases: {aliases_text}'
+            doc = f"""
+<ATT&CK-GROUP>
+{group_id} {name}:
+<Description>: {description} </Description>
+<Aliases>: {aliases_text} </Aliases>
+</ATT&CK-GROUP>
+"""
             meta = {
                 'id': group_id,
                 'name': name,
@@ -247,7 +270,13 @@ def insert_attack_software(collection: chromadb.Collection, attack_data):
             software_type = 'malware' if 'malware' in labels else 'tool'
 
             # Compose document
-            doc = f'{name} ({software_type}):\nDescription: {description}'
+            doc = f"""
+<ATT&CK-SOFTWARE>
+{software_id} {name} ({software_type}):
+<Description>: {description} </Description>
+<Type>: {software_type} </Type>
+</ATT&CK-SOFTWARE>
+"""
             meta = {
                 'id': software_id,
                 'name': name,

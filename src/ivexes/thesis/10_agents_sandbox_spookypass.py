@@ -4,11 +4,11 @@ from agents import Agent, MaxTurnsExceeded, Runner, TResponseInputItem, Tool, tr
 import dotenv
 
 dotenv.load_dotenv('thesis/10_agents_sandbox_spookypass.env', override=True)
-from ivexes.config.run import get_config
+
 from ivexes.modules.printer.printer import stream_result
 from ivexes.modules.sandbox.tools import sandbox_tools
 from ivexes.prompts.htb_reversing import system_msg, user_msg
-from ivexes.config.settings import settings
+from ivexes.config.settings import settings, get_run_config
 
 user_msg = user_msg.format(
     program='pass',
@@ -28,7 +28,7 @@ async def main(user_msg, agent):
                 result = Runner.run_streamed(
                     agent,
                     input_items,
-                    run_config=get_config(),
+                    run_config=get_run_config(),
                     max_turns=settings.max_turns,
                 )
                 input_items = await stream_result(result)

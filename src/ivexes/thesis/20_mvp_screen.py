@@ -5,10 +5,9 @@ from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExcee
 import dotenv
 
 dotenv.load_dotenv('thesis/20_mvp_screen.env', override=True)
-from ivexes.config.run import get_config
 from ivexes.modules.printer.printer import stream_result
 from ivexes.prompts.mvp import system_msg, user_msg
-from ivexes.config.settings import settings
+from ivexes.config.settings import settings, get_run_config
 from ivexes.modules.sandbox.tools import sandbox_tools
 
 user_msg = user_msg.format(
@@ -31,7 +30,7 @@ async def main(user_msg, agent):
                 result = Runner.run_streamed(
                     agent,
                     input_items,
-                    run_config=get_config(),
+                    run_config=get_run_config(),
                     max_turns=settings.max_turns,
                 )
                 input_items = await stream_result(result)

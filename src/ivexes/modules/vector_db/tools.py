@@ -136,7 +136,7 @@ def semantic_search_attack_all(query: str, n: int = 5):
 
 
 # Export all tools
-cwe_capec_attack_tools = [
+vectordb_tools = [
     semantic_search_cwe,
     semantic_search_capec,
     semantic_search_attack_techniques,
@@ -145,4 +145,3 @@ cwe_capec_attack_tools = [
     semantic_search_attack_software,
     semantic_search_attack_all,
 ]
-
