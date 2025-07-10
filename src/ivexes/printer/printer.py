@@ -17,6 +17,7 @@ import json
 import time
 
 from .components import banner
+from ..config import get_settings
 
 TIME_STRING: str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
@@ -176,20 +177,16 @@ async def stream_result(result: RunResultStreaming) -> list[TResponseInputItem]:
     return result.to_input_list()
 
 
-def print_banner(
-    model: str,
-    reasoning_model: str,
-    temperature: float,
-    max_turns: int,
-    program_name: str,
-) -> None:
+def print_banner() -> None:
+    """Print a banner with configuration details."""
+    settings = get_settings()
     print_and_write_to_file(
         banner(
-            model=model,
-            reasoning_model=reasoning_model,
-            temperature=temperature,
-            max_turns=max_turns,
-            program_name=program_name,
+            model=settings.model,
+            reasoning_model=settings.reasoning_model,
+            temperature=settings.model_temperature,
+            max_turns=settings.max_turns,
+            trace_name=settings.trace_name,
         ),
         truncate=False,
     )

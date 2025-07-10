@@ -9,13 +9,8 @@ from agents import (
     RunConfig,
 )
 from openai import AsyncOpenAI
-from ivexes.modules.printer.printer import print_banner
-from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings
-
-load_dotenv(verbose=True)
-load_dotenv(verbose=True, dotenv_path='.secrets.env')
 
 
 class Settings(BaseSettings):
@@ -84,6 +79,9 @@ class Settings(BaseSettings):
     )
 
     # Embedding settings
+    chroma_path: str = Field(
+        default_factory=lambda: os.environ.get('CHROMA_PATH', '/tmp/chroma')
+    )
     embedding_model: str = Field(
         default_factory=lambda: os.environ.get('EMBEDDING_MODEL', 'builtin')
     )
@@ -92,13 +90,23 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
+# Global settings instance - lazily initialized
+_settings: Settings | None = None
+
+
+def get_settings() -> Settings:
+    """Get the global settings instance, creating it if necessary."""
+    global _settings
+    if _settings is None:
+        _settings = Settings()
+    return _settings
 
 
 def get_run_config() -> RunConfig:
     from ivexes.config import log
 
     logger = log.get(__name__)
+    settings = get_settings()
 
     client = AsyncOpenAI(base_url=settings.llm_base_url, api_key=settings.llm_api_key)
 
@@ -120,12 +128,3 @@ def get_run_config() -> RunConfig:
     logger.debug(f'run_config=\n{pprint.pformat(run_config)}')
 
     return run_config
-
-
-print_banner(
-    model=settings.model,
-    reasoning_model=settings.reasoning_model,
-    temperature=settings.model_temperature,
-    max_turns=settings.max_turns,
-    program_name=settings.trace_name,
-)

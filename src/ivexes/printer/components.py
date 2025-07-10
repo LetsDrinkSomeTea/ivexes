@@ -36,10 +36,10 @@ def banner(
     reasoning_model: str,
     temperature: float,
     max_turns: int,
-    program_name: str,
+    trace_name: str,
 ) -> str:
     # Sanitize inputs
-    program_name = program_name.strip()
+    trace_name = trace_name.strip()
     model = model.strip()
     try:
         temperature = float(temperature)
@@ -52,7 +52,7 @@ def banner(
 
     # Prepare key-value pairs for config
     items = [
-        ('program', program_name),
+        ('trace name', trace_name),
         ('model', model),
         ('reasoning model', reasoning_model),
         ('temperature', str(temperature)),

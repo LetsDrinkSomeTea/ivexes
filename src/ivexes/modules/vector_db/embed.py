@@ -1,11 +1,15 @@
+from typing import cast
 import chromadb
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+from chromadb.config import Settings
 
 import ivexes.config.log as log
-from ivexes.config.settings import settings
+from ivexes.config.settings import get_settings
 from ivexes.modules.vector_db.downloader import get_cwe_tree, get_capec_tree
 from ivexes.modules.vector_db.parser import insert_capec, insert_cwe
 from ivexes.modules.vector_db.attack_parser import insert_attack_all
+
+from os import path
 
 logger = log.get(__name__)
 
@@ -13,6 +17,7 @@ logger = log.get(__name__)
 class CweCapecAttackDatabase:
     def __init__(self) -> None:
         ef = DefaultEmbeddingFunction()
+        settings = get_settings()
         if settings.embedding_provider == 'openai':
             from chromadb.utils.embedding_functions.openai_embedding_function import (
                 OpenAIEmbeddingFunction,
@@ -29,14 +34,16 @@ class CweCapecAttackDatabase:
             ef = SentenceTransformerEmbeddingFunction(
                 model_name=settings.embedding_model
             )
+        db_path = path.join(settings.chroma_path, settings.embedding_model)
+        logger.info(f'Using database path: {db_path}')
 
         self.chroma_client = chromadb.PersistentClient(
-            settings=chromadb.config.Settings(allow_reset=True),
-            path=f'./chroma/{settings.embedding_model}',
+            settings=Settings(allow_reset=True), path=db_path
         )
-        logger.info(f'using {settings.embedding_provider=} and {ef=}')
+        logger.info(f'using {settings.embedding_provider=} and ef={type(ef)}')
         self.collection = self.chroma_client.get_or_create_collection(
-            name='collection-local', embedding_function=ef
+            name='collection-local',
+            embedding_function=cast(chromadb.EmbeddingFunction, ef),
         )
 
         logger.info(f'currently {self.collection.count()} entries loaded')

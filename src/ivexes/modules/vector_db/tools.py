@@ -4,7 +4,17 @@ from ivexes.modules.vector_db.embed import CweCapecAttackDatabase
 
 logger = log.get(__name__)
 
-db = CweCapecAttackDatabase()
+db: CweCapecAttackDatabase | None = None
+
+def get_db() -> CweCapecAttackDatabase:
+    """
+    Get the singleton instance of the CweCapecAttackDatabase.
+    Initializes the database if it hasn't been created yet.
+    """
+    global db
+    if db is None:
+        db = CweCapecAttackDatabase()
+    return db
 
 
 @function_tool

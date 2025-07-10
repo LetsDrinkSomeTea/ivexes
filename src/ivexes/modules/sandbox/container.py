@@ -5,7 +5,7 @@ from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
 import ivexes.config.log as log
-from ivexes.config.settings import settings
+from ivexes.config.settings import get_settings
 from ivexes.container.utils import find_existing, remove_if_exists
 
 logger = log.get(__name__)
@@ -23,6 +23,7 @@ def setup_container(
     )
     assert isinstance(port, int), f'port must be number, got {type(port)}'
     client = docker.from_env()
+    settings = get_settings()
     if docker_image is None:
         docker_image = settings.sandbox_image
     container_name = f'ivexes-{docker_image.split(":")[0]}-{settings.trace_name}'

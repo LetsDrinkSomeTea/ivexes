@@ -1,19 +1,38 @@
 from agents import function_tool
-from ivexes.config.settings import settings
+from ivexes.config.settings import get_settings
 from ivexes.modules.code_browser.code_browser import CodeBrowser
 
 import ivexes.config.log as log
 
 logger = log.get(__name__)
 
-if settings.codebase_path and settings.vulnerable_folder and settings.patched_folder:
-    code_browser = CodeBrowser(
-        settings.codebase_path, settings.vulnerable_folder, settings.patched_folder
-    )
-else:
-    logger.warning(
-        'Skipping code_browser tools because codebase_path, vulnerable_folder or patched_folder is not set in settings.'
-    )
+_code_browser: CodeBrowser | None = None
+
+
+def get_code_browser() -> CodeBrowser:
+    """
+    Get the global code browser instance, creating it if necessary.
+
+    Returns:
+        CodeBrowser: The code browser instance.
+    """
+    global _code_browser
+    if _code_browser is None:
+        settings = get_settings()
+        if (
+            settings.codebase_path
+            and settings.vulnerable_folder
+            and settings.patched_folder
+        ):
+            _code_browser = CodeBrowser(
+                settings.codebase_path, settings.vulnerable_folder, settings.patched_folder
+            )
+        else:
+            logger.error(
+                'Code browser not initialized: codebase_path, vulnerable_folder, and patched_folder must be set in settings.'
+            )
+            exit(1)
+    return _code_browser
 
 
 @function_tool
@@ -25,7 +44,7 @@ def codebrowser_get_definition(symbol: str) -> str:
         symbol: The symbol name to find the definition for
     """
     logger.info(f'running codebrowser_get_definition({symbol=})')
-    result = code_browser.get_definition(symbol)
+    result = get_code_browser().get_definition(symbol)
     if result:
         definition, file, from_line, to_line = result
         return (
@@ -47,7 +66,7 @@ def codebrowser_get_references(symbol: str) -> str:
         symbol: The symbol name to find references for
     """
     logger.info(f'running codebrowser_get_references({symbol=})')
-    results = code_browser.get_references(symbol)
+    results = get_code_browser().get_references(symbol)
     if results:
         references = []
         for result in results:
@@ -67,7 +86,7 @@ def codebrowser_get_symbols(file: str) -> str:
         file: Path to the file within the codebase to analyze
     """
     logger.info(f'running codebrowser_get_symbols({file=})')
-    results = code_browser.get_symbols(file)
+    results = get_code_browser().get_symbols(file)
     if results:
         symbols = []
         for result in results:
@@ -91,7 +110,7 @@ def codebrowser_get_file_content(file: str, offset: int = 0, limit: int = 50) ->
         limit: Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit).
     """
     logger.info(f'running codebrowser_get_file_content({file=})')
-    result = code_browser.get_file_content(file, offset, limit)
+    result = get_code_browser().get_file_content(file, offset, limit)
     if result:
         return f'Content of {file}:\n<code>{result}</code>'
     else:
@@ -107,7 +126,7 @@ def codebrowser_get_file_structure(depth: int = 3) -> str:
         depth: Maximum depth level of the tree (default: 3)
     """
     logger.info(f'running codebrowser_get_file_structure({depth=})')
-    result = code_browser.get_codebase_structure(depth)
+    result = get_code_browser().get_codebase_structure(depth)
     if result:
         return f'Tree of the codebase:\n<tree>{result}</tree>'
     else:
@@ -131,22 +150,18 @@ def codebrowser_get_diff(
     if not options:
         options = ['-u', '-w']
     logger.info(f'running codebrowser_get_diff({options})')
-    result = code_browser.get_diff(options, file1, file2)
+    result = get_code_browser().get_diff(options, file1, file2)
     if result:
         return f'Diff of the codebase:\n<diff>{result}</diff>'
     else:
         return 'No diff found in the codebase.'
 
 
-code_browser_tools = (
-    [
-        codebrowser_get_definition,
-        codebrowser_get_references,
-        codebrowser_get_symbols,
-        codebrowser_get_file_content,
-        codebrowser_get_file_structure,
-        codebrowser_get_diff,
-    ]
-    if settings.codebase_path and settings.vulnerable_folder and settings.patched_folder
-    else []
-)
+code_browser_tools = [
+    codebrowser_get_definition,
+    codebrowser_get_references,
+    codebrowser_get_symbols,
+    codebrowser_get_file_content,
+    codebrowser_get_file_structure,
+    codebrowser_get_diff,
+]

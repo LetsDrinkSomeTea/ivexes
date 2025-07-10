@@ -5,7 +5,7 @@ from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
 import ivexes.config.log as log
-from ivexes.config.settings import settings
+from ivexes.config.settings import get_settings
 from ivexes.container.utils import find_existing, remove_if_exists
 
 logger = log.get(__name__)
@@ -26,7 +26,7 @@ def setup_container(
         The Docker container object if successful, None otherwise
     """
     client = docker.from_env()
-    container_name = f'ivexes-nvim-lsp-{settings.trace_name}'
+    container_name = f'ivexes-nvim-lsp-{get_settings().trace_name}'
 
     c = (
         remove_if_exists(client, container_name)

@@ -1,14 +1,19 @@
 import asyncio
+from dotenv import load_dotenv
 from typing import cast
 from agents import Agent, MaxTurnsExceeded, Runner, TResponseInputItem, Tool, trace
-import dotenv
 
-dotenv.load_dotenv('thesis/10_agents_sandbox_spookypass.env', override=True)
-
-from ivexes.modules.printer.printer import stream_result
-from ivexes.modules.sandbox.tools import sandbox_tools
+from ivexes.config import get_run_config, get_settings
+from ivexes.printer import stream_result, print_banner
+from ivexes.tools import sandbox_tools
 from ivexes.prompts.htb_reversing import system_msg, user_msg
-from ivexes.config.settings import settings, get_run_config
+
+load_dotenv(verbose=True, dotenv_path='.', override=True)
+load_dotenv(verbose=True, dotenv_path='../.secrets.env', override=True)
+
+settings = get_settings()
+print(settings)
+print_banner()
 
 user_msg = user_msg.format(
     program='pass',

@@ -1,9 +1,6 @@
-import datetime
 import logging
 
-from ivexes.config.settings import settings
-
-now = datetime.datetime.now()
+from ivexes.config.settings import get_settings
 
 
 def get(name: str) -> logging.Logger:
@@ -19,7 +16,7 @@ def get(name: str) -> logging.Logger:
         A configured logger instance
     """
     logger = logging.getLogger(name)
-    logger.setLevel(settings.log_level)
+    logger.setLevel(get_settings().log_level)
     logger.handlers.clear()
 
     log_format = '%(asctime)s | %(name)s | %(levelname)s | %(message)s'

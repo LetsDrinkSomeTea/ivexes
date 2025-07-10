@@ -1,10 +1,28 @@
 from agents import function_tool
 from ivexes.modules.sandbox.sandbox import Sandbox
-from ivexes.config.settings import settings
+from ivexes.config.settings import get_settings
 import ivexes.config.log as log
 
 logger = log.get(__name__)
-sandbox: Sandbox | None = None
+_sandbox: Sandbox | None = None
+
+
+def get_sandbox() -> Sandbox:
+    """
+    Get the global sandbox instance, creating it if necessary.
+
+    Returns:
+        Sandbox: The sandbox instance.
+    """
+    global _sandbox
+    if _sandbox is None:
+        settings = get_settings()
+        if settings.setup_archive:
+            _sandbox = Sandbox(settings.setup_archive)
+        else:
+            logger.error('Sandbox not initialized: setup_archive must be set in settings.')
+            exit(1)
+    return _sandbox
 
 
 @function_tool
@@ -15,9 +33,8 @@ def setup_sandbox() -> str:
     Returns:
         str: A message indicating the result of the setup operation. And basic information about the environment.
     """
-    global sandbox
-    logger.info(f'running setup_sandbox()')
-    sandbox = Sandbox(settings.setup_archive)
+    logger.info('running setup_sandbox()')
+    sandbox = get_sandbox()
     if not sandbox.connect():
         return 'Failed to setup sandbox'
     r = 'Sandbox setup successfully\n'
@@ -35,8 +52,8 @@ def teardown_sandbox() -> str:
     Returns:
         str: A message indicating the result of the teardown operation.
     """
-    global sandbox
-    logger.info(f'running teardown_sandbox()')
+    logger.info('running teardown_sandbox()')
+    sandbox = get_sandbox()
     success = False
     if sandbox:
         success = sandbox.close()
@@ -56,8 +73,8 @@ def sandbox_write_to_shell(input: str) -> str:
     Returns:
         The output of the shell.
     """
-    global sandbox
     logger.info(f'running write_to_shell({input=})')
+    sandbox = get_sandbox()
     if not sandbox:
         return 'Sandbox is not set up. Please run setup_sandbox() first.'
     return sandbox.write_to_shell(input.encode())
@@ -75,8 +92,8 @@ def sandbox_create_file(file_path: str, content: str) -> str:
     Returns:
         str: Confirmation message or error.
     """
-    global sandbox
     logger.info(f'running create_file({file_path=}, {content=})')
+    sandbox = get_sandbox()
     if not sandbox:
         return 'Sandbox is not set up. Please run setup_sandbox() first.'
     success = sandbox.create_file(file_path, content)
