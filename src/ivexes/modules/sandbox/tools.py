@@ -1,9 +1,9 @@
 from agents import function_tool
 from ivexes.modules.sandbox.sandbox import Sandbox
 from ivexes.config.settings import get_settings
-import ivexes.config.log as log
+import logging
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 _sandbox: Sandbox | None = None
 
 

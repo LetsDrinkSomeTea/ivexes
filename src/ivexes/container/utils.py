@@ -1,8 +1,8 @@
 from docker.models.containers import Container
 
-import ivexes.config.log as log
+import logging
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 
 
 def find_existing(client, container_name: str) -> Container | None:

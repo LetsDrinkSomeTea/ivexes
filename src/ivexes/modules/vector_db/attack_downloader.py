@@ -2,9 +2,9 @@ from mitreattack.stix20 import MitreAttackData
 import requests
 import tempfile
 import os
-import ivexes.config.log as log
+import logging
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 
 # ATT&CK STIX data URLs
 ENTERPRISE_ATTACK_URL = 'https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json'

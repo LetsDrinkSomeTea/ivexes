@@ -1,16 +1,12 @@
 import dotenv
 
-dotenv.load_dotenv('thesis/70_multi_agent_screen.env', override=True)
-
 import asyncio
 from typing import cast
 from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExceeded
 
-from ivexes.modules.printer import stream_result
-from ivexes.config.settings import settings, get_run_config
-from ivexes.modules.sandbox.tools import sandbox_tools
-from ivexes.modules.code_browser.tools import code_browser_tools, code_browser
-from ivexes.modules.vector_db.tools import vectordb_tools
+from ivexes.printer import stream_result
+from ivexes.config import get_run_config, get_settings, setup_default_logging
+from ivexes.tools import code_browser_tools, date_tools, sandbox_tools, vectordb_tools
 from ivexes.prompts.multi_agent import (
     security_specialist_system_msg,
     code_analyst_system_msg,
@@ -19,51 +15,66 @@ from ivexes.prompts.multi_agent import (
     planning_system_msg,
     user_msg,
 )
+from ivexes.modules.code_browser.tools import get_code_browser
+
+dotenv.load_dotenv(verbose=True, override=True)
+dotenv.load_dotenv(verbose=True, dotenv_path='../.secrets.env', override=True)
+
+settings = get_settings()
+setup_default_logging(get_settings().log_level)
 
 c_sandbox_tools: list[Tool] = cast(list[Tool], sandbox_tools)
 c_code_browser_tools: list[Tool] = cast(list[Tool], code_browser_tools)
 c_vectordb_tools: list[Tool] = cast(list[Tool], vectordb_tools)
+c_date_tools: list[Tool] = cast(list[Tool], date_tools)
 
-security_specialist_agent = Agent(
+security_specialist_tool = Agent(
     name='Security Specialist',
     handoff_description='Specialist agent for up-to-date information on CWE, CAPEC and ATT&CK data',
     instructions=security_specialist_system_msg,
     tools=c_vectordb_tools,
+).as_tool(
+    tool_name='security-specialist',
+    tool_description='Expert in CWE, CAPEC, and ATT&CK frameworks. Provides security vulnerability analysis, attack pattern identification, and mitigation strategies based on industry standards.',
 )
 
-code_analyst_agent = Agent(
+code_analyst_tool = Agent(
     name='Code Analyst',
     handoff_description='Specialist agent for information about the codebase, including code structure, functions, diffs and classes',
     instructions=code_analyst_system_msg,
     tools=c_code_browser_tools,
+).as_tool(
+    tool_name='code-analyst',
+    tool_description='Specialist for codebase analysis and vulnerability identification. Analyzes code structure, functions, classes, and diffs to identify potential security weaknesses.',
 )
 
-red_team_operator_agent = Agent(
+red_team_operator_tool = Agent(
     name='Red Team Operator',
     handoff_description='Specialist agent for generating Proof-of-Concepts (PoC) and Exploits',
     instructions=red_team_operator_system_msg,
     tools=c_sandbox_tools,
+).as_tool(
+    tool_name='red-team-operator',
+    tool_description='Specialist for creating and testing Proof-of-Concept exploits. Develops bash/Python scripts, tests exploits in sandbox, and validates exploitation techniques.',
 )
 
 report_journalist_agent = Agent(
     name='Report Journalist',
     handoff_description='Specialist agent for generating reports and summaries',
     instructions=report_journalist_system_msg,
+    tools=c_date_tools,
 )
 
 planning_agent = Agent(
     name='Planning Agent',
     handoff_description='Specialist agent for planning and coordinating the actions of other agents',
     instructions=planning_system_msg,
-    handoffs=[
-        security_specialist_agent,
-        code_analyst_agent,
-        red_team_operator_agent,
-        report_journalist_agent,
-    ],
     model=settings.reasoning_model,
+    tools=[security_specialist_tool, code_analyst_tool, red_team_operator_tool],
+    handoffs=[report_journalist_agent],
 )
 
+code_browser = get_code_browser()
 user_msg = user_msg.format(
     codebase_structure=code_browser.get_codebase_structure(),
     diff='\n'.join(code_browser.get_diff()),

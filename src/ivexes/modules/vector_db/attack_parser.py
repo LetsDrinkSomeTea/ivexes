@@ -1,7 +1,7 @@
 import chromadb
 import click
 
-import ivexes.config.log as log
+import logging
 from ivexes.modules.vector_db.attack_downloader import (
     get_attack_data,
     get_all_techniques,
@@ -11,7 +11,7 @@ from ivexes.modules.vector_db.attack_downloader import (
     get_all_software,
 )
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _safe_get(obj, *keys, default=''):

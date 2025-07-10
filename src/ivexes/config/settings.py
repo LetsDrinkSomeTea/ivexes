@@ -103,9 +103,9 @@ def get_settings() -> Settings:
 
 
 def get_run_config() -> RunConfig:
-    from ivexes.config import log
+    import logging
 
-    logger = log.get(__name__)
+    logger = logging.getLogger(__name__)
     settings = get_settings()
 
     client = AsyncOpenAI(base_url=settings.llm_base_url, api_key=settings.llm_api_key)

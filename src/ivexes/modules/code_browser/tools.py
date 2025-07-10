@@ -2,9 +2,9 @@ from agents import function_tool
 from ivexes.config.settings import get_settings
 from ivexes.modules.code_browser.code_browser import CodeBrowser
 
-import ivexes.config.log as log
+import logging
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 
 _code_browser: CodeBrowser | None = None
 

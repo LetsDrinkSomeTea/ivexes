@@ -3,7 +3,7 @@ import chromadb
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from chromadb.config import Settings
 
-import ivexes.config.log as log
+import logging
 from ivexes.config.settings import get_settings
 from ivexes.modules.vector_db.downloader import get_cwe_tree, get_capec_tree
 from ivexes.modules.vector_db.parser import insert_capec, insert_cwe
@@ -11,7 +11,7 @@ from ivexes.modules.vector_db.attack_parser import insert_attack_all
 
 from os import path
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 
 
 class CweCapecAttackDatabase:

@@ -2,10 +2,10 @@ import time
 
 import paramiko
 
-import ivexes.config.log as log
+import logging
 from ivexes.modules.sandbox.container import setup_container
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 
 
 class Sandbox:

@@ -8,7 +8,7 @@ from ivexes.printer import stream_result, print_banner
 from ivexes.tools import sandbox_tools
 from ivexes.prompts.htb_reversing import system_msg, user_msg
 
-load_dotenv(verbose=True, dotenv_path='.', override=True)
+load_dotenv(verbose=True, override=True)
 load_dotenv(verbose=True, dotenv_path='../.secrets.env', override=True)
 
 settings = get_settings()

@@ -4,11 +4,11 @@ import docker
 from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
-import ivexes.config.log as log
+import logging
 from ivexes.config.settings import get_settings
 from ivexes.container.utils import find_existing, remove_if_exists
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 
 
 def setup_container(

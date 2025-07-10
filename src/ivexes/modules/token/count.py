@@ -1,6 +1,6 @@
-import ivexes.config.log as log
+import logging
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 
 
 def get_text_statistics(string: str) -> tuple[int, int, int]:

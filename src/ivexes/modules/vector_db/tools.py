@@ -1,8 +1,8 @@
 from agents import function_tool
-import ivexes.config.log as log
+import logging
 from ivexes.modules.vector_db.embed import CweCapecAttackDatabase
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 
 db: CweCapecAttackDatabase | None = None
 

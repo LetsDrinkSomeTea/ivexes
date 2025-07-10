@@ -8,11 +8,11 @@ from time import sleep
 
 import pynvim
 
-import ivexes.config.log as log
+import logging
 from ivexes.modules.code_browser.nvim import setup_container
 from ivexes.modules.code_browser.parser import parse_symbols, parse_references
 
-logger = log.get(__name__)
+logger = logging.getLogger(__name__)
 NVIM_DELAY = 0.5
 
 
