@@ -31,7 +31,13 @@ def _create_box(
     return boxed
 
 
-def banner(model: str, temperature: float, max_turns: int, program_name: str) -> str:
+def banner(
+    model: str,
+    reasoning_model: str,
+    temperature: float,
+    max_turns: int,
+    program_name: str,
+) -> str:
     # Sanitize inputs
     program_name = program_name.strip()
     model = model.strip()
@@ -48,6 +54,7 @@ def banner(model: str, temperature: float, max_turns: int, program_name: str) ->
     items = [
         ('program', program_name),
         ('model', model),
+        ('reasoning model', reasoning_model),
         ('temperature', str(temperature)),
         ('max turns', str(max_turns)),
     ]

@@ -13,7 +13,7 @@ logger = log.get(__name__)
 
 def setup_container(
     code_base: str, port: str = '8080', renew: bool = False
-) -> Container | None:
+) -> Container:
     """
     Set up a Docker container with the codebase mounted for Neovim LSP analysis.
 

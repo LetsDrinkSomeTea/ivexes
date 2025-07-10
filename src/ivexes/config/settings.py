@@ -48,8 +48,11 @@ class Settings(BaseSettings):
     model: str = Field(
         default_factory=lambda: os.environ.get('MODEL', 'openai/gpt-4o-mini')
     )
-    temperature: float = Field(
+    model_temperature: float = Field(
         default_factory=lambda: float(os.environ.get('TEMPERATURE', '0.3'))
+    )
+    reasoning_model: str = Field(
+        default_factory=lambda: os.environ.get('REASONING_MODEL', 'openai/o4-mini')
     )
     max_turns: int = Field(
         default_factory=lambda: int(os.environ.get('MAX_TURNS', '10'))
@@ -108,7 +111,7 @@ def get_run_config() -> RunConfig:
     run_config: RunConfig = RunConfig(
         model=settings.model,
         model_provider=CustomModelProvider(),
-        model_settings=ModelSettings(temperature=settings.temperature),
+        model_settings=ModelSettings(temperature=settings.model_temperature),
     )
 
     logger.info(
@@ -121,7 +124,8 @@ def get_run_config() -> RunConfig:
 
 print_banner(
     model=settings.model,
-    temperature=settings.temperature,
+    reasoning_model=settings.reasoning_model,
+    temperature=settings.model_temperature,
     max_turns=settings.max_turns,
     program_name=settings.trace_name,
 )

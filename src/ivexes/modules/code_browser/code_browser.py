@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import os
+import re
+from typing import Optional
 import chardet
 import sys
 from time import sleep
@@ -45,7 +47,7 @@ class CodeBrowser:
             logger.error(f'Error connecting to Neovim (127.0.0.1:{port}): {e}')
             sys.exit(1)
 
-    def _search_symbol(self, symbol: str) -> tuple[str, int, int] | None:
+    def _search_symbol(self, symbol: str) -> tuple[str, int, int]:
         """
         Search for a symbol in the workspace using ripgrep in vimgrep format.
 
@@ -66,7 +68,7 @@ class CodeBrowser:
 
         if res.exit_code != 0:
             logger.error(f'Error running command: {res.output}')
-            return None
+            return (f'error running {" ".join(cmd)}', 0, 0)
         # Format: file:line:col:match
         hits = []
         for line in res.output.splitlines():
@@ -189,6 +191,7 @@ class CodeBrowser:
             - range (tuple): Reference range as (start_col, end_col)
         """
         file, line, col = self._search_symbol(symbol)
+        references = []
         try:
             self.nvim.command(f'edit {file}')
             sleep(NVIM_DELAY)
@@ -244,23 +247,41 @@ class CodeBrowser:
 
     def get_diff(
         self,
-        options: list[str] | None = None,
-        file1: str | None = None,
-        file2: str | None = None,
-    ):
+        options: Optional[list[str]] = None,
+        file1: Optional[str] = None,
+        file2: Optional[str] = None,
+    ) -> list[str]:
+        """
+        Get diff output and split it into individual file diffs using regex.
+
+        Returns:
+            List of strings, each containing the diff for one file, or None if error
+        """
         if not options:
             options = ['-u', '-w']
         if not file1:
             file1 = f'/codebase/{self.vulnerable_folder}'
         if not file2:
             file2 = f'/codebase/{self.patched_folder}'
-        cmd = ['diff'] + options + [file1, file2]
 
+        cmd = ['diff'] + options + [file1, file2]
         logger.info(f'Running: {" ".join(cmd)}')
         res = self.container.exec_run(cmd)
+
         if res.exit_code not in [0, 1]:
             logger.error(f'Error running command: {res.output}')
-            return None
-        file_diffs = res.output.decode().split('diff --git ')[1:]
+            return [f'Error running {" ".join(cmd)}:\n{res.output}']
+
+        # Get the full diff output as string
+        diff_output = res.output.decode()
+
+        # Split using regex to find "diff " at the beginning of lines
+        file_diffs = re.split(
+            r'^(?=diff |Common subdirectories)', diff_output, flags=re.MULTILINE
+        )
+
+        # Remove empty strings and common subdirectories message
+        file_diffs = [diff.strip() for diff in file_diffs if diff.strip()]
+
         logger.info(f'{len(file_diffs)} files altered')
         return file_diffs

@@ -198,6 +198,28 @@ def cmd_get_references(symbol: str) -> None:
         click.echo('No References found')
 
 
+@code_browser.command('get-diff')
+@click.argument('file1', required=False)
+@click.argument('file2', required=False)
+def cmd_get_diff(file1: str, file2: str) -> None:
+    """
+    Get the differences between two files in the codebase.
+
+    Args:
+        file1: Path to the first file
+        file2: Path to the second file
+    """
+    from ivexes.modules.code_browser.tools import code_browser as cb
+
+    results = cb.get_diff(file1=file1, file2=file2)
+    if results:
+        click.echo(f'Found {len(results)} diffs:')
+        for result in results:
+            click.echo(f'{result}\n{"-" * 80}\n')
+    else:
+        click.echo('No References found')
+
+
 @code_browser.command('get-symbols')
 @click.argument('file')
 def cmd_get_symbols(file: str) -> None:
