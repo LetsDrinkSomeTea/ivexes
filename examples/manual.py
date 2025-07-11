@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 import click
 import os
+import logging
 
-from ivexes.config.settings import get_settings
-from ivexes.vector_db.vector_db import CweCapecAttackDatabase
+from ivexes.config import get_settings, setup_default_logging
+from ivexes.vector_db import CweCapecAttackDatabase
 
-import ivexes.config.log as log
+setup_default_logging()
 
-logger = log.get(__name__)
-
+logger = logging.getLogger(__name__)
 
 @click.group()
 def cli() -> None:

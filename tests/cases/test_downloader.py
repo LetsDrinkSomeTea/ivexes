@@ -5,20 +5,13 @@ functionality, including mocking external HTTP requests and XML parsing.
 """
 
 import unittest
-from unittest.mock import patch, Mock, MagicMock
+from unittest.mock import patch, Mock
 import xml.etree.ElementTree as ElementTree
 import io
 import zipfile
-import sys
-import os
-import logging
-
-# Add the project root to the Python path to allow importing modules
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../'))
-sys.path.insert(0, project_root)
 
 # Mock the logger before importing the module
-from modules.vector_db.downloader import (
+from ivexes.vector_db.downloader import (
     download_capec,
     download_cwe,
     get_capec_tree,
@@ -31,7 +24,7 @@ from modules.vector_db.downloader import (
 class TestDownloader(unittest.TestCase):
     """Test cases for the vector_db downloader module."""
 
-    @patch('modules.vector_db.downloader.urllib.request.urlopen')
+    @patch('ivexes.vector_db.downloader.urllib.request.urlopen')
     def test_download_capec(self, mock_urlopen):
         """Test downloading CAPEC XML data."""
         # Mock the response from urlopen
@@ -51,7 +44,7 @@ class TestDownloader(unittest.TestCase):
             '<capec:Attack_Patterns xmlns:capec="http://capec.mitre.org/capec-3"></capec:Attack_Patterns>',
         )
 
-    @patch('modules.vector_db.downloader.urllib.request.urlopen')
+    @patch('ivexes.vector_db.downloader.urllib.request.urlopen')
     def test_download_cwe(self, mock_urlopen):
         """Test downloading and extracting CWE XML data from a zip file."""
         # Create a mock zip file with XML content
@@ -80,7 +73,7 @@ class TestDownloader(unittest.TestCase):
             '<Weakness_Catalog xmlns="http://cwe.mitre.org/cwe-7"></Weakness_Catalog>',
         )
 
-    @patch('modules.vector_db.downloader.download_capec')
+    @patch('ivexes.vector_db.downloader.download_capec')
     def test_get_capec_tree(self, mock_download_capec):
         """Test getting the CAPEC ElementTree."""
         # Mock the download_capec function to return XML content
@@ -95,7 +88,7 @@ class TestDownloader(unittest.TestCase):
         # Verify the result is an ElementTree element
         self.assertIsInstance(result, ElementTree.Element)
 
-    @patch('modules.vector_db.downloader.download_cwe')
+    @patch('ivexes.vector_db.downloader.download_cwe')
     def test_get_cwe_tree(self, mock_download_cwe):
         """Test getting the CWE ElementTree."""
         # Mock the download_cwe function to return XML content
@@ -112,7 +105,7 @@ class TestDownloader(unittest.TestCase):
         # Verify the result is an ElementTree element
         self.assertIsInstance(result, ElementTree.Element)
 
-    @patch('modules.vector_db.downloader.urllib.request.urlopen')
+    @patch('ivexes.vector_db.downloader.urllib.request.urlopen')
     def test_download_capec_error(self, mock_urlopen):
         """Test error handling when downloading CAPEC data fails."""
         # Mock urlopen to raise an exception
@@ -122,7 +115,7 @@ class TestDownloader(unittest.TestCase):
         with self.assertRaises(Exception):
             download_capec()
 
-    @patch('modules.vector_db.downloader.urllib.request.urlopen')
+    @patch('ivexes.vector_db.downloader.urllib.request.urlopen')
     def test_download_cwe_error(self, mock_urlopen):
         """Test error handling when downloading CWE data fails."""
         # Mock urlopen to raise an exception

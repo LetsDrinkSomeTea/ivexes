@@ -48,11 +48,11 @@ class Settings(BaseSettings):
     """
 
     # OpenAI API settings
-    openai_api_key: str = Field(
-        default_factory=lambda: os.environ.get('OPENAI_API_KEY', '')
+    openai_api_key: str | None = Field(
+        default_factory=lambda: os.environ.get('OPENAI_API_KEY', None)
     )
-    brave_search_api_key: str = Field(
-        default_factory=lambda: os.environ.get('BRAVE_SEARCH_API_KEY', '')
+    brave_search_api_key: str | None = Field(
+        default_factory=lambda: os.environ.get('BRAVE_SEARCH_API_KEY', None)
     )
 
     # gets used
@@ -84,15 +84,21 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = Field(default_factory=lambda: os.environ.get('LOG_LEVEL', 'INFO'))
     trace_name: str = Field(
-        default_factory=lambda: os.environ.get('TRACE_NAME', 'ivexes').lower()
+        default_factory=lambda: os.environ.get('TRACE_NAME', 'ivexes')
     )
+
+    @field_validator('trace_name')
+    @classmethod
+    def validate_trace_name(cls, v: str) -> str:
+        """Convert trace name to lowercase."""
+        return v.lower()
 
     # Sandbox settings
     sandbox_image: str = Field(
         default_factory=lambda: os.environ.get('SANDBOX_IMAGE', 'kali-ssh:latest')
     )
-    setup_archive: str = Field(
-        default_factory=lambda: os.environ.get('SETUP_ARCHIVE', '')
+    setup_archive: str | None = Field(
+        default_factory=lambda: os.environ.get('SETUP_ARCHIVE', None)
     )
 
     # Codebase settings
@@ -108,7 +114,7 @@ class Settings(BaseSettings):
 
     # Embedding settings
     chroma_path: str = Field(
-        default_factory=lambda: os.environ.get('CHROMA_PATH', '/tmp/chroma')
+        default_factory=lambda: os.environ.get('CHROMA_PATH', '/tmp/ivexes/chromadb')
     )
     embedding_model: str = Field(
         default_factory=lambda: os.environ.get('EMBEDDING_MODEL', 'builtin')
@@ -117,7 +123,7 @@ class Settings(BaseSettings):
         default_factory=lambda: os.environ.get('EMBEDDING_PROVIDER', 'builtin')
     )
 
-    @field_validator('openai_api_key', 'llm_api_key')
+    @field_validator('llm_api_key')
     @classmethod
     def validate_api_keys(cls, v: str) -> str:
         """Validate API keys are not empty."""
