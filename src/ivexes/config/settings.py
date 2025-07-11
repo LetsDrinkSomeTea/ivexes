@@ -6,6 +6,7 @@ environment variable support and lazy loading capabilities.
 
 import os
 import pprint
+from typing import Any, Dict, Optional
 
 from agents import (
     Model,
@@ -17,6 +18,7 @@ from agents import (
 from openai import AsyncOpenAI
 from pydantic import Field, field_validator, ValidationError
 from pydantic_settings import BaseSettings
+from typing_extensions import TypedDict
 
 
 class Settings(BaseSettings):
@@ -165,6 +167,33 @@ class Settings(BaseSettings):
         return v
 
 
+class PartialSettings(TypedDict, total=False):
+    """Partial settings type for overriding global settings.
+
+    This type allows any subset of Settings fields to be specified
+    for overriding global configuration. All fields are optional.
+    """
+
+    openai_api_key: Optional[str]
+    brave_search_api_key: Optional[str]
+    llm_api_key: str
+    llm_base_url: str
+    model: str
+    model_temperature: float
+    reasoning_model: str
+    max_turns: int
+    log_level: str
+    trace_name: str
+    sandbox_image: str
+    setup_archive: Optional[str]
+    codebase_path: Optional[str]
+    vulnerable_folder: Optional[str]
+    patched_folder: Optional[str]
+    chroma_path: str
+    embedding_model: str
+    embedding_provider: str
+
+
 # Global settings instance - lazily initialized
 _settings: Settings | None = None
 
@@ -200,6 +229,55 @@ def get_settings() -> Settings:
                 error_msg += f'  - {field}: {msg}\n'
             raise RuntimeError(error_msg) from e
     return _settings
+
+
+def set_settings(partial_settings: PartialSettings) -> None:
+    """Override global settings with partial settings.
+
+    This function allows you to update the global settings instance with
+    a subset of configuration values. Useful for creating predefined Agent
+    classes that need specific configuration overrides.
+
+    Args:
+        partial_settings: Dictionary containing settings to override.
+                         Only the specified fields will be updated.
+
+    Example:
+        >>> set_settings(
+        ...     {'model': 'openai/gpt-4', 'model_temperature': 0.7, 'max_turns': 20}
+        ... )
+        >>> settings = get_settings()
+        >>> print(settings.model)  # 'openai/gpt-4'
+    """
+    global _settings
+    if _settings is None:
+        _settings = Settings()
+
+    # Get current settings data and update with partial settings
+    current_data = _settings.model_dump()
+    current_data.update(partial_settings)
+
+    # Create new settings instance with updated data
+    _settings = Settings(**current_data)
+
+
+def reset_settings() -> None:
+    """Reset global settings to reload from environment variables.
+
+    This function clears the global settings instance, forcing it to be
+    recreated from environment variables on the next call to get_settings().
+    Useful for reverting any programmatic changes made via set_settings().
+
+    Example:
+        >>> set_settings({'model': 'openai/gpt-4'})
+        >>> settings = get_settings()
+        >>> print(settings.model)  # 'openai/gpt-4'
+        >>> reset_settings()
+        >>> settings = get_settings()
+        >>> print(settings.model)  # Back to env var or default value
+    """
+    global _settings
+    _settings = None
 
 
 def get_run_config() -> RunConfig:

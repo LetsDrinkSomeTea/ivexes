@@ -9,7 +9,14 @@ from unittest.mock import patch, Mock
 import os
 from pydantic import ValidationError
 
-from ivexes.config.settings import Settings, get_settings, get_run_config
+from ivexes.config.settings import (
+    Settings,
+    get_settings,
+    get_run_config,
+    set_settings,
+    reset_settings,
+    PartialSettings,
+)
 
 
 class TestSettingsModule(unittest.TestCase):
@@ -381,6 +388,194 @@ class TestSettingsModule(unittest.TestCase):
             self.assertEqual(settings.chroma_path, '/prod/chroma')
             self.assertEqual(settings.embedding_model, 'text-embedding-3-large')
             self.assertEqual(settings.embedding_provider, 'openai')
+
+    def test_set_settings_partial_override(self):
+        """Test set_settings with partial settings override."""
+        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
+            # Get initial settings
+            settings = get_settings()
+            initial_model = settings.model
+            initial_temp = settings.model_temperature
+
+            # Override some settings
+            partial_settings: PartialSettings = {
+                'model': 'openai/gpt-4',
+                'model_temperature': 0.8,
+                'max_turns': 25,
+            }
+            set_settings(partial_settings)
+
+            # Get updated settings
+            updated_settings = get_settings()
+
+            # Verify overridden fields
+            self.assertEqual(updated_settings.model, 'openai/gpt-4')
+            self.assertEqual(updated_settings.model_temperature, 0.8)
+            self.assertEqual(updated_settings.max_turns, 25)
+
+            # Verify non-overridden fields remain unchanged
+            self.assertEqual(updated_settings.log_level, 'INFO')  # Default value
+            self.assertEqual(updated_settings.llm_api_key, 'sk-test-key')
+
+    def test_set_settings_validation(self):
+        """Test that set_settings validates the updated settings."""
+        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
+            # Test invalid temperature
+            with self.assertRaises(ValidationError) as cm:
+                set_settings({'model_temperature': 3.0})
+            self.assertIn('Temperature must be between 0.0 and 2.0', str(cm.exception))
+
+            # Test invalid max_turns
+            with self.assertRaises(ValidationError) as cm:
+                set_settings({'max_turns': -1})
+            self.assertIn('Max turns must be a positive integer', str(cm.exception))
+
+            # Test invalid log_level
+            with self.assertRaises(ValidationError) as cm:
+                set_settings({'log_level': 'INVALID'})
+            self.assertIn('Log level must be one of:', str(cm.exception))
+
+    def test_set_settings_empty_dict(self):
+        """Test set_settings with empty dictionary."""
+        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
+            original_settings = get_settings()
+            original_model = original_settings.model
+
+            # Set empty dictionary
+            set_settings({})
+
+            # Settings should remain unchanged
+            updated_settings = get_settings()
+            self.assertEqual(updated_settings.model, original_model)
+            self.assertEqual(updated_settings.llm_api_key, 'sk-test-key')
+
+    def test_reset_settings_restores_environment(self):
+        """Test that reset_settings restores settings from environment variables."""
+        with patch.dict(
+            os.environ,
+            {
+                'LLM_API_KEY': 'sk-test-key',
+                'MODEL': 'openai/gpt-3.5-turbo',
+                'TEMPERATURE': '0.5',
+            },
+            clear=True,
+        ):
+            # Get initial settings from environment
+            initial_settings = get_settings()
+            self.assertEqual(initial_settings.model, 'openai/gpt-3.5-turbo')
+            self.assertEqual(initial_settings.model_temperature, 0.5)
+
+            # Override with set_settings
+            set_settings({'model': 'openai/gpt-4', 'model_temperature': 0.9})
+
+            # Verify settings were changed
+            changed_settings = get_settings()
+            self.assertEqual(changed_settings.model, 'openai/gpt-4')
+            self.assertEqual(changed_settings.model_temperature, 0.9)
+
+            # Reset settings
+            reset_settings()
+
+            # Verify settings are back to environment values
+            reset_settings_instance = get_settings()
+            self.assertEqual(reset_settings_instance.model, 'openai/gpt-3.5-turbo')
+            self.assertEqual(reset_settings_instance.model_temperature, 0.5)
+
+    def test_reset_settings_clears_global_instance(self):
+        """Test that reset_settings clears the global settings instance."""
+        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
+            # Get settings to create global instance
+            settings1 = get_settings()
+
+            # Reset settings
+            reset_settings()
+
+            # Get settings again - should be new instance
+            settings2 = get_settings()
+
+            # Should be different instances (new object created)
+            self.assertIsNot(settings1, settings2)
+            # But should have same values (from environment)
+            self.assertEqual(settings1.model, settings2.model)
+            self.assertEqual(settings1.llm_api_key, settings2.llm_api_key)
+
+    def test_set_settings_multiple_calls(self):
+        """Test multiple calls to set_settings."""
+        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
+            # First override
+            set_settings({'model': 'openai/gpt-4', 'max_turns': 15})
+            settings1 = get_settings()
+            self.assertEqual(settings1.model, 'openai/gpt-4')
+            self.assertEqual(settings1.max_turns, 15)
+
+            # Second override (should merge with current, not original)
+            set_settings({'model_temperature': 0.8, 'log_level': 'DEBUG'})
+            settings2 = get_settings()
+            self.assertEqual(settings2.model, 'openai/gpt-4')  # Still overridden
+            self.assertEqual(settings2.max_turns, 15)  # Still overridden
+            self.assertEqual(settings2.model_temperature, 0.8)  # New override
+            self.assertEqual(settings2.log_level, 'DEBUG')  # New override
+
+    def test_partial_settings_type_hints(self):
+        """Test that PartialSettings type hints work correctly."""
+        # This test ensures the type works with type checkers
+        # All fields should be optional
+        partial: PartialSettings = {}
+        self.assertEqual(partial, {})
+
+        partial_with_values: PartialSettings = {
+            'model': 'openai/gpt-4',
+            'model_temperature': 0.7,
+        }
+        self.assertEqual(partial_with_values['model'], 'openai/gpt-4')
+        self.assertEqual(partial_with_values['model_temperature'], 0.7)
+
+    def test_set_settings_with_all_fields(self):
+        """Test set_settings with all possible fields."""
+        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
+            full_partial: PartialSettings = {
+                'openai_api_key': 'sk-new-openai',
+                'brave_search_api_key': 'brave-new',
+                'llm_api_key': 'sk-new-llm',
+                'llm_base_url': 'https://new.api.com/v1',
+                'model': 'openai/gpt-4-turbo',
+                'model_temperature': 0.7,
+                'reasoning_model': 'openai/o1-preview',
+                'max_turns': 30,
+                'log_level': 'DEBUG',
+                'trace_name': 'new-trace',
+                'sandbox_image': 'new-kali:latest',
+                'setup_archive': '/new/setup.tar.gz',
+                'codebase_path': '/new/codebase',
+                'vulnerable_folder': '/new/vulnerable',
+                'patched_folder': '/new/patched',
+                'chroma_path': '/new/chroma',
+                'embedding_model': 'new-embedding',
+                'embedding_provider': 'new-provider',
+            }
+
+            set_settings(full_partial)
+            settings = get_settings()
+
+            # Verify all fields were set
+            self.assertEqual(settings.openai_api_key, 'sk-new-openai')
+            self.assertEqual(settings.brave_search_api_key, 'brave-new')
+            self.assertEqual(settings.llm_api_key, 'sk-new-llm')
+            self.assertEqual(settings.llm_base_url, 'https://new.api.com/v1')
+            self.assertEqual(settings.model, 'openai/gpt-4-turbo')
+            self.assertEqual(settings.model_temperature, 0.7)
+            self.assertEqual(settings.reasoning_model, 'openai/o1-preview')
+            self.assertEqual(settings.max_turns, 30)
+            self.assertEqual(settings.log_level, 'DEBUG')
+            self.assertEqual(settings.trace_name, 'new-trace')
+            self.assertEqual(settings.sandbox_image, 'new-kali:latest')
+            self.assertEqual(settings.setup_archive, '/new/setup.tar.gz')
+            self.assertEqual(settings.codebase_path, '/new/codebase')
+            self.assertEqual(settings.vulnerable_folder, '/new/vulnerable')
+            self.assertEqual(settings.patched_folder, '/new/patched')
+            self.assertEqual(settings.chroma_path, '/new/chroma')
+            self.assertEqual(settings.embedding_model, 'new-embedding')
+            self.assertEqual(settings.embedding_provider, 'new-provider')
 
 
 if __name__ == '__main__':
