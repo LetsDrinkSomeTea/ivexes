@@ -1,0 +1,89 @@
+"""Sandbox container management module.
+
+This module provides functionality to set up and manage Docker containers
+for sandboxed environments, including container lifecycle management
+and configuration.
+"""
+
+import time
+
+import docker
+from docker.errors import ContainerError, ImageNotFound
+from docker.models.containers import Container
+
+import logging
+from ..config import get_settings
+from ..container import find_by_name, remove_if_exists
+
+logger = logging.getLogger(__name__)
+
+
+def setup_container(
+    setup_archive: str,
+    docker_image: str | None = None,
+    port: int = 2222,
+    renew: bool = True,
+) -> Container:
+    """Set up a Docker container for sandbox execution.
+
+    Args:
+        setup_archive: Path to the setup archive file (.tar or .tgz)
+        port: Port number to map for container access
+        docker_image: Docker image to use (defaults to settings.sandbox_image)
+        renew: Whether to remove existing container with same name
+
+    Returns:
+        Container: Docker container object ready for use
+
+    Raises:
+        AssertionError: If setup_archive is not .tar/.tgz or port is not int
+        docker.errors.APIError: If Docker operations fail
+    """
+    assert setup_archive.endswith('.tar') or setup_archive.endswith('.tgz'), (
+        'Executable archive must be a .tar or .tgz file'
+    )
+    assert isinstance(port, int), f'port must be number, got {type(port)}'
+    client = docker.from_env()
+    settings = get_settings()
+    if docker_image is None:
+        docker_image = settings.sandbox_image
+    container_name = f'ivexes-{docker_image.split(":")[0]}-{settings.trace_name}'
+
+    if renew:
+        remove_if_exists(client, container_name)
+    else:
+        c = find_by_name(client, container_name)
+        if c:
+            logger.info(f'Returning: container {c.name}.')
+            return c
+
+    try:
+        logger.info(f'Starting container {container_name} with {setup_archive=}')
+        container: Container = client.containers.run(
+            image=docker_image,
+            name=container_name,
+            detach=True,
+            ports={'22': ('127.0.0.1', port)},
+            # remove=True
+        )
+        time.sleep(10)  # Wait for the container to start
+        logger.info(f'Container {container.name} started')
+        with open(setup_archive, 'rb') as f:
+            data = f.read()
+        container.put_archive('/tmp', data)
+        logger.info(
+            f'Setup archive {setup_archive} uploaded to container {container.name}'
+        )
+        container.exec_run('chmod a+x /tmp/setup.sh')
+        ret = container.exec_run('sudo -u user bash /tmp/setup.sh')
+        logger.debug(f'Setup script output: {ret.output.decode()}')
+        return container
+    except ContainerError as e:
+        logger.error(f'Container error: {e}')
+        exit(1)
+    except ImageNotFound as e:
+        logger.error(f'Image not found: {e}')
+        exit(1)
+    except Exception as e:
+        logger.error(f'An error occurred: {e}')
+        exit(1)

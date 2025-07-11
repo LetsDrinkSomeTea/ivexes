@@ -1,3 +1,9 @@
+"""Single-agent vulnerability analysis prompts.
+
+This module contains prompts and context for single-agent vulnerability
+analysis workflows, focusing on comprehensive analysis by a single agent.
+"""
+
 system_msg = """
 Analyze two versions of a codebase to identify vulnerabilities fixed between them, then develop a proof of concept (PoC) exploit for any identified issues.
 

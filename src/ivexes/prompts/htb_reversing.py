@@ -1,3 +1,9 @@
+"""Hack The Box reversing challenge prompts.
+
+This module contains specialized prompts for reverse engineering challenges
+from Hack The Box platform, providing context and guidance for analysis.
+"""
+
 system_msg = """
 You are an expert at analyzing and reverse engineering binary files
 You have access to a sandbox environment with a kali linux system, including all the tools you need to analyze and reverse engineer binary files.

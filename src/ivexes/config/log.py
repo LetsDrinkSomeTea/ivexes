@@ -1,33 +1,35 @@
-import datetime
+"""Logging configuration module.
+
+This module provides hierarchical logging setup where third-party libraries
+are silenced at WARNING level while ivexes modules can use custom log levels.
+"""
+
 import logging
 
-from ivexes.config.settings import settings
 
-now = datetime.datetime.now()
+def setup_default_logging(ivexes_level: str = 'INFO'):
+    """Setup default logging configuration.
 
-
-def get(name: str) -> logging.Logger:
-    """
-    Set up and return a logger with the given name and level.
-
-    Uses a unified formatter for consistent log output formatting.
+    - Third-party libraries: WARNING
+    - All ivexes submodules: User-specified level (default INFO)
 
     Args:
-        name: Logger name to identify the source of log messages
-
-    Returns:
-        A configured logger instance
+        ivexes_level: Log level for all ivexes modules
     """
-    logger = logging.getLogger(name)
-    logger.setLevel(settings.log_level)
-    logger.handlers.clear()
+    # Root logger catches everything at WARNING+
+    logging.basicConfig(
+        level=logging.WARNING,
+        format='%(asctime)s | %(name)s | %(levelname)s | %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        force=True,
+    )
 
-    log_format = '%(asctime)s | %(name)s | %(levelname)s | %(message)s'
-    date_format = '%Y-%m-%d %H:%M:%S'
-    formatter = logging.Formatter(log_format, date_format)
+    # Set ivexes package and ALL submodules to user level
+    logging.getLogger('ivexes').setLevel(ivexes_level)
 
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
-    return logger
+    # Explicitly silence noisy third-party libraries
+    logging.getLogger('openai').setLevel(logging.WARNING)
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+    logging.getLogger('httpx').setLevel(logging.WARNING)
+    logging.getLogger('requests').setLevel(logging.WARNING)
+    logging.getLogger('chromadb').setLevel(logging.WARNING)
