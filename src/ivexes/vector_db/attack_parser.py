@@ -5,6 +5,7 @@ and insert it into a ChromaDB vector database for similarity search
 and retrieval.
 """
 
+from typing import Any
 import chromadb
 import click
 
@@ -21,7 +22,7 @@ from .attack_downloader import (
 logger = logging.getLogger(__name__)
 
 
-def _safe_get(obj, *keys, default=''):
+def _safe_get(obj, *keys, default: Any = ''):
     """Safely get nested attributes/keys from an object."""
     result = obj
     for key in keys:

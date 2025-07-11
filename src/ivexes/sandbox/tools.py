@@ -84,7 +84,7 @@ def teardown_sandbox() -> str:
         success = sandbox.close()
     if success:
         sandbox = None
-    return 'Sandbox teardown succesfully' if success else 'Failed to teardown sandbox'
+    return 'Sandbox teardown successfully' if success else 'Failed to teardown sandbox'
 
 
 @function_tool

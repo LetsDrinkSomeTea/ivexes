@@ -9,6 +9,8 @@ import re
 
 import logging
 
+from pynvim.api import Buffer
+
 logger = logging.getLogger(__name__)
 # Compile once at module load
 _SYMBOL_PATTERN = re.compile(
@@ -32,17 +34,18 @@ _SYMBOL_PATTERN = re.compile(
 )
 
 
-def parse_symbols(lines: list[str]) -> list[tuple[str, str, int, tuple[int, int]]]:
+def parse_symbols(buffer: Buffer) -> list[tuple[str, str, int, tuple[int, int]]]:
     """Parse symbol information from LSP output lines.
 
     Args:
-        lines: List of strings containing symbol information in LSP format
+        buffer: Buffer containing LSP output lines in the format:
+            <filename>|<line> col <col_start>-<col_end>| [<type>] <name>
 
     Returns:
         A list of tuples, each containing (name, type, line_no, (col_start, col_end))
     """
     parsed = []
-    for line in lines:
+    for line in buffer:
         try:
             m = _SYMBOL_PATTERN.match(line)
             if not m:
@@ -78,17 +81,18 @@ _REFERENCE_PATTERN = re.compile(
 )
 
 
-def parse_references(lines: list[str]) -> list[tuple[str, str, int, tuple[int, int]]]:
+def parse_references(buffer: Buffer) -> list[tuple[str, str, int, tuple[int, int]]]:
     """Parse reference information from LSP output lines.
 
     Args:
-        lines: List of strings containing reference information in LSP format
+        buffer: Buffer containing LSP output lines in the format:
+            <filename>|<line> col <col_start>-<col_end>| <code>
 
     Returns:
         A list of tuples, each containing (filename, code, line_no, (col_start, col_end))
     """
     parsed = []
-    for line in lines:
+    for line in buffer:
         try:
             m = _REFERENCE_PATTERN.match(line)
             if not m:

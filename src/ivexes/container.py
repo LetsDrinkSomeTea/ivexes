@@ -4,15 +4,15 @@ This module provides utility functions for Docker container management
 including container lookup and cleanup operations.
 """
 
-import docker
 from docker.models.containers import Container
+from docker import DockerClient
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def find_by_name(client: docker.client, container_name: str) -> Container | None:
+def find_by_name(client: DockerClient, container_name: str) -> Container | None:
     """Find a container by its name.
 
     Args:
@@ -27,7 +27,7 @@ def find_by_name(client: docker.client, container_name: str) -> Container | None
     return None
 
 
-def remove_if_exists(client: docker.client, container_name: str) -> bool:
+def remove_if_exists(client: DockerClient, container_name: str) -> bool:
     """Remove the container if it exists.
 
     Args:

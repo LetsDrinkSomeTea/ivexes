@@ -32,6 +32,8 @@ def insert_cwe(collection: chromadb.Collection, xml_data):
     cwe_ns = {'ns': 'http://cwe.mitre.org/cwe-7'}
 
     weaknesses = root.find('ns:Weaknesses', cwe_ns)
+    if weaknesses is None:
+        raise ValueError('Err')
     with click.progressbar(
         weaknesses.findall('ns:Weakness', cwe_ns),
         label='Embedding CWEs: ',
@@ -39,7 +41,15 @@ def insert_cwe(collection: chromadb.Collection, xml_data):
     ) as items:
         for weakness in items:
             wid = weakness.get('ID')
+            if wid is None:
+                logger.warning(f'CWE entry without an ID found, skipping...{weakness}')
+                continue
+
             name = weakness.get('Name')
+            if name is None:
+                logger.warning(f'CWE entry without a name found, skipping...{weakness}')
+                continue
+
             # Main description
             desc_node = weakness.find('ns:Description', cwe_ns)
             desc_text = (
@@ -89,6 +99,9 @@ def insert_capec(collection: chromadb.Collection, xml_data):
     capec_ns = {'ns': 'http://capec.mitre.org/capec-3'}
 
     attack_patterns = root.find('ns:Attack_Patterns', capec_ns)
+    if attack_patterns is None:
+        raise ValueError('CAPEC XML data does not contain <Attack_Patterns> element.')
+
     with click.progressbar(
         attack_patterns.findall('ns:Attack_Pattern', capec_ns),
         label='Embedding CAPECs: ',
@@ -96,7 +109,13 @@ def insert_capec(collection: chromadb.Collection, xml_data):
     ) as items:
         for ap in items:
             aid = ap.get('ID')
+            if aid is None:
+                logger.warning(f'CAPEC entry without an ID found, skipping...{ap}')
+                continue
             name = ap.get('Name')
+            if name is None:
+                logger.warning(f'CAPEC entry without a name found, skipping...{ap}')
+                continue
             # Main description
             desc_node = ap.find('ns:Description', capec_ns)
             desc_text = (

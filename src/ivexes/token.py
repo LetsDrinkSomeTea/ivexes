@@ -22,7 +22,7 @@ def get_text_statistics(string: str) -> tuple[int, int, int]:
         tuple[int, int, int]: A tuple containing the number of tokens, characters, and words.
     """
     import tiktoken
-    from ..config.settings import get_settings
+    from .config import get_settings
 
     encoding = tiktoken.encoding_for_model(get_settings().model)
     tokens = encoding.encode(string)

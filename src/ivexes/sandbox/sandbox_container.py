@@ -49,14 +49,13 @@ def setup_container(
         docker_image = settings.sandbox_image
     container_name = f'ivexes-{docker_image.split(":")[0]}-{settings.trace_name}'
 
-    c = (
+    if renew:
         remove_if_exists(client, container_name)
-        if renew
-        else find_by_name(client, container_name)
-    )
-    if c:
-        logger.info(f'Returning: container {c.name}.')
-        return c
+    else:
+        c = find_by_name(client, container_name)
+        if c:
+            logger.info(f'Returning: container {c.name}.')
+            return c
 
     try:
         logger.info(f'Starting container {container_name} with {setup_archive=}')
