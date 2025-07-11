@@ -1,3 +1,9 @@
+"""MVP (Minimum Viable Product) prompts.
+
+This module contains basic prompts for the MVP version of the vulnerability
+analysis system, providing core functionality and context.
+"""
+
 system_msg = """
 Analyze two versions of a codebase to identify vulnerabilities fixed between them, then develop a proof of concept (PoC) exploit for any identified issues.
 

@@ -1,3 +1,9 @@
+"""UI components module for text formatting and display.
+
+This module provides ASCII art, text formatting utilities, and banner
+generation functions for the ivexes application interface.
+"""
+
 ART = [
     r'o-O-o o   o o--o     o--o  o-o ',
     r'  |   |   | |        |    |    ',
@@ -13,11 +19,16 @@ ART = [
 def _create_box(
     lines: list[str], horizontal: str = '-', vertical: str = '|', corner: str = '+'
 ) -> list[str]:
-    """
-    Wrap a list of text lines in a box border.
-    horizontal: character for top/bottom borders
-    vertical: character for side borders
-    corner: character for corners
+    """Wrap a list of text lines in a box border.
+
+    Args:
+        lines: List of text lines to wrap in a box
+        horizontal: Character for top/bottom borders
+        vertical: Character for side borders
+        corner: Character for corners
+
+    Returns:
+        List of strings representing the boxed content
     """
     # Determine content width
     width = max(len(line) for line in lines)
@@ -38,6 +49,18 @@ def banner(
     max_turns: int,
     trace_name: str,
 ) -> str:
+    """Generate a banner with ASCII art and model information.
+
+    Args:
+        model: Primary model name to display
+        reasoning_model: Reasoning model name to display
+        temperature: Temperature parameter for model
+        max_turns: Maximum number of turns
+        trace_name: Name of the trace
+
+    Returns:
+        Formatted banner string with ASCII art and model info
+    """
     # Sanitize inputs
     trace_name = trace_name.strip()
     model = model.strip()

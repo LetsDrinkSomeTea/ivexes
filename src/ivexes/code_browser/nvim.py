@@ -1,3 +1,10 @@
+"""Neovim container setup and management module.
+
+This module provides functionality to set up and manage Docker containers
+running Neovim with LSP capabilities for code analysis. It handles container
+lifecycle management including creation, configuration, and cleanup.
+"""
+
 import time
 
 import docker
@@ -5,8 +12,8 @@ from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
 import logging
-from ivexes.config.settings import get_settings
-from ivexes.container.utils import find_existing, remove_if_exists
+from ..config import get_settings
+from ..container import find_by_name, remove_if_exists
 
 logger = logging.getLogger(__name__)
 
@@ -14,8 +21,7 @@ logger = logging.getLogger(__name__)
 def setup_container(
     code_base: str, port: str = '8080', renew: bool = False
 ) -> Container:
-    """
-    Set up a Docker container with the codebase mounted for Neovim LSP analysis.
+    """Set up a Docker container with the codebase mounted for Neovim LSP analysis.
 
     Args:
         code_base: Path to the codebase directory to be mounted
@@ -31,7 +37,7 @@ def setup_container(
     c = (
         remove_if_exists(client, container_name)
         if renew
-        else find_existing(client, container_name)
+        else find_by_name(client, container_name)
     )
     if c:
         logger.info(f'Returning: container {c.name}.')

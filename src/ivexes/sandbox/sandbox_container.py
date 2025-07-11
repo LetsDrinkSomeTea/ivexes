@@ -1,3 +1,10 @@
+"""Sandbox container management module.
+
+This module provides functionality to set up and manage Docker containers
+for sandboxed environments, including container lifecycle management
+and configuration.
+"""
+
 import time
 
 import docker
@@ -5,8 +12,8 @@ from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
 import logging
-from ivexes.config.settings import get_settings
-from ivexes.container.utils import find_existing, remove_if_exists
+from ..config import get_settings
+from ..container import find_by_name, remove_if_exists
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +23,22 @@ def setup_container(
     docker_image: str | None = None,
     port: int = 2222,
     renew: bool = True,
-) -> Container | None:
-    """ """
+) -> Container:
+    """Set up a Docker container for sandbox execution.
+
+    Args:
+        setup_archive: Path to the setup archive file (.tar or .tgz)
+        port: Port number to map for container access
+        docker_image: Docker image to use (defaults to settings.sandbox_image)
+        renew: Whether to remove existing container with same name
+
+    Returns:
+        Container: Docker container object ready for use
+
+    Raises:
+        AssertionError: If setup_archive is not .tar/.tgz or port is not int
+        docker.errors.APIError: If Docker operations fail
+    """
     assert setup_archive.endswith('.tar') or setup_archive.endswith('.tgz'), (
         'Executable archive must be a .tar or .tgz file'
     )
@@ -31,7 +52,7 @@ def setup_container(
     c = (
         remove_if_exists(client, container_name)
         if renew
-        else find_existing(client, container_name)
+        else find_by_name(client, container_name)
     )
     if c:
         logger.info(f'Returning: container {c.name}.')
@@ -48,7 +69,8 @@ def setup_container(
         )
         time.sleep(10)  # Wait for the container to start
         logger.info(f'Container {container.name} started')
-        data = open(setup_archive, 'rb').read()
+        with open(setup_archive, 'rb') as f:
+            data = f.read()
         container.put_archive('/tmp', data)
         logger.info(
             f'Setup archive {setup_archive} uploaded to container {container.name}'
@@ -66,5 +88,3 @@ def setup_container(
     except Exception as e:
         logger.error(f'An error occurred: {e}')
         exit(1)
-
-    return None

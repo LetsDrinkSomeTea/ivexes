@@ -1,4 +1,27 @@
 #!/usr/bin/env python3
+"""Code Browser module for LSP-based code analysis.
+
+This module provides a CodeBrowser class that leverages Neovim's Language Server
+Protocol (LSP) capabilities to analyze codebases. It runs in a containerized
+environment to provide consistent analysis capabilities across different systems.
+
+The CodeBrowser can:
+- Navigate code structures using LSP
+- Find symbol definitions and references
+- Analyze file contents and directory structures
+- Generate code diffs between versions
+- Parse programming language symbols
+
+Example:
+    Basic code browser usage:
+
+    >>> browser = CodeBrowser(
+    ...     codebase='/path/to/code', vulnerable_folder='vuln', patched_folder='patched'
+    ... )
+    >>> symbols = browser.get_symbols('main.c')
+    >>> structure = browser.get_codebase_structure()
+"""
+
 import os
 import re
 from typing import Optional
@@ -9,15 +32,52 @@ from time import sleep
 import pynvim
 
 import logging
-from ivexes.modules.code_browser.nvim import setup_container
-from ivexes.modules.code_browser.parser import parse_symbols, parse_references
+from .nvim import setup_container
+from .parser import parse_symbols, parse_references
 
 logger = logging.getLogger(__name__)
 NVIM_DELAY = 0.5
 
 
 class CodeBrowser:
-    """Code Browser for Neovim LSP."""
+    """LSP-based code browser for comprehensive code analysis.
+
+    This class provides a high-level interface for analyzing codebases using
+    Neovim's Language Server Protocol capabilities in a containerized environment.
+    It supports various programming languages and provides symbol navigation,
+    reference finding, and code structure analysis.
+
+    The browser operates in a Docker container to ensure consistent analysis
+    environments and proper LSP server availability for different languages.
+
+    Attributes:
+        path (str): Absolute path to the codebase directory.
+        vulnerable_folder (str): Name of the vulnerable code folder.
+        patched_folder (str): Name of the patched code folder.
+        container: Docker container instance for the analysis environment.
+        nvim: PyNvim client instance for LSP communication.
+
+    Example:
+        Comprehensive code analysis workflow:
+
+        >>> browser = CodeBrowser(
+        ...     codebase='/project/src',
+        ...     vulnerable_folder='before_fix',
+        ...     patched_folder='after_fix',
+        ...     port=8080,
+        ... )
+        >>> # Get codebase structure
+        >>> structure = browser.get_codebase_structure(n=3)
+        >>> print(structure)
+        >>> # Analyze symbols in a file
+        >>> symbols = browser.get_symbols('main.c')
+        >>> for name, type, line, range in symbols:
+        ...     print(f'{name} ({type}) at line {line}')
+        >>> # Find references to a symbol
+        >>> refs = browser.get_references('vulnerable_function')
+        >>> # Get differences between versions
+        >>> diffs = browser.get_diff()
+    """
 
     def __init__(
         self,
@@ -26,12 +86,25 @@ class CodeBrowser:
         patched_folder: str,
         port: int = 8080,
     ) -> None:
-        """
-        Initialize the CodeBrowser with a codebase path and port.
+        """Initialize the CodeBrowser with codebase and connection parameters.
 
         Args:
-            codebase: Path to the codebase directory
-            port: Port number for Neovim connection
+            codebase (str): Path to the codebase directory to analyze.
+            vulnerable_folder (str): Name of the folder containing vulnerable code.
+            patched_folder (str): Name of the folder containing patched code.
+            port (int, optional): Port number for Neovim TCP connection.
+                Defaults to 8080.
+
+        Raises:
+            SystemExit: If connection to Neovim fails.
+
+        Example:
+            >>> browser = CodeBrowser(
+            ...     codebase='/path/to/project',
+            ...     vulnerable_folder='vulnerable_version',
+            ...     patched_folder='fixed_version',
+            ...     port=8080,
+            ... )
         """
         self.path = os.path.abspath(codebase)
         self.vulnerable_folder = os.path.basename(vulnerable_folder)
@@ -44,12 +117,11 @@ class CodeBrowser:
             self.nvim = pynvim.attach('tcp', address='127.0.0.1', port=port)
             logger.info(f'Connected to Neovim with {self.path}')
         except Exception as e:
-            logger.error(f'Error connecting to Neovim (127.0.0.1:{port}): {e}')
+            logger.critical(f'Error connecting to Neovim (127.0.0.1:{port}): {e}')
             sys.exit(1)
 
     def _search_symbol(self, symbol: str) -> tuple[str, int, int]:
-        """
-        Search for a symbol in the workspace using ripgrep in vimgrep format.
+        """Search for a symbol in the workspace using ripgrep in vimgrep format.
 
         Args:
             symbol: The symbol name to search for
@@ -85,13 +157,12 @@ class CodeBrowser:
     def get_file_content(
         self, file: str, offset: int = 0, limit: int = 50
     ) -> str | None:
-        """
-        Get the content of a file from the container.
+        """Get the content of a file from the container.
 
         Args:
             file: Path to the file within the container
-            from_line: Start line number (0-indexed, default: 0)
-            to_line: End line number (0-indexed, -1 for all lines, default: -1)
+            offset: Start line number (0-indexed, default: 0)
+            limit: Maximum number of lines to return (default: 50)
 
         Returns:
             The content of the file as a string
@@ -124,8 +195,7 @@ class CodeBrowser:
             return None
 
     def get_codebase_structure(self, n: int = 3) -> str | None:
-        """
-        Get the structure of the codebase using the tree command.
+        """Get the structure of the codebase using the tree command.
 
         Args:
             n: Maximum depth level of the tree (default: 3)
@@ -148,8 +218,7 @@ class CodeBrowser:
         return res.output.decode()
 
     def get_symbols(self, file: str) -> list[tuple[str, str, int, tuple[int, int]]]:
-        """
-        Get all symbols (variables, functions, classes, etc.) in the specified file using LSP.
+        """Get all symbols (variables, functions, classes, etc.) in the specified file using LSP.
 
         Args:
             file: Path to the file to analyze
@@ -177,8 +246,7 @@ class CodeBrowser:
     def get_references(
         self, symbol: str
     ) -> list[tuple[str, str, int, tuple[int, int]]]:
-        """
-        Get all references to the specified symbol in the codebase using LSP.
+        """Get all references to the specified symbol in the codebase using LSP.
 
         Args:
             symbol: The symbol name to find references for
@@ -210,8 +278,7 @@ class CodeBrowser:
         return references
 
     def get_definition(self, symbol: str) -> tuple[str, str, int, int]:
-        """
-        Find the definition of a symbol using LSP and return its content and location.
+        """Find the definition of a symbol using LSP and return its content and location.
 
         Args:
             symbol: The symbol name to find the definition for
@@ -251,8 +318,7 @@ class CodeBrowser:
         file1: Optional[str] = None,
         file2: Optional[str] = None,
     ) -> list[str]:
-        """
-        Get diff output and split it into individual file diffs using regex.
+        """Get diff output and split it into individual file diffs using regex.
 
         Returns:
             List of strings, each containing the diff for one file, or None if error

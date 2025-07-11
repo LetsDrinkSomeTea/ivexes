@@ -1,3 +1,10 @@
+"""Printer module for formatting and displaying agent interactions.
+
+This module provides functionality to format and display various types of
+agent interactions including messages, tool calls, handoffs, and reasoning
+steps. It handles output formatting for both console and file display.
+"""
+
 from typing import Optional, Union, Any, Callable
 from agents import RunItem, TResponseInputItem
 from agents.items import (
@@ -23,6 +30,13 @@ TIME_STRING: str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 
 
 def print_and_write_to_file(text: str, truncate: bool = True, end: str = '\n') -> None:
+    """Print text to console and write to file with optional truncation.
+
+    Args:
+        text: Text to print and write
+        truncate: Whether to truncate long output
+        end: Line ending character
+    """
     lines: list[str] = text.splitlines()
     if truncate and len(lines) > 10:
         lines = lines[:10] + [f'... truncated {len(lines) - 10} lines']
@@ -56,18 +70,50 @@ class ItemFormatter:
 
     @staticmethod
     def format_message_output(item: MessageOutputItem) -> tuple[str, str]:
+        """Format a message output item for display.
+
+        Args:
+            item: Message output item to format
+
+        Returns:
+            Tuple of (label, formatted_content)
+        """
         return 'Agent', ItemHelpers.text_message_output(item)
 
     @staticmethod
     def format_tool_call(item: ToolCallItem) -> tuple[str, str]:
+        """Format a tool call item for display.
+
+        Args:
+            item: Tool call item to format
+
+        Returns:
+            Tuple of (label, formatted_content)
+        """
         return 'Tool Call', format_tool_call(item.raw_item)
 
     @staticmethod
     def format_tool_call_output(item: ToolCallOutputItem) -> tuple[str, str]:
+        """Format a tool call output item for display.
+
+        Args:
+            item: Tool call output item to format
+
+        Returns:
+            Tuple of (label, formatted_content)
+        """
         return 'Tool Output', item.output
 
     @staticmethod
     def format_handoff_call(item: HandoffCallItem) -> tuple[str, str]:
+        """Format a handoff call item for display.
+
+        Args:
+            item: Handoff call item to format
+
+        Returns:
+            Tuple of (label, formatted_content)
+        """
         raw_call: Any = item.raw_item
         if isinstance(raw_call, ResponseFunctionToolCall):
             formatted_call: str = format_tool_call(raw_call)
@@ -78,11 +124,27 @@ class ItemFormatter:
 
     @staticmethod
     def format_handoff_output(item: HandoffOutputItem) -> tuple[str, str]:
+        """Format a handoff output item for display.
+
+        Args:
+            item: Handoff output item to format
+
+        Returns:
+            Tuple of (label, formatted_content)
+        """
         content: str = f'Handoff completed from {item.source_agent.name} to {item.target_agent.name}'
         return 'Handoff Completed', content
 
     @staticmethod
     def format_reasoning(item: ReasoningItem) -> tuple[str, str]:
+        """Format a reasoning item for display.
+
+        Args:
+            item: Reasoning item to format
+
+        Returns:
+            Tuple of (label, formatted_content)
+        """
         reasoning_text: str = ''
         for summary_item in item.raw_item.summary:
             reasoning_text += summary_item.text + '\n'
@@ -90,6 +152,14 @@ class ItemFormatter:
 
     @staticmethod
     def format_mcp_approval_request(item: MCPApprovalRequestItem) -> tuple[str, str]:
+        """Format an MCP approval request item for display.
+
+        Args:
+            item: MCP approval request item to format
+
+        Returns:
+            Tuple of (label, formatted_content)
+        """
         raw_item: Any = item.raw_item
         content: str = f'MCP Server: {raw_item.server_label}\n'
         content += f'Tool: {raw_item.name}\n'
@@ -98,6 +168,14 @@ class ItemFormatter:
 
     @staticmethod
     def format_mcp_list_tools(item: MCPListToolsItem) -> tuple[str, str]:
+        """Format an MCP list tools item for display.
+
+        Args:
+            item: MCP list tools item to format
+
+        Returns:
+            Tuple of (label, formatted_content)
+        """
         raw_item: Any = item.raw_item
         content: str = f'MCP Server: {raw_item.server_label}\n'
         if raw_item.tools:

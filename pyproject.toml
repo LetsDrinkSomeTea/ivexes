@@ -21,9 +21,25 @@ dependencies = [
   "mitreattack-python",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pre-commit",
+  "ruff",
+]
+
 [project.urls]
 Repository = "https://github.com/LetsDrinkSomeTea/ivexes"
+
+[tool.ruff]
+extend-exclude = [".venv", "examples"]
 
 [tool.ruff.format]
 skip-magic-trailing-comma = true
 quote-style = "single"
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

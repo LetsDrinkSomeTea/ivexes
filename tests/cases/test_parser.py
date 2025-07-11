@@ -1,6 +1,13 @@
+"""Test cases for the vector_db parser module.
+
+This module contains unit tests for the CWE and CAPEC XML data parser
+functionality, including XML parsing and ChromaDB insertion operations.
+"""
+
 import unittest
 from unittest.mock import MagicMock
 import xml.etree.ElementTree as ElementTree
+
 
 class TestParser(unittest.TestCase):
     """Test cases for the vector_db parser module."""
@@ -34,8 +41,10 @@ class TestParser(unittest.TestCase):
         # Verify the collection's add method can be called with the expected arguments
         self.mock_collection.add(
             ids=['1'],
-            documents=['Test Weakness:\nDescription: This is a test weakness description.\nExtended: This is an extended description.'],
-            metadatas=[{'id': '1', 'name': 'Test Weakness', 'type': 'cwe'}]
+            documents=[
+                'Test Weakness:\nDescription: This is a test weakness description.\nExtended: This is an extended description.'
+            ],
+            metadatas=[{'id': '1', 'name': 'Test Weakness', 'type': 'cwe'}],
         )
 
         # Verify the collection.add was called with the correct arguments
@@ -75,8 +84,10 @@ class TestParser(unittest.TestCase):
         # Verify the collection's add method can be called with the expected arguments
         self.mock_collection.add(
             ids=['1'],
-            documents=['Test Attack Pattern:\nDescription: This is a test attack pattern description.\nPrerequisites: Prerequisite 1 | Prerequisite 2'],
-            metadatas=[{'id': '1', 'name': 'Test Attack Pattern', 'type': 'capec'}]
+            documents=[
+                'Test Attack Pattern:\nDescription: This is a test attack pattern description.\nPrerequisites: Prerequisite 1 | Prerequisite 2'
+            ],
+            metadatas=[{'id': '1', 'name': 'Test Attack Pattern', 'type': 'capec'}],
         )
 
         # Verify the collection.add was called with the correct arguments
@@ -86,11 +97,14 @@ class TestParser(unittest.TestCase):
         # Check the document and metadata
         self.assertEqual(kwargs['ids'], ['1'])
         self.assertIn('Test Attack Pattern', kwargs['documents'][0])
-        self.assertIn('This is a test attack pattern description.', kwargs['documents'][0])
+        self.assertIn(
+            'This is a test attack pattern description.', kwargs['documents'][0]
+        )
         self.assertIn('Prerequisite 1 | Prerequisite 2', kwargs['documents'][0])
         self.assertEqual(kwargs['metadatas'][0]['id'], '1')
         self.assertEqual(kwargs['metadatas'][0]['name'], 'Test Attack Pattern')
         self.assertEqual(kwargs['metadatas'][0]['type'], 'capec')
+
 
 if __name__ == '__main__':
     unittest.main()

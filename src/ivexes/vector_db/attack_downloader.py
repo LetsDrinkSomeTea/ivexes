@@ -1,3 +1,10 @@
+"""MITRE ATT&CK framework data downloader.
+
+This module provides functionality to download and parse MITRE ATT&CK
+framework data from official sources, extracting techniques, tactics,
+mitigations, groups, and software information.
+"""
+
 from mitreattack.stix20 import MitreAttackData
 import requests
 import tempfile
@@ -15,8 +22,7 @@ MOBILE_ATTACK_URL = 'https://raw.githubusercontent.com/mitre/cti/master/mobile-a
 
 
 def get_attack_data(domain='enterprise'):
-    """
-    Download and return MITRE ATT&CK data for the specified domain.
+    """Download and return MITRE ATT&CK data for the specified domain.
 
     Args:
         domain: The ATT&CK domain to download ("enterprise", "ics", or "mobile")
@@ -77,8 +83,7 @@ def get_attack_data(domain='enterprise'):
 
 
 def get_all_techniques(attack_data):
-    """
-    Get all techniques from the ATT&CK data.
+    """Get all techniques from the ATT&CK data.
 
     Args:
         attack_data: MitreAttackData object
@@ -92,8 +97,7 @@ def get_all_techniques(attack_data):
 
 
 def get_all_tactics(attack_data):
-    """
-    Get all tactics from the ATT&CK data.
+    """Get all tactics from the ATT&CK data.
 
     Args:
         attack_data: MitreAttackData object
@@ -107,8 +111,7 @@ def get_all_tactics(attack_data):
 
 
 def get_all_mitigations(attack_data):
-    """
-    Get all mitigations from the ATT&CK data.
+    """Get all mitigations from the ATT&CK data.
 
     Args:
         attack_data: MitreAttackData object
@@ -122,8 +125,7 @@ def get_all_mitigations(attack_data):
 
 
 def get_all_groups(attack_data):
-    """
-    Get all groups from the ATT&CK data.
+    """Get all groups from the ATT&CK data.
 
     Args:
         attack_data: MitreAttackData object
@@ -137,8 +139,7 @@ def get_all_groups(attack_data):
 
 
 def get_all_software(attack_data):
-    """
-    Get all software (tools and malware) from the ATT&CK data.
+    """Get all software (tools and malware) from the ATT&CK data.
 
     Args:
         attack_data: MitreAttackData object
@@ -149,4 +150,3 @@ def get_all_software(attack_data):
     software = attack_data.get_software(remove_revoked_deprecated=True)
     logger.info(f'Retrieved {len(software)} software items')
     return software
-

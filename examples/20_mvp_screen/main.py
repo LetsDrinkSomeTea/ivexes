@@ -5,10 +5,12 @@ from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExcee
 import dotenv
 
 dotenv.load_dotenv('thesis/20_mvp_screen.env', override=True)
-from ivexes.modules.printer.printer import stream_result
+
+settings = get_settings()
+from ivexes.printer.printer import stream_result
 from ivexes.prompts.mvp import system_msg, user_msg
-from ivexes.config.settings import settings, get_run_config
-from ivexes.modules.sandbox.tools import sandbox_tools
+from ivexes.config.settings import get_settings, get_run_config
+from ivexes.sandbox.tools import sandbox_tools
 
 user_msg = user_msg.format(
     vulnerable_version=settings.vulnerable_folder,

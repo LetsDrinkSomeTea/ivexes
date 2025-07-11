@@ -1,11 +1,9 @@
 import dotenv
 
 import asyncio
-from typing import cast
-from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExceeded
+from agents import Agent, Runner, TResponseInputItem, trace, MaxTurnsExceeded
 
-from ivexes.printer import stream_result
-from ivexes.config import get_run_config, get_settings, setup_default_logging
+from ivexes import stream_result, get_run_config, get_settings, setup_default_logging
 from ivexes.tools import code_browser_tools, date_tools, sandbox_tools, vectordb_tools
 from ivexes.prompts.multi_agent import (
     security_specialist_system_msg,
@@ -15,24 +13,19 @@ from ivexes.prompts.multi_agent import (
     planning_system_msg,
     user_msg,
 )
-from ivexes.modules.code_browser.tools import get_code_browser
+from ivexes.code_browser import get_code_browser
 
 dotenv.load_dotenv(verbose=True, override=True)
 dotenv.load_dotenv(verbose=True, dotenv_path='../.secrets.env', override=True)
 
 settings = get_settings()
-setup_default_logging(get_settings().log_level)
-
-c_sandbox_tools: list[Tool] = cast(list[Tool], sandbox_tools)
-c_code_browser_tools: list[Tool] = cast(list[Tool], code_browser_tools)
-c_vectordb_tools: list[Tool] = cast(list[Tool], vectordb_tools)
-c_date_tools: list[Tool] = cast(list[Tool], date_tools)
+setup_default_logging(settings.log_level)
 
 security_specialist_tool = Agent(
     name='Security Specialist',
     handoff_description='Specialist agent for up-to-date information on CWE, CAPEC and ATT&CK data',
     instructions=security_specialist_system_msg,
-    tools=c_vectordb_tools,
+    tools=vectordb_tools,
 ).as_tool(
     tool_name='security-specialist',
     tool_description='Expert in CWE, CAPEC, and ATT&CK frameworks. Provides security vulnerability analysis, attack pattern identification, and mitigation strategies based on industry standards.',
@@ -42,7 +35,7 @@ code_analyst_tool = Agent(
     name='Code Analyst',
     handoff_description='Specialist agent for information about the codebase, including code structure, functions, diffs and classes',
     instructions=code_analyst_system_msg,
-    tools=c_code_browser_tools,
+    tools=code_browser_tools,
 ).as_tool(
     tool_name='code-analyst',
     tool_description='Specialist for codebase analysis and vulnerability identification. Analyzes code structure, functions, classes, and diffs to identify potential security weaknesses.',
@@ -52,7 +45,7 @@ red_team_operator_tool = Agent(
     name='Red Team Operator',
     handoff_description='Specialist agent for generating Proof-of-Concepts (PoC) and Exploits',
     instructions=red_team_operator_system_msg,
-    tools=c_sandbox_tools,
+    tools=sandbox_tools,
 ).as_tool(
     tool_name='red-team-operator',
     tool_description='Specialist for creating and testing Proof-of-Concept exploits. Develops bash/Python scripts, tests exploits in sandbox, and validates exploitation techniques.',
@@ -62,7 +55,7 @@ report_journalist_agent = Agent(
     name='Report Journalist',
     handoff_description='Specialist agent for generating reports and summaries',
     instructions=report_journalist_system_msg,
-    tools=c_date_tools,
+    tools=date_tools,
 )
 
 planning_agent = Agent(

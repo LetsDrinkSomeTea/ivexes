@@ -1,3 +1,9 @@
+"""Multi-agent system prompts and workflows.
+
+This module contains prompts and context for multi-agent vulnerability
+analysis workflows, coordinating between different specialized agents.
+"""
+
 from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
 
 security_specialist_system_msg = """

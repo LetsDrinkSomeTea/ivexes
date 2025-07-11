@@ -1,3 +1,10 @@
+"""CWE and CAPEC data downloader.
+
+This module provides functionality to download and parse CWE (Common
+Weakness Enumeration) and CAPEC (Common Attack Pattern Enumeration)
+data from official MITRE sources.
+"""
+
 import io
 import urllib.request
 import xml.etree.ElementTree as ElementTree
@@ -12,8 +19,7 @@ CWE_URL = 'https://cwe.mitre.org/data/xml/cwec_latest.xml.zip'
 
 
 def download_capec():
-    """
-    Download the CAPEC XML file and return it as a string.
+    """Download the CAPEC XML file and return it as a string.
 
     Returns:
         str: The CAPEC XML content
@@ -30,8 +36,7 @@ def download_capec():
 
 
 def download_cwe():
-    """
-    Download and extract the CWE XML file from the zip archive and return it as a string.
+    """Download and extract the CWE XML file from the zip archive and return it as a string.
 
     Returns:
         str: The CWE XML content
@@ -58,8 +63,7 @@ def download_cwe():
 
 
 def get_capec_tree():
-    """
-    Download the CAPEC XML and return it as an ElementTree.
+    """Download the CAPEC XML and return it as an ElementTree.
 
     Returns:
         ElementTree.ElementTree: The parsed CAPEC XML
@@ -69,8 +73,7 @@ def get_capec_tree():
 
 
 def get_cwe_tree():
-    """
-    Download and extract the CWE XML and return it as an ElementTree.
+    """Download and extract the CWE XML and return it as an ElementTree.
 
     Returns:
         ElementTree.ElementTree: The parsed CWE XML

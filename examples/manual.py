@@ -2,8 +2,8 @@
 import click
 import os
 
-from ivexes.config import settings
-from ivexes.modules.vector_db.embed import CweCapecAttackDatabase
+from ivexes.config.settings import get_settings
+from ivexes.vector_db.vector_db import CweCapecAttackDatabase
 
 import ivexes.config.log as log
 
@@ -12,8 +12,7 @@ logger = log.get(__name__)
 
 @click.group()
 def cli() -> None:
-    """
-    Command line interface for ivexes modules.
+    """Command line interface for ivexes modules.
 
     This is the main entry point for the CLI application.
     """
@@ -23,11 +22,10 @@ def cli() -> None:
 @cli.command()
 @click.argument('path', type=click.Path(exists=True))
 def tokenize(path: str) -> None:
-    """
-    Tokenize a file and print the number of tokens, characters, and words.
+    """Tokenize a file and print the number of tokens, characters, and words.
 
     """
-    import ivexes.modules.token.count as count
+    import ivexes.token as count
 
     res = (0, 0, 0)  # Default result in case of error
     if os.path.isdir(path):
@@ -43,8 +41,7 @@ def tokenize(path: str) -> None:
 # Vector DB module commands
 @cli.group()
 def vector_db() -> None:
-    """
-    Commands for the vector database module.
+    """Commands for the vector database module.
 
     This group contains commands for managing and querying the vector database.
     """
@@ -53,8 +50,7 @@ def vector_db() -> None:
 
 @vector_db.command('clear')
 def cmd_clear() -> None:
-    """
-    Clear the vector database.
+    """Clear the vector database.
 
     This command removes all entries from the vector database.
     """
@@ -65,10 +61,8 @@ def cmd_clear() -> None:
 
 @vector_db.command('size')
 def cmd_size() -> None:
+    """Get the size of the vector database.
     """
-    Get the size of the vector database.
-    """
-
     db = CweCapecAttackDatabase()
     click.echo(f' Size of DB: {db.collection.count()}')
 
@@ -94,8 +88,7 @@ def init_verctor_db(type_of_data: str):
 )
 @click.option('--count', '-n', default=3, help='Number of results to return')
 def cmd_query(query_text: str, type: str, count: int) -> None:
-    """
-    Query the vector database for matching entries.
+    """Query the vector database for matching entries.
 
     Args:
         query_text: The text to search for in the database
@@ -113,8 +106,7 @@ def cmd_query(query_text: str, type: str, count: int) -> None:
 @click.argument('query_text')
 @click.option('--count', '-n', default=3, help='Number of results to return')
 def cmd_query_cwe(query_text: str, count: int) -> None:
-    """
-    Query only CWE entries in the vector database.
+    """Query only CWE entries in the vector database.
 
     Args:
         query_text: The text to search for in CWE entries
@@ -130,8 +122,7 @@ def cmd_query_cwe(query_text: str, count: int) -> None:
 @click.argument('query_text')
 @click.option('--count', '-n', default=3, help='Number of results to return')
 def cmd_query_capec(query_text: str, count: int) -> None:
-    """
-    Query only CAPEC entries in the vector database.
+    """Query only CAPEC entries in the vector database.
 
     Args:
         query_text: The text to search for in CAPEC entries
@@ -146,8 +137,7 @@ def cmd_query_capec(query_text: str, count: int) -> None:
 # Code Browser module commands
 @cli.group()
 def code_browser() -> None:
-    """
-    Commands for the code browser module.
+    """Commands for the code browser module.
 
     This group contains commands for browsing and analyzing code using LSP.
     """
@@ -157,14 +147,13 @@ def code_browser() -> None:
 @code_browser.command('get-definition')
 @click.argument('symbol')
 def cmd_get_definition(symbol: str) -> None:
-    """
-    Find the definition of a symbol in the codebase.
+    """Find the definition of a symbol in the codebase.
 
     Args:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find the definition for
     """
-    from ivexes.modules.code_browser.tools import code_browser as cb
+    from ivexes.code_browser import code_browser as cb
 
     result = cb.get_definition(symbol)
     if result:
@@ -179,14 +168,13 @@ def cmd_get_definition(symbol: str) -> None:
 @code_browser.command('get-references')
 @click.argument('symbol')
 def cmd_get_references(symbol: str) -> None:
-    """
-    Find all references to a symbol in the codebase.
+    """Find all references to a symbol in the codebase.
 
     Args:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find references for
     """
-    from ivexes.modules.code_browser.tools import code_browser as cb
+    from ivexes.code_browser import code_browser as cb
 
     results = cb.get_references(symbol)
     if results:
@@ -202,14 +190,13 @@ def cmd_get_references(symbol: str) -> None:
 @click.argument('file1', required=False)
 @click.argument('file2', required=False)
 def cmd_get_diff(file1: str, file2: str) -> None:
-    """
-    Get the differences between two files in the codebase.
+    """Get the differences between two files in the codebase.
 
     Args:
         file1: Path to the first file
         file2: Path to the second file
     """
-    from ivexes.modules.code_browser.tools import code_browser as cb
+    from ivexes.code_browser import code_browser as cb
 
     results = cb.get_diff(file1=file1, file2=file2)
     if results:
@@ -223,14 +210,13 @@ def cmd_get_diff(file1: str, file2: str) -> None:
 @code_browser.command('get-symbols')
 @click.argument('file')
 def cmd_get_symbols(file: str) -> None:
-    """
-    Get all symbols (variables, functions, classes) in a file.
+    """Get all symbols (variables, functions, classes) in a file.
 
     Args:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to analyze
     """
-    from ivexes.modules.code_browser.tools import code_browser as cb
+    from ivexes.code_browser import code_browser as cb
 
     symbols = cb.get_symbols(file)
     for symbol in symbols:
@@ -240,14 +226,13 @@ def cmd_get_symbols(file: str) -> None:
 @code_browser.command('get-file')
 @click.argument('file')
 def cmd_get_file(file: str) -> None:
-    """
-    Get the content of a file in the codebase.
+    """Get the content of a file in the codebase.
 
     Args:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to retrieve
     """
-    from ivexes.modules.code_browser.tools import code_browser as cb
+    from ivexes.code_browser import code_browser as cb
 
     content = cb.get_file_content(file)
     click.echo(content)
@@ -256,14 +241,13 @@ def cmd_get_file(file: str) -> None:
 @code_browser.command('get-tree')
 @click.option('--count', '-n', default=3, help='Number of recursive levels')
 def cmd_get_tree(count: int) -> None:
-    """
-    Get the directory structure of the codebase.
+    """Get the directory structure of the codebase.
 
     Args:
         path_to_codebase: Path to the codebase directory
         count: Maximum depth level for the directory tree
     """
-    from ivexes.modules.code_browser.tools import code_browser as cb
+    from ivexes.code_browser import code_browser as cb
 
     content = cb.get_codebase_structure(n=count)
     click.echo(content)
@@ -272,8 +256,7 @@ def cmd_get_tree(count: int) -> None:
 # Diff module commands
 @cli.group()
 def diff() -> None:
-    """
-    Commands for the diff module.
+    """Commands for the diff module.
 
     This group contains commands for comparing code versions and analyzing differences.
     """
@@ -283,8 +266,7 @@ def diff() -> None:
 # Sandbox module commands
 @cli.group()
 def sandbox() -> None:
-    """
-    Commands for the sandbox module.
+    """Commands for the sandbox module.
 
     This group contains commands for running code in an isolated sandbox environment.
     """
@@ -293,12 +275,11 @@ def sandbox() -> None:
 
 @sandbox.command('start')
 def cmd_start() -> None:
+    """Starts interactive shell in a sandbox environment.
     """
-    Starts interactive shell in a sandbox environment.
-    """
-    from ivexes.modules.sandbox.sandbox import Sandbox
+    from ivexes.sandbox.sandbox import Sandbox
 
-    sb = Sandbox(setup_archive=settings.settings.setup_archive)
+    sb = Sandbox(setup_archive=get_settings().setup_archive)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return
@@ -312,16 +293,16 @@ def cmd_start() -> None:
 @sandbox.command('run')
 @click.argument('command')
 def cmd_run(command: str) -> None:
-    """
-    Run a command in a sandbox environment.
+    """Run a command in a sandbox environment.
+
     Args:
         path_to_executable_archive: Path to the executable archive
         command: The command to run in the sandbox
 
     """
-    from ivexes.modules.sandbox.sandbox import Sandbox
+    from ivexes.sandbox.sandbox import Sandbox
 
-    sb = Sandbox(setup_archive=settings.settings.setup_archive)
+    sb = Sandbox(setup_archive=get_settings().setup_archive)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return
@@ -333,16 +314,16 @@ def cmd_run(command: str) -> None:
 @click.argument('path')
 @click.argument('content')
 def create_file(path: str, content: str) -> None:
-    """
-    Run a command in a sandbox environment.
+    """Run a command in a sandbox environment.
+
     Args:
         path_to_executable_archive: Path to the executable archive
         command: The command to run in the sandbox
 
     """
-    from ivexes.modules.sandbox.sandbox import Sandbox
+    from ivexes.sandbox.sandbox import Sandbox
 
-    sb = Sandbox(setup_archive=settings.settings.setup_archive)
+    sb = Sandbox(setup_archive=get_settings().setup_archive)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return

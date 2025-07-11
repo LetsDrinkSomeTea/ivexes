@@ -5,12 +5,14 @@ from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExcee
 import dotenv
 
 dotenv.load_dotenv('thesis/60_single_agent_screen.env', override=True)
-from ivexes.modules.printer.printer import stream_result
+
+settings = get_settings()
+from ivexes.printer.printer import stream_result
 from ivexes.prompts.single_agent import system_msg, user_msg
-from ivexes.config.settings import settings, get_run_config
-from ivexes.modules.sandbox.tools import sandbox_tools
-from ivexes.modules.code_browser.tools import code_browser_tools, code_browser
-from ivexes.modules.vector_db.tools import vectordb_tools
+from ivexes.config.settings import get_settings, get_run_config
+from ivexes.sandbox.tools import sandbox_tools
+from ivexes.code_browser import code_browser_tools, code_browser
+from ivexes.vector_db.tools import vectordb_tools
 
 user_msg = user_msg.format(
     codebase_structure=code_browser.get_codebase_structure(),

@@ -1,8 +1,15 @@
+"""MITRE ATT&CK framework data parser for vector database.
+
+This module provides functionality to parse MITRE ATT&CK framework data
+and insert it into a ChromaDB vector database for similarity search
+and retrieval.
+"""
+
 import chromadb
 import click
 
 import logging
-from ivexes.modules.vector_db.attack_downloader import (
+from .attack_downloader import (
     get_attack_data,
     get_all_techniques,
     get_all_tactics,
@@ -28,8 +35,7 @@ def _safe_get(obj, *keys, default=''):
 
 
 def insert_attack_techniques(collection: chromadb.Collection, attack_data):
-    """
-    Insert ATT&CK techniques into the ChromaDB collection.
+    """Insert ATT&CK techniques into the ChromaDB collection.
 
     Args:
         collection: The ChromaDB collection to insert into
@@ -86,8 +92,7 @@ def insert_attack_techniques(collection: chromadb.Collection, attack_data):
 
 
 def insert_attack_tactics(collection: chromadb.Collection, attack_data):
-    """
-    Insert ATT&CK tactics into the ChromaDB collection.
+    """Insert ATT&CK tactics into the ChromaDB collection.
 
     Args:
         collection: The ChromaDB collection to insert into
@@ -140,8 +145,7 @@ def insert_attack_tactics(collection: chromadb.Collection, attack_data):
 
 
 def insert_attack_mitigations(collection: chromadb.Collection, attack_data):
-    """
-    Insert ATT&CK mitigations into the ChromaDB collection.
+    """Insert ATT&CK mitigations into the ChromaDB collection.
 
     Args:
         collection: The ChromaDB collection to insert into
@@ -187,8 +191,7 @@ def insert_attack_mitigations(collection: chromadb.Collection, attack_data):
 
 
 def insert_attack_groups(collection: chromadb.Collection, attack_data):
-    """
-    Insert ATT&CK groups into the ChromaDB collection.
+    """Insert ATT&CK groups into the ChromaDB collection.
 
     Args:
         collection: The ChromaDB collection to insert into
@@ -240,8 +243,7 @@ def insert_attack_groups(collection: chromadb.Collection, attack_data):
 
 
 def insert_attack_software(collection: chromadb.Collection, attack_data):
-    """
-    Insert ATT&CK software (tools and malware) into the ChromaDB collection.
+    """Insert ATT&CK software (tools and malware) into the ChromaDB collection.
 
     Args:
         collection: The ChromaDB collection to insert into
@@ -295,8 +297,7 @@ def insert_attack_software(collection: chromadb.Collection, attack_data):
 
 
 def insert_attack_all(collection: chromadb.Collection, domain='enterprise'):
-    """
-    Insert all ATT&CK data (techniques, mitigations, groups, software) into the collection.
+    """Insert all ATT&CK data (techniques, mitigations, groups, software) into the collection.
 
     Args:
         collection: The ChromaDB collection to insert into
@@ -309,4 +310,3 @@ def insert_attack_all(collection: chromadb.Collection, domain='enterprise'):
     insert_attack_mitigations(collection, attack_data)
     insert_attack_groups(collection, attack_data)
     insert_attack_software(collection, attack_data)
-

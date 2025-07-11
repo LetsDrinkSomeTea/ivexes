@@ -1,13 +1,20 @@
+"""Vector database module for cybersecurity knowledge storage.
+
+This module provides vector database functionality for storing and querying
+cybersecurity knowledge from CWE, CAPEC, and MITRE ATT&CK frameworks
+using ChromaDB for similarity search.
+"""
+
 from typing import cast
 import chromadb
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from chromadb.config import Settings
 
 import logging
-from ivexes.config.settings import get_settings
-from ivexes.modules.vector_db.downloader import get_cwe_tree, get_capec_tree
-from ivexes.modules.vector_db.parser import insert_capec, insert_cwe
-from ivexes.modules.vector_db.attack_parser import insert_attack_all
+from ..config import get_settings
+from .downloader import get_cwe_tree, get_capec_tree
+from .parser import insert_capec, insert_cwe
+from .attack_parser import insert_attack_all
 
 from os import path
 
@@ -15,15 +22,29 @@ logger = logging.getLogger(__name__)
 
 
 class CweCapecAttackDatabase:
+    """Database for storing and querying CWE, CAPEC, and ATT&CK framework data.
+
+    This class provides a vector database interface for cybersecurity knowledge
+    bases including Common Weakness Enumeration (CWE), Common Attack Pattern
+    Enumeration and Classification (CAPEC), and MITRE ATT&CK framework data.
+
+    The database uses ChromaDB for vector storage and similarity search.
+    """
+
     def __init__(self) -> None:
-        ef = DefaultEmbeddingFunction()
+        """Initialize the CWE/CAPEC/ATT&CK vector database.
+
+        Sets up ChromaDB client with appropriate embedding function based
+        on configuration settings and initializes the database if empty.
+        """
+        embedding_function = DefaultEmbeddingFunction()
         settings = get_settings()
         if settings.embedding_provider == 'openai':
             from chromadb.utils.embedding_functions.openai_embedding_function import (
                 OpenAIEmbeddingFunction,
             )
 
-            ef = OpenAIEmbeddingFunction(
+            embedding_function = OpenAIEmbeddingFunction(
                 model_name=settings.embedding_model, api_key=settings.openai_api_key
             )
         if settings.embedding_provider == 'local':
@@ -31,7 +52,7 @@ class CweCapecAttackDatabase:
                 SentenceTransformerEmbeddingFunction,
             )
 
-            ef = SentenceTransformerEmbeddingFunction(
+            embedding_function = SentenceTransformerEmbeddingFunction(
                 model_name=settings.embedding_model
             )
         db_path = path.join(settings.chroma_path, settings.embedding_model)
@@ -40,10 +61,12 @@ class CweCapecAttackDatabase:
         self.chroma_client = chromadb.PersistentClient(
             settings=Settings(allow_reset=True), path=db_path
         )
-        logger.info(f'using {settings.embedding_provider=} and ef={type(ef)}')
+        logger.info(
+            f'using {settings.embedding_provider=} and embedding_function={type(embedding_function)}'
+        )
         self.collection = self.chroma_client.get_or_create_collection(
             name='collection-local',
-            embedding_function=cast(chromadb.EmbeddingFunction, ef),
+            embedding_function=cast(chromadb.EmbeddingFunction, embedding_function),
         )
 
         logger.info(f'currently {self.collection.count()} entries loaded')
@@ -58,6 +81,7 @@ class CweCapecAttackDatabase:
         self.initialize_capec()
 
     def initialize_cwe(self) -> None:
+        """Initialize the database with CWE (Common Weakness Enumeration) data."""
         try:
             logger.info('Downloading and parsing CWE data...')
             cwe_root = get_cwe_tree()
@@ -67,6 +91,7 @@ class CweCapecAttackDatabase:
             logger.error('Failed to download or insert CWE data: %s', exc)
 
     def initialize_capec(self) -> None:
+        """Initialize the database with CAPEC (Common Attack Pattern Enumeration) data."""
         try:
             logger.info('Downloading and parsing CAPEC data...')
             capec_root = get_capec_tree()
@@ -76,6 +101,7 @@ class CweCapecAttackDatabase:
             logger.error('Failed to download or insert CAPEC data: %s', exc)
 
     def initialize_attack(self) -> None:
+        """Initialize the database with MITRE ATT&CK framework data."""
         try:
             logger.info('Downloading and parsing ATT&CK data...')
             insert_attack_all(self.collection, domain='enterprise')
@@ -84,6 +110,7 @@ class CweCapecAttackDatabase:
             logger.error('Failed to download or insert ATT&CK data: %s', exc)
 
     def clear(self) -> None:
+        """Clear all data from the database collection."""
         self.chroma_client.reset()
         logger.info('DB cleared')
 
@@ -116,9 +143,11 @@ class CweCapecAttackDatabase:
         ]
 
     def query_cwe(self, query_text: str, n: int = 3) -> list[str]:
+        """Query only CWE entries in the database."""
         return self.query(query_text, ['cwe'], n)
 
     def query_capec(self, query_text: str, n: int = 3) -> list[str]:
+        """Query only CAPEC entries in the database."""
         return self.query(query_text, ['capec'], n)
 
     def query_attack_techniques(self, query_text: str, n: int = 3) -> list[str]:

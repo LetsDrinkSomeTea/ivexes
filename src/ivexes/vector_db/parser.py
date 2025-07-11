@@ -1,3 +1,10 @@
+"""CWE and CAPEC data parser for vector database.
+
+This module provides functionality to parse CWE and CAPEC XML data
+and insert it into a ChromaDB vector database for similarity search
+and retrieval.
+"""
+
 import xml.etree.ElementTree as ElementTree
 
 import chromadb
@@ -9,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def insert_cwe(collection: chromadb.Collection, xml_data):
-    """
-    Parse CWE XML data and insert it into the ChromaDB collection.
+    """Parse CWE XML data and insert it into the ChromaDB collection.
 
     Args:
         collection: The ChromaDB collection to insert into
@@ -67,8 +73,7 @@ CWE-{wid} {name}:
 
 
 def insert_capec(collection: chromadb.Collection, xml_data):
-    """
-    Parse CAPEC XML data and insert it into the ChromaDB collection.
+    """Parse CAPEC XML data and insert it into the ChromaDB collection.
 
     Args:
         collection: The ChromaDB collection to insert into

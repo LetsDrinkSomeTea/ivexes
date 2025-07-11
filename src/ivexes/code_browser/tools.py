@@ -1,6 +1,15 @@
-from agents import function_tool
-from ivexes.config.settings import get_settings
-from ivexes.modules.code_browser.code_browser import CodeBrowser
+"""Code browser tools module for agent integration.
+
+This module provides agent-compatible tools that wrap CodeBrowser functionality
+for use within multi-agent systems. It includes tools for code analysis,
+symbol searching, and structural exploration.
+"""
+
+from typing import cast
+
+from agents import function_tool, Tool
+from ..config import get_settings
+from .code_browser import CodeBrowser
 
 import logging
 
@@ -10,8 +19,7 @@ _code_browser: CodeBrowser | None = None
 
 
 def get_code_browser() -> CodeBrowser:
-    """
-    Get the global code browser instance, creating it if necessary.
+    """Get the global code browser instance, creating it if necessary.
 
     Returns:
         CodeBrowser: The code browser instance.
@@ -25,7 +33,9 @@ def get_code_browser() -> CodeBrowser:
             and settings.patched_folder
         ):
             _code_browser = CodeBrowser(
-                settings.codebase_path, settings.vulnerable_folder, settings.patched_folder
+                settings.codebase_path,
+                settings.vulnerable_folder,
+                settings.patched_folder,
             )
         else:
             logger.error(
@@ -37,8 +47,7 @@ def get_code_browser() -> CodeBrowser:
 
 @function_tool
 def codebrowser_get_definition(symbol: str) -> str:
-    """
-    Find the definition of a symbol in the codebase.
+    """Find the definition of a symbol in the codebase.
 
     Args:
         symbol: The symbol name to find the definition for
@@ -59,8 +68,7 @@ def codebrowser_get_definition(symbol: str) -> str:
 
 @function_tool
 def codebrowser_get_references(symbol: str) -> str:
-    """
-    Find all references to a symbol in the codebase.
+    """Find all references to a symbol in the codebase.
 
     Args:
         symbol: The symbol name to find references for
@@ -79,8 +87,7 @@ def codebrowser_get_references(symbol: str) -> str:
 
 @function_tool
 def codebrowser_get_symbols(file: str) -> str:
-    """
-    Get all symbols (variables, functions, classes) in a file.
+    """Get all symbols (variables, functions, classes) in a file.
 
     Args:
         file: Path to the file within the codebase to analyze
@@ -101,8 +108,7 @@ def codebrowser_get_symbols(file: str) -> str:
 
 @function_tool
 def codebrowser_get_file_content(file: str, offset: int = 0, limit: int = 50) -> str:
-    """
-    Get the content of a file in the codebase.
+    """Get the content of a file in the codebase.
 
     Args:
         file: Path to the file within the codebase to analyze
@@ -119,8 +125,7 @@ def codebrowser_get_file_content(file: str, offset: int = 0, limit: int = 50) ->
 
 @function_tool
 def codebrowser_get_file_structure(depth: int = 3) -> str:
-    """
-    Get the tree of files in the codebase.
+    """Get the tree of files in the codebase.
 
     Args:
         depth: Maximum depth level of the tree (default: 3)
@@ -139,8 +144,7 @@ def codebrowser_get_diff(
     file2: str = 'patched_folder',
     options: list[str] | None = None,
 ) -> str:
-    """
-    Get the diff of the codebase using diff.
+    """Get the diff of the codebase using diff.
 
     Args:
         options: List of options for the diff command (default: ['-u', '-w'])
@@ -157,11 +161,14 @@ def codebrowser_get_diff(
         return 'No diff found in the codebase.'
 
 
-code_browser_tools = [
-    codebrowser_get_definition,
-    codebrowser_get_references,
-    codebrowser_get_symbols,
-    codebrowser_get_file_content,
-    codebrowser_get_file_structure,
-    codebrowser_get_diff,
-]
+code_browser_tools = cast(
+    list[Tool],
+    [
+        codebrowser_get_definition,
+        codebrowser_get_references,
+        codebrowser_get_symbols,
+        codebrowser_get_file_content,
+        codebrowser_get_file_structure,
+        codebrowser_get_diff,
+    ],
+)

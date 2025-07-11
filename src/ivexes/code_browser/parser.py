@@ -1,3 +1,10 @@
+"""Parser module for extracting code symbols and references from LSP output.
+
+This module provides parsing functionality for processing Language Server Protocol
+(LSP) output to extract code symbols, references, and other structural information
+from code analysis results.
+"""
+
 import re
 
 import logging
@@ -26,8 +33,7 @@ _SYMBOL_PATTERN = re.compile(
 
 
 def parse_symbols(lines: list[str]) -> list[tuple[str, str, int, tuple[int, int]]]:
-    """
-    Parse symbol information from LSP output lines.
+    """Parse symbol information from LSP output lines.
 
     Args:
         lines: List of strings containing symbol information in LSP format
@@ -73,8 +79,7 @@ _REFERENCE_PATTERN = re.compile(
 
 
 def parse_references(lines: list[str]) -> list[tuple[str, str, int, tuple[int, int]]]:
-    """
-    Parse reference information from LSP output lines.
+    """Parse reference information from LSP output lines.
 
     Args:
         lines: List of strings containing reference information in LSP format
