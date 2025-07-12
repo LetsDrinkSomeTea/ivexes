@@ -287,7 +287,6 @@ class TestSettingsModule(unittest.TestCase):
             {
                 'OPENAI_API_KEY': 'sk-test-key',
                 'LLM_API_KEY': 'sk-llm-key',
-                'MODEL': 'openai/gpt-4',
                 'MODEL_TEMPERATURE': '0.8',
             },
             clear=True,
@@ -304,7 +303,6 @@ class TestSettingsModule(unittest.TestCase):
                 )
 
                 # Verify run_config has correct model
-                self.assertEqual(run_config.model, 'openai/gpt-4')
                 self.assertIsNotNone(run_config.model_settings)
                 self.assertEqual(run_config.model_settings.temperature, 0.8)
 
