@@ -74,7 +74,7 @@ class Settings(BaseSettings):
         default_factory=lambda: os.environ.get('MODEL', 'openai/gpt-4o-mini')
     )
     model_temperature: float = Field(
-        default_factory=lambda: float(os.environ.get('TEMPERATURE', '0.3'))
+        default_factory=lambda: float(os.environ.get('MODEL_TEMPERATURE', '0.3'))
     )
     reasoning_model: str = Field(
         default_factory=lambda: os.environ.get('REASONING_MODEL', 'openai/o4-mini')
@@ -88,12 +88,6 @@ class Settings(BaseSettings):
     trace_name: str = Field(
         default_factory=lambda: os.environ.get('TRACE_NAME', 'ivexes')
     )
-
-    @field_validator('trace_name')
-    @classmethod
-    def validate_trace_name(cls, v: str) -> str:
-        """Convert trace name to lowercase."""
-        return v.lower()
 
     # Sandbox settings
     sandbox_image: str = Field(
@@ -124,6 +118,22 @@ class Settings(BaseSettings):
     embedding_provider: str = Field(
         default_factory=lambda: os.environ.get('EMBEDDING_PROVIDER', 'builtin')
     )
+
+    @field_validator('trace_name')
+    @classmethod
+    def validate_trace_name(cls, v: str) -> str:
+        """Convert trace name to lowercase."""
+        return v.lower()
+
+    @field_validator('embedding_provider')
+    @classmethod
+    def validate_embedding_provider(cls, v: str) -> str:
+        """Validate embedding provider is either 'builtin', 'local' or 'openai'."""
+        if v not in ['builtin', 'local', 'openai']:
+            raise ValueError(
+                'embedding_provider must be one of: builtin, local, openai'
+            )
+        return v
 
     @field_validator('llm_api_key')
     @classmethod

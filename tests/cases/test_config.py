@@ -56,7 +56,7 @@ class TestSettingsModule(unittest.TestCase):
             'LLM_API_KEY': 'llm-test-key',
             'LLM_BASE_URL': 'https://custom.api.com/v1',
             'MODEL': 'openai/gpt-4',
-            'TEMPERATURE': '0.7',
+            'MODEL_TEMPERATURE': '0.7',
             'REASONING_MODEL': 'openai/o1-preview',
             'MAX_TURNS': '15',
             'LOG_LEVEL': 'DEBUG',
@@ -118,7 +118,7 @@ class TestSettingsModule(unittest.TestCase):
         # Test temperature below 0.0
         with patch.dict(
             os.environ,
-            {'LLM_API_KEY': 'sk-test-key', 'TEMPERATURE': '-0.1'},
+            {'LLM_API_KEY': 'sk-test-key', 'MODEL_TEMPERATURE': '-0.1'},
             clear=True,
         ):
             with self.assertRaises(ValidationError) as cm:
@@ -127,7 +127,9 @@ class TestSettingsModule(unittest.TestCase):
 
         # Test temperature above 2.0
         with patch.dict(
-            os.environ, {'LLM_API_KEY': 'sk-test-key', 'TEMPERATURE': '2.1'}, clear=True
+            os.environ,
+            {'LLM_API_KEY': 'sk-test-key', 'MODEL_TEMPERATURE': '2.1'},
+            clear=True,
         ):
             with self.assertRaises(ValidationError) as cm:
                 Settings()
@@ -138,7 +140,7 @@ class TestSettingsModule(unittest.TestCase):
         for temp in valid_temps:
             with patch.dict(
                 os.environ,
-                {'LLM_API_KEY': 'sk-test-key', 'TEMPERATURE': temp},
+                {'LLM_API_KEY': 'sk-test-key', 'MODEL_TEMPERATURE': temp},
                 clear=True,
             ):
                 settings = Settings()
@@ -286,7 +288,7 @@ class TestSettingsModule(unittest.TestCase):
                 'OPENAI_API_KEY': 'sk-test-key',
                 'LLM_API_KEY': 'sk-llm-key',
                 'MODEL': 'openai/gpt-4',
-                'TEMPERATURE': '0.8',
+                'MODEL_TEMPERATURE': '0.8',
             },
             clear=True,
         ):
@@ -310,7 +312,11 @@ class TestSettingsModule(unittest.TestCase):
         """Test that environment variables are properly converted to correct types."""
         with patch.dict(
             os.environ,
-            {'LLM_API_KEY': 'sk-test-key', 'TEMPERATURE': '0.9', 'MAX_TURNS': '20'},
+            {
+                'LLM_API_KEY': 'sk-test-key',
+                'MODEL_TEMPERATURE': '0.9',
+                'MAX_TURNS': '20',
+            },
             clear=True,
         ):
             settings = Settings()
@@ -325,13 +331,17 @@ class TestSettingsModule(unittest.TestCase):
         """Test edge cases in field validators."""
         # Test exact boundary values for temperature
         with patch.dict(
-            os.environ, {'LLM_API_KEY': 'sk-test-key', 'TEMPERATURE': '0.0'}, clear=True
+            os.environ,
+            {'LLM_API_KEY': 'sk-test-key', 'MODEL_TEMPERATURE': '0.0'},
+            clear=True,
         ):
             settings = Settings()
             self.assertEqual(settings.model_temperature, 0.0)
 
         with patch.dict(
-            os.environ, {'LLM_API_KEY': 'sk-test-key', 'TEMPERATURE': '2.0'}, clear=True
+            os.environ,
+            {'LLM_API_KEY': 'sk-test-key', 'MODEL_TEMPERATURE': '2.0'},
+            clear=True,
         ):
             settings = Settings()
             self.assertEqual(settings.model_temperature, 2.0)
@@ -351,7 +361,7 @@ class TestSettingsModule(unittest.TestCase):
             'LLM_API_KEY': 'llm-key',
             'LLM_BASE_URL': 'https://custom.api.com/v1',
             'MODEL': 'openai/gpt-4-turbo',
-            'TEMPERATURE': '0.5',
+            'MODEL_TEMPERATURE': '0.5',
             'REASONING_MODEL': 'openai/o1-mini',
             'MAX_TURNS': '25',
             'LOG_LEVEL': 'WARNING',
@@ -456,7 +466,7 @@ class TestSettingsModule(unittest.TestCase):
             {
                 'LLM_API_KEY': 'sk-test-key',
                 'MODEL': 'openai/gpt-3.5-turbo',
-                'TEMPERATURE': '0.5',
+                'MODEL_TEMPERATURE': '0.5',
             },
             clear=True,
         ):
@@ -551,7 +561,7 @@ class TestSettingsModule(unittest.TestCase):
                 'patched_folder': '/new/patched',
                 'chroma_path': '/new/chroma',
                 'embedding_model': 'new-embedding',
-                'embedding_provider': 'new-provider',
+                'embedding_provider': 'builtin',
             }
 
             set_settings(full_partial)
@@ -575,7 +585,7 @@ class TestSettingsModule(unittest.TestCase):
             self.assertEqual(settings.patched_folder, '/new/patched')
             self.assertEqual(settings.chroma_path, '/new/chroma')
             self.assertEqual(settings.embedding_model, 'new-embedding')
-            self.assertEqual(settings.embedding_provider, 'new-provider')
+            self.assertEqual(settings.embedding_provider, 'builtin')
 
 
 if __name__ == '__main__':
