@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from ivexes.agents import SingleAgent
 from ivexes.config import PartialSettings, setup_default_logging
 
-load_dotenv(verbose=True, dotenv_path='../.secrets.env', override=True)
+load_dotenv(verbose=True, override=True)
 setup_default_logging()
 
 settings = PartialSettings(
@@ -19,6 +19,8 @@ settings = PartialSettings(
     embedding_provider='openai',
     setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
     codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/screen/codebase',
+    vulnerable_folder='vulnerable-enlightenment-0.25.3',
+    patched_folder='patched-enlightenment-0.26.0',
 )
 
 agent = SingleAgent(bin_path='/usr/bin/screen', settings=settings)

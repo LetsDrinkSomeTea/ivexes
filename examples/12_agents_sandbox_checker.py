@@ -6,14 +6,14 @@ from dotenv import load_dotenv
 from ivexes.agents import HTBChallengeAgent
 from ivexes.config import PartialSettings, setup_default_logging
 
-load_dotenv(verbose=True, dotenv_path='../.secrets.env', override=True)
+load_dotenv(verbose=True, override=True)
 setup_default_logging()
 
 settings = PartialSettings(
     log_level='INFO',
-    trace_name='checker',
+    trace_name='bincrypt_breaker',
     model='openai/gpt-4.1-mini',
-    model_temperature=0.1,
+    model_temperature=0.2,
     max_turns=25,
     setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/bincrypt_breaker/upload.tgz',
 )

@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from ivexes.agents import MultiAgent
 from ivexes.config import PartialSettings, setup_default_logging
 
-load_dotenv(verbose=True, dotenv_path='../.secrets.env', override=True)
+load_dotenv(verbose=True, override=True)
 setup_default_logging()
 
 settings = PartialSettings(

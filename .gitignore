@@ -8,6 +8,7 @@
 .claude
 
 data/
+.env
 
 CLAUDE.md
 
