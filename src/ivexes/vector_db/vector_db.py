@@ -135,12 +135,8 @@ class CweCapecAttackDatabase:
             query_texts=query_text, n_results=n, where={'type': {'$in': types}}
         )
         logger.debug(results)
-        metadata = results.get('metadatas', [[]])[0]
         documents = results.get('documents', [[]])[0]
-        return [
-            f'{m.get("type", "").upper()}-{m.get("id", "")} {d}'
-            for (m, d) in zip(metadata, documents)
-        ]
+        return documents
 
     def query_cwe(self, query_text: str, n: int = 3) -> list[str]:
         """Query only CWE entries in the database."""

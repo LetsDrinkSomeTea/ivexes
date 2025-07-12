@@ -12,7 +12,7 @@ setup_default_logging()
 settings = PartialSettings(
     log_level='INFO',
     trace_name='Multi-Agent Screen',
-    model='openai/gpt-4.1-mini',
+    model='openai/gpt-4.1',
     reasoning_model='openai/o4-mini',
     model_temperature=0.1,
     max_turns=25,

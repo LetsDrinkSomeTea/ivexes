@@ -67,7 +67,9 @@ class SharedMemory:
 
     def set(self, key: str, value: str):
         """Store a value in shared memory."""
-        self.data[key] = self.Entry(value=value, timestamp=datetime.now().isoformat())
+        self.data[key] = self.Entry(
+            value=value, timestamp=datetime.now().strftime('%H:%M:%S')
+        )
 
     def get(self, key: str, default=None):
         """Retrieve a value from shared memory."""
@@ -85,7 +87,7 @@ class SharedMemory:
 
         items = []
         for key, item in self.data.items():
-            items.append(f'  -[{item.timestamp}] {key}: {item.value[:20]}')
+            items.append(f'  -[{item.timestamp}] {key}: {item.value[:40]}')
 
         return f'Shared memory contents:\n' + '\n'.join(items)
 

@@ -4,6 +4,7 @@ from typing import Optional
 
 from agents import Agent, RunConfig
 
+
 from .shared_context import MultiAgentContext
 from .tools import agent_as_tool, create_shared_memory_tools
 from ...tools import (
@@ -12,6 +13,7 @@ from ...tools import (
     sandbox_tools,
     vectordb_tools,
     cve_tools,
+    report_tools,
 )
 from ...prompts.multi_agent import (
     security_specialist_system_msg,
@@ -108,11 +110,18 @@ class MultiAgent(BaseAgent):
             context=self.context,
         )
 
-        report_journalist_agent = Agent(
-            name='Report Journalist',
-            handoff_description='Specialist agent for generating reports and summaries',
-            instructions=report_journalist_system_msg,
-            tools=date_tools + self.context_tools,
+        report_journalist_agent = agent_as_tool(
+            Agent(
+                name='Report Journalist',
+                handoff_description='Specialist agent for generating reports and summaries',
+                instructions=report_journalist_system_msg,
+                tools=date_tools + report_tools + self.context_tools,
+            ),
+            tool_name='report_journalist',
+            tool_description='Specialist for generating comprehensive reports and summaries. Compiles findings from security analysis, code review, and exploitation into structured reports.',
+            run_config=self.subagent_run_config,
+            max_turns=self.settings.max_turns,
+            context=self.context,
         )
 
         # Create planning agent
@@ -125,9 +134,9 @@ class MultiAgent(BaseAgent):
                 security_specialist_tool,
                 code_analyst_tool,
                 red_team_operator_tool,
+                report_journalist_agent,
             ]
             + self.context_tools,
-            handoffs=[report_journalist_agent],
         )
 
         # Set up user message
