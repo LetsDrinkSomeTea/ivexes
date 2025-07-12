@@ -8,8 +8,12 @@ from .base import BaseAgent
 from .htb_challenge import HTBChallengeAgent
 from .mvp import MVPAgent
 from .single_agent import SingleAgent
-from .multi_agent import MultiAgent
-from .tools import agent_as_tool
+from .multi_agent import (
+    MultiAgent,
+    MultiAgentContext,
+    agent_as_tool,
+    create_shared_memory_tools,
+)
 
 __all__ = [
     'BaseAgent',
@@ -17,5 +21,7 @@ __all__ = [
     'MVPAgent',
     'SingleAgent',
     'MultiAgent',
+    'MultiAgentContext',
     'agent_as_tool',
+    'create_shared_memory_tools',
 ]
