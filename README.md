@@ -3,11 +3,16 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 
-**IVEXES** is a comprehensive Python framework for cybersecurity vulnerability analysis and exploitation using multi-agent AI systems. Developed as part of a bachelor thesis, it combines knowledge bases (CWE, CAPEC, MITRE ATT&CK) with dynamic analysis capabilities for automated security assessment.
+**IVEXES** is a comprehensive Python framework for cybersecurity vulnerability
+analysis and exploitation using multi-agent AI systems. Developed as part of a
+bachelor thesis, it combines knowledge bases (CWE, CAPEC, MITRE ATT&CK) with
+dynamic analysis capabilities for automated security assessment.
 
 ## ⚠️ Important Notice
 
-This project is developed as part of a **bachelor thesis** for academic research purposes. It is designed to advance the understanding of automated vulnerability analysis and contribute to defensive cybersecurity research.
+This project is developed as part of a **bachelor thesis** for academic research
+purposes. It is designed to advance the understanding of automated vulnerability
+analysis and contribute to defensive cybersecurity research.
 
 ### Ethical Considerations and Responsible Use
 
@@ -15,7 +20,8 @@ This project is developed as part of a **bachelor thesis** for academic research
 
 - Academic research and education
 - Defensive cybersecurity purposes
-- Vulnerability assessment of systems you own or have explicit permission to test
+- Vulnerability assessment of systems you own or have explicit permission to
+  test
 - Security research within controlled environments
 - Contributing to the development of better security practices
 
@@ -27,7 +33,9 @@ This project is developed as part of a **bachelor thesis** for academic research
 - Attacking systems without explicit written permission
 - Commercial exploitation without proper licensing
 
-Users are responsible for ensuring compliance with all applicable laws, regulations, and ethical guidelines in their jurisdiction. The developers assume no responsibility for misuse of this software.
+Users are responsible for ensuring compliance with all applicable laws,
+regulations, and ethical guidelines in their jurisdiction. The developers assume
+no responsibility for misuse of this software.
 
 ## 🎓 Academic Context
 
@@ -38,15 +46,20 @@ This project represents a bachelor thesis research contribution focusing on:
 - Multi-agent systems for security assessment
 - Academic advancement in defensive cybersecurity
 
-The research aims to improve defensive capabilities and contribute to the academic understanding of automated security analysis.
+The research aims to improve defensive capabilities and contribute to the
+academic understanding of automated security analysis.
 
 ## 🚀 Features
 
-- **Multi-Agent AI System**: Orchestrated AI agents for complex vulnerability analysis
-- **Knowledge Base Integration**: Built-in support for CWE, CAPEC, and MITRE ATT&CK frameworks
-- **Code Analysis**: Advanced code browsing with LSP integration and tree-sitter parsing
+- **Multi-Agent AI System**: Orchestrated AI agents for complex vulnerability
+  analysis
+- **Knowledge Base Integration**: Built-in support for CWE, CAPEC, and MITRE
+  ATT&CK frameworks
+- **Code Analysis**: Advanced code browsing with LSP integration and tree-sitter
+  parsing
 - **Sandbox Environment**: Docker-based isolated execution for safe analysis
-- **Vector Database**: ChromaDB integration for similarity search and knowledge retrieval
+- **Vector Database**: ChromaDB integration for similarity search and knowledge
+  retrieval
 - **CVE Search**: Automated vulnerability lookup and analysis
 - **Interactive CLI**: Comprehensive command-line interface for all modules
 
@@ -180,8 +193,9 @@ python examples/manual.py --help
 
 ### Configuration Options
 
-It is possible to define global standards as environment variables or to pass them into the Agent.
-Passed settings gets preferred over the environment variables.
+It is possible to define global standards as environment variables or to pass
+them into the Agent. Passed settings gets preferred over the environment
+variables.
 
 #### Core Settings
 
@@ -192,7 +206,8 @@ Passed settings gets preferred over the environment variables.
 
 #### Embedding & Vector Database
 
-- `EMBEDDING_PROVIDER`: `builtin`, `local` (fetched from SentenceTransformers), or `openai` (default: builtin)
+- `EMBEDDING_PROVIDER`: `builtin`, `local` (fetched from SentenceTransformers),
+  or `openai` (default: builtin)
 - `CHROMA_PATH`: ChromaDB storage location
 
 #### Analysis Configuration
@@ -203,7 +218,8 @@ Passed settings gets preferred over the environment variables.
 
 #### Sandbox Configuration
 
-- `SETUP_ARCHIVE`: tgz-archive with necessary data to setup sandbox, gets unpacked at /tmp, afterwards /tmp/setup.sh is run.
+- `SETUP_ARCHIVE`: tgz-archive with necessary data to setup sandbox, gets
+  unpacked at /tmp, afterwards /tmp/setup.sh is run.
 - `SANDBOX_IMAGE`: Which docker image to use as the sandbox base.
 
 ## 🏗️ Architecture
@@ -271,20 +287,26 @@ The `examples/` directory contains various usage patterns:
 
 ## 📄 License
 
-This project is licensed under the GPL-3.0-or-later License - see the LICENSE file for details.
+This project is licensed under the GPL-3.0-or-later License - see the LICENSE
+file for details.
 
 ## 🔗 Repository
 
-- **Source Code**: [https://github.com/LetsDrinkSomeTea/ivexes](https://github.com/LetsDrinkSomeTea/ivexes)
+- **Source Code**:
+  [https://github.com/LetsDrinkSomeTea/ivexes](https://github.com/LetsDrinkSomeTea/ivexes)
 - **Issues**: Report bugs and request features via GitHub Issues
 
 ## ⚖️ Legal Disclaimer
 
-This software is provided for educational and research purposes only. Users must ensure compliance with all applicable laws and regulations. Unauthorized use for malicious purposes is strictly prohibited. The developers are not responsible for any misuse of this software.
+This software is provided for educational and research purposes only. Users must
+ensure compliance with all applicable laws and regulations. Unauthorized use for
+malicious purposes is strictly prohibited. The developers are not responsible
+for any misuse of this software.
 
 ## 🤝 Contributing
 
-As this is a bachelor thesis project, contributions should align with academic research goals. Please ensure any contributions:
+As this is a bachelor thesis project, contributions should align with academic
+research goals. Please ensure any contributions:
 
 - Follow ethical guidelines
 - Support defensive cybersecurity research
@@ -293,4 +315,5 @@ As this is a bachelor thesis project, contributions should align with academic r
 
 ---
 
-**IVEXES** - Advancing cybersecurity through responsible AI-driven vulnerability analysis.
+**IVEXES** - Advancing cybersecurity through responsible AI-driven vulnerability
+analysis.
