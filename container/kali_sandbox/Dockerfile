@@ -1,9 +1,9 @@
-FROM kalilinux/kali-rolling
+FROM kalilinux/kali-rolling:latest
 LABEL authors="julian"
 
-RUN apt update && apt -y install kali-linux-headless
+RUN apt-get update && apt-get -y install kali-linux-headless
 
-RUN apt update && apt install -y strace
+RUN apt-get update && apt-get install -y strace
 
 RUN echo 'root:passwd' | chpasswd
 RUN useradd -m -s /bin/bash user && echo 'user:passwd' | chpasswd

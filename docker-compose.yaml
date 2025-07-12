@@ -4,13 +4,51 @@ services:
     build: ./container/nvim_lsp
     image: nvim-lsp:latest
     pull_policy: never
-    ports:
-      - "8080:8080"
+    profiles:
+      - images
 
   kali:
-      build: ./container/kali_sandbox
-      image: kali-ssh:latest
-      pull_policy: never
-      ports:
-        - "2222:22"
+    build: ./container/kali_sandbox
+    image: kali-ssh:latest
+    pull_policy: never
+    profiles:
+      - images
 
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    restart: unless-stopped
+    volumes:
+      - ./container/litellm/config/config.yaml:/app/config.yaml
+    command:
+      - "--config=/app/config.yaml"
+    ports:
+      - "127.0.0.1:4000:4000"
+    environment:
+      DATABASE_URL: "postgresql://llmproxy:litellm_passworddb:5432/litellm"
+      LITELLM_MASTER_KEY: "sk-1234"
+      LITELLM_SALT_KEY: "random-string"
+      STORE_MODEL_IN_DB: 'True'
+    depends_on:
+      - db
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 http://localhost:4000/health/liveliness || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    container_name: litellm_db
+    environment:
+      POSTGRES_DB: litellm
+      POSTGRES_USER: llmproxy
+      POSTGRES_PASSWORD: litellm_password
+    volumes:
+      - ./container/litellm/data/postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d litellm -U llmproxy"]
+      interval: 1s
+      timeout: 5s
+      retries: 10

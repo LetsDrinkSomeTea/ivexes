@@ -12,6 +12,7 @@ This project is developed as part of a **bachelor thesis** for academic research
 ### Ethical Considerations and Responsible Use
 
 **IVEXES is intended EXCLUSIVELY for:**
+
 - Academic research and education
 - Defensive cybersecurity purposes
 - Vulnerability assessment of systems you own or have explicit permission to test
@@ -19,6 +20,7 @@ This project is developed as part of a **bachelor thesis** for academic research
 - Contributing to the development of better security practices
 
 **STRICTLY PROHIBITED uses include:**
+
 - Unauthorized access to systems or networks
 - Malicious exploitation of vulnerabilities
 - Any illegal cybersecurity activities
@@ -30,6 +32,7 @@ Users are responsible for ensuring compliance with all applicable laws, regulati
 ## 🎓 Academic Context
 
 This project represents a bachelor thesis research contribution focusing on:
+
 - Automated vulnerability analysis using AI agents
 - Integration of cybersecurity knowledge bases
 - Multi-agent systems for security assessment
@@ -59,24 +62,34 @@ The research aims to improve defensive capabilities and contribute to the academ
 ### Quick Setup
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/LetsDrinkSomeTea/ivexes.git
    cd ivexes
    ```
 
 2. **Install in development mode:**
+
    ```bash
    pip install -e .
    ```
 
 3. **For development with additional tools:**
+
    ```bash
    pip install -e ".[dev]"
    ```
 
 4. **Build container images:**
+
    ```bash
-   docker compose build
+   docker compose --profile images build
+   ```
+
+5. Start LiteLLM Proxy
+
+   ```bash
+   docker compose up
    ```
 
 ### Environment Configuration
@@ -125,6 +138,7 @@ SETUP_ARCHIVE=/path/to/setup.tar.gz
 ### Basic Agent Usage
 
 #### Single Agent Analysis
+
 ```python
 from ivexes.agents import SingleAgent
 from ivexes.config import PartialSettings
@@ -147,6 +161,7 @@ await agent.run_streamed():
 ```
 
 #### Multi-Agent Analysis
+
 ```python
 from ivexes.agents import MultiAgent
 
@@ -169,21 +184,25 @@ It is possible to define global standards as environment variables or to pass th
 Passed settings gets preferred over the environment variables.
 
 #### Core Settings
+
 - `MODEL`: Primary LLM model (default: `openai/gpt-4o-mini`)
 - `REASONING_MODEL`: Model for planning component (default: `openai/o4-mini`)
 - `MODEL_TEMPERATURE`: Model temperature 0.0-2.0 (default: 0.3)
 - `MAX_TURNS`: Maximum agent conversation turns (default: 10)
 
 #### Embedding & Vector Database
+
 - `EMBEDDING_PROVIDER`: `builtin`, `local` (fetched from SentenceTransformers), or `openai` (default: builtin)
 - `CHROMA_PATH`: ChromaDB storage location
 
 #### Analysis Configuration
+
 - `CODEBASE_PATH`: Root directory containing vulnerable/patched code
 - `VULNERABLE_CODEBASE_FOLDER`: Subdirectory with vulnerable version
 - `PATCHED_CODEBASE_FOLDER`: Subdirectory with patched version
 
 #### Sandbox Configuration
+
 - `SETUP_ARCHIVE`: tgz-archive with necessary data to setup sandbox, gets unpacked at /tmp, afterwards /tmp/setup.sh is run.
 - `SANDBOX_IMAGE`: Which docker image to use as the sandbox base.
 
@@ -192,6 +211,7 @@ Passed settings gets preferred over the environment variables.
 ### Core Components
 
 #### Agents (`src/ivexes/agents/`)
+
 - **BaseAgent**: Foundation class with settings management
 - **SingleAgent**: Focused vulnerability analysis
 - **MultiAgent**: Orchestrated multi-agent analysis
@@ -199,16 +219,19 @@ Passed settings gets preferred over the environment variables.
 - **HTBChallengeAgent**: Specialized for CTF challenges
 
 #### Code Browser (`src/ivexes/code_browser/`)
+
 - LSP integration for advanced code analysis
 - Tree-sitter parsing for code structure
 - Container-based isolated analysis environment
 
 #### Sandbox System (`src/ivexes/sandbox/`)
+
 - Docker-based execution environments
 - Kali Linux container for security testing
 - Secure isolation with automatic setup
 
 #### Vector Database (`src/ivexes/vector_db/`)
+
 - ChromaDB for knowledge storage
 - MITRE ATT&CK framework integration
 - CWE and vulnerability pattern matching
@@ -216,6 +239,7 @@ Passed settings gets preferred over the environment variables.
 ## 🧪 Development
 
 ### Testing
+
 ```bash
 # Run all tests
 python -m unittest discover tests/
@@ -224,6 +248,7 @@ python -m unittest discover tests/
 ```
 
 ### Code Quality
+
 ```bash
 # Format code
 ruff format
@@ -237,6 +262,7 @@ ruff check
 ### Examples
 
 The `examples/` directory contains various usage patterns:
+
 - `10_agents_sandbox_*`: Sandbox-based analysis examples
 - `20_mvp_screen`: MVP agent demonstration
 - `30_chroma_db_example`: Vector database usage
@@ -259,6 +285,7 @@ This software is provided for educational and research purposes only. Users must
 ## 🤝 Contributing
 
 As this is a bachelor thesis project, contributions should align with academic research goals. Please ensure any contributions:
+
 - Follow ethical guidelines
 - Support defensive cybersecurity research
 - Include appropriate documentation
