@@ -40,6 +40,7 @@ class MultiAgent(BaseAgent):
         bin_path: str,
         settings: Optional[PartialSettings] = None,
         subagent_run_config: Optional[RunConfig] = None,
+        shared_context: bool = True,
     ):
         """Initialize Multi Agent.
 
@@ -47,11 +48,16 @@ class MultiAgent(BaseAgent):
             bin_path: Path to the binary to analyze inside the sandbox
             settings: Optional partial settings to configure the agent
             subagent_run_config: Optional run configuration for subagents
+            shared_context: Whether to use a shared context for agents
         """
         self.bin_path = bin_path
         self.subagent_run_config = subagent_run_config
-        self.context = MultiAgentContext()
-        self.context_tools = create_shared_memory_tools(self.context)
+        self.context = None
+        self.context_tools = []
+
+        if shared_context:
+            self.context = MultiAgentContext()
+            self.context_tools = create_shared_memory_tools(self.context)
         super().__init__(settings or {})
 
     def _setup_agent(self):
@@ -92,7 +98,6 @@ class MultiAgent(BaseAgent):
             Agent(
                 name='Red Team Operator',
                 handoff_description='Specialist agent for generating Proof-of-Concepts (PoC) and Exploits',
-                model=self.settings.model,
                 instructions=red_team_operator_system_msg,
                 tools=sandbox_tools + self.context_tools,
             ),
@@ -106,7 +111,6 @@ class MultiAgent(BaseAgent):
         report_journalist_agent = Agent(
             name='Report Journalist',
             handoff_description='Specialist agent for generating reports and summaries',
-            model=self.settings.model,
             instructions=report_journalist_system_msg,
             tools=date_tools + self.context_tools,
         )

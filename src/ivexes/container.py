@@ -46,3 +46,17 @@ def remove_if_exists(client: DockerClient, container_name: str) -> bool:
     container.remove(force=True)
     logger.info(f'Container {container.name} removed')
     return True
+
+
+def santize_name(name: str) -> str:
+    """Sanitize a container name by replacing invalid characters.
+
+    Args:
+        name (str): The original name to sanitize.
+
+    Returns:
+        str: Sanitized name with invalid characters replaced by hyphens.
+    """
+    valid_chars = 'abcdefghijklmnopqrstuvwxyz123456789-'
+    sanitized = ''.join(c if c in valid_chars else '-' for c in name.lower())
+    return sanitized.strip('-')  # Remove leading/trailing hyphens

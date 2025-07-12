@@ -5,6 +5,7 @@ agent types including HTB challenges, MVP, single agent, and multi-agent workflo
 """
 
 from .base import BaseAgent
+from .default_agent import DefaultAgent as DefaultAgent
 from .htb_challenge import HTBChallengeAgent
 from .mvp import MVPAgent
 from .single_agent import SingleAgent
@@ -17,6 +18,7 @@ from .multi_agent import (
 
 __all__ = [
     'BaseAgent',
+    'DefaultAgent',
     'HTBChallengeAgent',
     'MVPAgent',
     'SingleAgent',

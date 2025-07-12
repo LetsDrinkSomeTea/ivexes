@@ -13,7 +13,7 @@ from docker.models.containers import Container
 
 import logging
 from ..config import get_settings
-from ..container import find_by_name, remove_if_exists
+from ..container import find_by_name, remove_if_exists, santize_name
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ def setup_container(code_base: str, port: int = 8080, renew: bool = False) -> Co
         The Docker container object if successful, None otherwise
     """
     client = docker.from_env()
-    container_name = f'ivexes-nvim-lsp-{get_settings().trace_name}'
+    container_name = santize_name(f'ivexes-nvim-lsp-{get_settings().trace_name}')
 
     if renew:
         remove_if_exists(client, container_name)

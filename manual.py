@@ -7,10 +7,11 @@ import logging
 from dotenv import load_dotenv
 
 from ivexes.config import get_settings, setup_default_logging
+from ivexes.config.settings import PartialSettings
 from ivexes.vector_db import CweCapecAttackDatabase
 from ivexes.cve_search.tools import _search_cve_by_id
 
-load_dotenv(dotenv_path='.secrets.env', override=True)
+load_dotenv(verbose=True, override=True)
 setup_default_logging()
 
 logger = logging.getLogger(__name__)
@@ -379,6 +380,29 @@ def create_file(path: str, content: str) -> None:
         return
     click.echo(sb.create_file('test', 'multi\nlinie\ntext ```’’’\\\\´´'))
     click.echo(sb.create_file(path, content=content))
+
+
+@cli.group
+def llm() -> None:
+    """Commands for the LLM module.
+
+    This group contains commands for interacting with large language models.
+    """
+    pass
+
+
+@llm.command('ask')
+@click.argument('input')
+def cmd_llm_ask(input: str) -> None:
+    """Query a LLM using default config.
+
+    Args:
+        input: The input text to query the LLM with
+    """
+    from ivexes.agents import DefaultAgent
+
+    agent = DefaultAgent()
+    click.echo(agent.run(user_msg=input).final_output)
 
 
 if __name__ == '__main__':

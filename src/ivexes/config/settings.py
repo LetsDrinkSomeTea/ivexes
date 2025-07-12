@@ -321,7 +321,6 @@ def get_run_config() -> RunConfig:
             )
 
     run_config: RunConfig = RunConfig(
-        model=settings.model,
         model_provider=CustomModelProvider(),
         model_settings=ModelSettings(
             temperature=settings.model_temperature,

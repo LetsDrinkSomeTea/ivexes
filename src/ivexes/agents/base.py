@@ -1,12 +1,18 @@
 """Base Agent module providing common functionality for all agents."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, Callable, Any, Dict
-from contextlib import contextmanager
+from typing import Optional, Any, Dict
 
-from agents import Agent, MaxTurnsExceeded, Runner, TResponseInputItem, trace
-from openai.types.responses import EasyInputMessage, EasyInputMessageParam
-from openai.types.responses.response_input_param import Message
+from agents import (
+    Agent,
+    MaxTurnsExceeded,
+    RunResult,
+    RunResultStreaming,
+    Runner,
+    TResponseInputItem,
+    trace,
+)
+from openai.types.responses import EasyInputMessageParam
 
 from ivexes import print_result, print_banner, stream_result
 
@@ -26,12 +32,6 @@ class BaseAgent(ABC):
     for all agents in the system. It handles settings management, agent
     initialization, and provides different execution modes.
     """
-
-    # Error message constants
-    _AGENT_NOT_SET_ERROR = (
-        'Agent is not set up. Make sure to assign self.agent in _setup_agent method.'
-    )
-    _USER_MSG_NOT_SET_ERROR = 'User message is not set. Make sure to assign self.user_msg in _setup_agent method'
 
     def __init__(self, settings: PartialSettings):
         """Initialize the base agent with settings.
@@ -62,16 +62,20 @@ class BaseAgent(ABC):
         """
         raise NotImplementedError('Subclasses must implement this method.')
 
-    def _check_settings(self):
+    def _check_settings(self, user_msg: Optional[str]):
         """Validate that agent and user message are properly configured.
 
         Raises:
             ValueError: If agent or user_msg are not set.
         """
         if not self.agent:
-            raise ValueError(self._AGENT_NOT_SET_ERROR)
-        if not self.user_msg:
-            raise ValueError(self._USER_MSG_NOT_SET_ERROR)
+            raise ValueError(
+                'Agent is not set up. Make sure to assign self.agent in _setup_agent method.'
+            )
+        if not self.user_msg and not user_msg:
+            raise ValueError(
+                'User message is not set. Make sure to assign self.user_msg in _setup_agent method or provide one in the run command'
+            )
 
     def _get_runner_config(self) -> Dict[str, Any]:
         """Get common Runner configuration parameters.
@@ -85,52 +89,70 @@ class BaseAgent(ABC):
             'max_turns': self.settings.max_turns,
         }
 
-    @contextmanager
-    def _prepare_execution(self):
-        """Prepare execution context with validation, banner, and tracing.
-
-        Yields:
-            None: Context is set up for execution.
-        """
-        self._check_settings()
-        print_banner()
-        with trace(self.settings.trace_name):
-            yield
-
-    def _execute_with_context(
-        self, runner_func: Callable, result_handler: Callable, input_data: Any = None
-    ):
-        """Execute runner function with common context setup.
+    def run_p(self, user_msg: Optional[str] = None) -> None:
+        """Run the agent synchronously and print the result.
 
         Args:
-            runner_func: Runner function to execute (run_sync, run_streamed, etc.)
-            result_handler: Function to handle the result (print_result, stream_result)
-            input_data: Input data for the runner, defaults to self.user_msg
+            user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
         """
-        with self._prepare_execution():
+        print_result(self.run(user_msg))
+
+    def run(self, user_msg: Optional[str] = None) -> RunResult:
+        """Run the agent synchronously.
+
+        Args:
+            user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
+
+        Returns:
+            RunResult: The result of the agent execution.
+        """
+        self._check_settings(user_msg)
+        print_banner()
+        with trace(self.settings.trace_name):
             runner_config = self._get_runner_config()
-            runner_config['input'] = input_data or self.user_msg
+            runner_config['input'] = user_msg if user_msg else self.user_msg
+            result = Runner.run_sync(**runner_config)
+            return result
 
-            result = runner_func(**runner_config)
-            return result_handler(result) if result_handler else result
+    async def run_streamed_p(self, user_msg: Optional[str] = None) -> None:
+        """Run the agent with streaming output.
 
-    def run(self) -> None:
-        """Run the agent synchronously and print the result."""
-        self._execute_with_context(Runner.run_sync, print_result)
+        Args:
+            user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
+        """
+        await stream_result(self.run_streamed(user_msg))
 
-    async def run_streamed(self) -> None:
-        """Run the agent with streaming output."""
-        await self._execute_with_context(Runner.run_streamed, stream_result)
+    def run_streamed(self, user_msg: Optional[str] = None) -> RunResultStreaming:
+        """Run the agent with streaming results.
 
-    async def run_interactive(self) -> None:
+        Args:
+            user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
+
+        Returns:
+            RunResultStreaming: The streaming result of the agent execution.
+        """
+        self._check_settings(user_msg)
+        print_banner()
+        with trace(self.settings.trace_name):
+            runner_config = self._get_runner_config()
+            runner_config['input'] = user_msg if user_msg else self.user_msg
+            result = Runner.run_streamed(**runner_config)
+            return result
+
+    async def run_interactive(self, user_msg: Optional[str] = None) -> None:
         """Run the agent in interactive mode with continuous user input.
 
         Allows users to have a conversation with the agent. The session continues
         until the user types 'exit', 'quit', or 'q'.
+
+        Args:
+            user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
         """
-        with self._prepare_execution():
+        self._check_settings(user_msg)
+        print_banner()
+        with trace(self.settings.trace_name):
             input_items: list[TResponseInputItem] = []
-            user_msg = self.user_msg
+            user_msg = user_msg if user_msg else self.user_msg
             runner_config = self._get_runner_config()
 
             while user_msg not in ['exit', 'quit', 'q']:

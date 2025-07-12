@@ -11,11 +11,11 @@ setup_default_logging()
 
 settings = PartialSettings(
     log_level='INFO',
-    trace_name='screen-ma',
+    trace_name='Multi-Agent Screen',
     model='openai/gpt-4.1-mini',
     reasoning_model='openai/o4-mini',
     model_temperature=0.1,
-    max_turns=5,
+    max_turns=25,
     embedding_provider='local',
     embedding_model='intfloat/multilingual-e5-large-instruct',
     setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
