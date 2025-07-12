@@ -7,6 +7,8 @@
 .vscode/
 .claude
 
+CLAUDE.md
+
 # chromadb
 chroma/
 chroma-*/
