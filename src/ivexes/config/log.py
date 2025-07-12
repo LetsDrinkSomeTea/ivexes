@@ -5,9 +5,12 @@ are silenced at WARNING level while ivexes modules can use custom log levels.
 """
 
 import logging
+from typing import Optional
+
+from ivexes.config import get_settings
 
 
-def setup_default_logging(ivexes_level: str = 'INFO'):
+def setup_default_logging(ivexes_level: Optional[str] = None):
     """Setup default logging configuration.
 
     - Third-party libraries: WARNING
@@ -24,6 +27,8 @@ def setup_default_logging(ivexes_level: str = 'INFO'):
         force=True,
     )
 
+    if ivexes_level is None:
+        ivexes_level = get_settings().log_level
     # Set ivexes package and ALL submodules to user level
     logging.getLogger('ivexes').setLevel(ivexes_level)
 

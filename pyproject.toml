@@ -19,6 +19,7 @@ dependencies = [
   "click",
   "tiktoken",
   "mitreattack-python",
+  "nvdlib",
 ]
 
 [project.optional-dependencies]
@@ -31,10 +32,10 @@ dev = [
 Repository = "https://github.com/LetsDrinkSomeTea/ivexes"
 
 [tool.ruff]
-extend-exclude = [".venv", "examples"]
+extend-exclude = [".venv"]
 
 [tool.ruff.format]
-skip-magic-trailing-comma = true
+skip-magic-trailing-comma = false
 quote-style = "single"
 docstring-code-format = true
 

@@ -156,7 +156,9 @@ def codebrowser_get_diff(
     logger.info(f'running codebrowser_get_diff({options})')
     result = get_code_browser().get_diff(options, file1, file2)
     if result:
-        return f'Diff of the codebase:\n<diff>{result}</diff>'
+        return (
+            f'Diff of {file1} and {file2} codebase:\n<diff>{"\n\n".join(result)}</diff>'
+        )
     else:
         return 'No diff found in the codebase.'
 

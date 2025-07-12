@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
+"""Manual command line interface for ivexes modules."""
+
 import click
 import os
 import logging
+from dotenv import load_dotenv
 
 from ivexes.config import get_settings, setup_default_logging
 from ivexes.vector_db import CweCapecAttackDatabase
+from ivexes.cve_search.tools import _search_cve_by_id
 
+load_dotenv(dotenv_path='.secrets.env', override=True)
 setup_default_logging()
 
 logger = logging.getLogger(__name__)
+
 
 @click.group()
 def cli() -> None:
@@ -22,9 +28,7 @@ def cli() -> None:
 @cli.command()
 @click.argument('path', type=click.Path(exists=True))
 def tokenize(path: str) -> None:
-    """Tokenize a file and print the number of tokens, characters, and words.
-
-    """
+    """Tokenize a file and print the number of tokens, characters, and words."""
     import ivexes.token as count
 
     res = (0, 0, 0)  # Default result in case of error
@@ -36,6 +40,23 @@ def tokenize(path: str) -> None:
     click.echo(
         f'===== Result of counting =====\nTokens: {res[0]}\nCharacters: {res[1]}\nWords: {res[2]}'
     )
+
+
+# CVE module commands
+@cli.group()
+def cve() -> None:
+    """Commands for the CVE module.
+
+    This group contains commands for fetching CVEs.
+    """
+    pass
+
+
+@cve.command('by-id')
+@click.argument('id')
+def cmd_cve_by_id(id: str) -> None:
+    """Search for a CVE by its ID."""
+    click.echo(_search_cve_by_id(id))
 
 
 # Vector DB module commands
@@ -61,8 +82,7 @@ def cmd_clear() -> None:
 
 @vector_db.command('size')
 def cmd_size() -> None:
-    """Get the size of the vector database.
-    """
+    """Get the size of the vector database."""
     db = CweCapecAttackDatabase()
     click.echo(f' Size of DB: {db.collection.count()}')
 
@@ -70,6 +90,7 @@ def cmd_size() -> None:
 @vector_db.command('init')
 @click.argument('type_of_data', type=click.Choice(['cwe', 'capec', 'attack', 'all']))
 def init_verctor_db(type_of_data: str):
+    """Initialize vector database with specified data type."""
     db = CweCapecAttackDatabase()
     if type_of_data == 'cwe':
         db.initialize_cwe()
@@ -153,7 +174,9 @@ def cmd_get_definition(symbol: str) -> None:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find the definition for
     """
-    from ivexes.code_browser import code_browser as cb
+    from ivexes.code_browser import get_code_browser
+
+    cb = get_code_browser()
 
     result = cb.get_definition(symbol)
     if result:
@@ -174,7 +197,9 @@ def cmd_get_references(symbol: str) -> None:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find references for
     """
-    from ivexes.code_browser import code_browser as cb
+    from ivexes.code_browser import get_code_browser
+
+    cb = get_code_browser()
 
     results = cb.get_references(symbol)
     if results:
@@ -196,7 +221,9 @@ def cmd_get_diff(file1: str, file2: str) -> None:
         file1: Path to the first file
         file2: Path to the second file
     """
-    from ivexes.code_browser import code_browser as cb
+    from ivexes.code_browser import get_code_browser
+
+    cb = get_code_browser()
 
     results = cb.get_diff(file1=file1, file2=file2)
     if results:
@@ -216,7 +243,9 @@ def cmd_get_symbols(file: str) -> None:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to analyze
     """
-    from ivexes.code_browser import code_browser as cb
+    from ivexes.code_browser import get_code_browser
+
+    cb = get_code_browser()
 
     symbols = cb.get_symbols(file)
     for symbol in symbols:
@@ -232,7 +261,9 @@ def cmd_get_file(file: str) -> None:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to retrieve
     """
-    from ivexes.code_browser import code_browser as cb
+    from ivexes.code_browser import get_code_browser
+
+    cb = get_code_browser()
 
     content = cb.get_file_content(file)
     click.echo(content)
@@ -247,7 +278,9 @@ def cmd_get_tree(count: int) -> None:
         path_to_codebase: Path to the codebase directory
         count: Maximum depth level for the directory tree
     """
-    from ivexes.code_browser import code_browser as cb
+    from ivexes.code_browser import get_code_browser
+
+    cb = get_code_browser()
 
     content = cb.get_codebase_structure(n=count)
     click.echo(content)
@@ -275,11 +308,16 @@ def sandbox() -> None:
 
 @sandbox.command('start')
 def cmd_start() -> None:
-    """Starts interactive shell in a sandbox environment.
-    """
+    """Starts interactive shell in a sandbox environment."""
     from ivexes.sandbox.sandbox import Sandbox
 
-    sb = Sandbox(setup_archive=get_settings().setup_archive)
+    if not (setup_archive := get_settings().setup_archive):
+        click.echo(
+            'No setup archive configured. Please set it in the settings or via the env vars'
+        )
+        return
+
+    sb = Sandbox(setup_archive=setup_archive)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return
@@ -302,7 +340,13 @@ def cmd_run(command: str) -> None:
     """
     from ivexes.sandbox.sandbox import Sandbox
 
-    sb = Sandbox(setup_archive=get_settings().setup_archive)
+    if not (setup_archive := get_settings().setup_archive):
+        click.echo(
+            'No setup archive configured. Please set it in the settings or via the env vars'
+        )
+        return
+
+    sb = Sandbox(setup_archive=setup_archive)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return
@@ -314,16 +358,22 @@ def cmd_run(command: str) -> None:
 @click.argument('path')
 @click.argument('content')
 def create_file(path: str, content: str) -> None:
-    """Run a command in a sandbox environment.
+    """Create a file in the sandbox environment.
 
     Args:
-        path_to_executable_archive: Path to the executable archive
-        command: The command to run in the sandbox
+        path: Path where the file should be created
+        content: Content to write to the file
 
     """
     from ivexes.sandbox.sandbox import Sandbox
 
-    sb = Sandbox(setup_archive=get_settings().setup_archive)
+    if not (setup_archive := get_settings().setup_archive):
+        click.echo(
+            'No setup archive configured. Please set it in the settings or via the env vars'
+        )
+        return
+
+    sb = Sandbox(setup_archive=setup_archive)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return

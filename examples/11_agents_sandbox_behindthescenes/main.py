@@ -1,42 +1,29 @@
+"""HTB Challenge Agent example for behindthescenes."""
+
 import asyncio
-from typing import cast
-from agents import Agent, MaxTurnsExceeded, Runner, TResponseInputItem, Tool, trace
-import dotenv
+from dotenv import load_dotenv
 
-dotenv.load_dotenv('thesis/11_agents_sandbox_behindthescenes.env', override=True)
+from ivexes.agents import HTBChallengeAgent
+from ivexes.config import PartialSettings, setup_default_logging
 
-settings = get_settings()
-from ivexes.printer.printer import stream_result
-from ivexes.sandbox.tools import sandbox_tools
-from ivexes.prompts.htb_reversing import system_msg, user_msg
-from ivexes.config.settings import get_settings, get_run_config
+load_dotenv(verbose=True, dotenv_path='../.secrets.env', override=True)
+setup_default_logging()
 
-user_msg = user_msg.format(
-    program='behindthescenes',
-    challenge='After struggling to secure our secret strings for a long time, we finally figured out the solution to our problem: Make decompilation harder. It should now be impossible to figure out how our programs work!',
+settings = PartialSettings(
+    log_level='INFO',
+    trace_name='behindthescenes',
+    model='openai/gpt-4.1-mini',
+    model_temperature=0.1,
+    max_turns=25,
+    setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/behind_the_scenes/upload.tgz',
 )
 
-tools = cast(list[Tool], sandbox_tools)
-agent = Agent(name='Exploiter', instructions=system_msg, tools=tools)
-
-
-async def main(user_msg, agent):
-    with trace(f'IVExES (Single Agent Sandbox ({settings.trace_name}))'):
-        input_items: list[TResponseInputItem] = []
-        while user_msg not in ['exit', 'quit', 'q']:
-            input_items.append({'content': user_msg, 'role': 'user'})
-            try:
-                result = Runner.run_streamed(
-                    agent,
-                    input_items,
-                    run_config=get_run_config(),
-                    max_turns=settings.max_turns,
-                )
-                input_items = await stream_result(result)
-            except MaxTurnsExceeded as e:
-                print(f'MaxTurnsExceeded: {e}')
-            user_msg = input('User: ')
+agent = HTBChallengeAgent(
+    program='behindthescenes',
+    challenge='After struggling to secure our secret strings for a long time, we finally figured out the solution to our problem: Make decompilation harder. It should now be impossible to figure out how our programs work!',
+    settings=settings,
+)
 
 
 if __name__ == '__main__':
-    asyncio.run(main(user_msg, agent))
+    asyncio.run(agent.run_interactive())

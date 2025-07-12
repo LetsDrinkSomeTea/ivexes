@@ -1,45 +1,31 @@
+"""MVP Agent example for screen vulnerability analysis."""
+
 import asyncio
-from typing import cast
-from agents import Agent, Runner, TResponseInputItem, Tool, trace, MaxTurnsExceeded
+from dotenv import load_dotenv
 
-import dotenv
+from ivexes.agents import MVPAgent
+from ivexes.config import PartialSettings, setup_default_logging
 
-dotenv.load_dotenv('thesis/20_mvp_screen.env', override=True)
+load_dotenv('../.secrets.env', override=True)
+setup_default_logging()
 
-settings = get_settings()
-from ivexes.printer.printer import stream_result
-from ivexes.prompts.mvp import system_msg, user_msg
-from ivexes.config.settings import get_settings, get_run_config
-from ivexes.sandbox.tools import sandbox_tools
-
-user_msg = user_msg.format(
-    vulnerable_version=settings.vulnerable_folder,
-    patched_version=settings.patched_folder,
+settings = PartialSettings(
+    log_level='INFO',
+    trace_name='screen',
+    model='anthropic/claude-sonnet-4-20250514',
+    model_temperature=0.1,
+    max_turns=50,
+    embedding_model='text-embedding-3-large',
+    embedding_provider='openai',
+    setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen_mvp/upload.tgz',
 )
 
-tools: list[Tool] = cast(list[Tool], sandbox_tools)
-agent = Agent(
-    name='Exploiter', instructions=system_msg, model=settings.model, tools=tools
+agent = MVPAgent(
+    vulnerable_version='vulnerable-screen-4.5.0',
+    patched_version='patched-screen-4.5.1',
+    settings=settings,
 )
-
-
-async def main(user_msg, agent):
-    with trace(f'IVExES (Single Agent Sandbox ({settings.trace_name}))'):
-        input_items: list[TResponseInputItem] = []
-        while user_msg not in ['exit', 'quit', 'q']:
-            input_items.append({'content': user_msg, 'role': 'user'})
-            try:
-                result = Runner.run_streamed(
-                    agent,
-                    input_items,
-                    run_config=get_run_config(),
-                    max_turns=settings.max_turns,
-                )
-                input_items = await stream_result(result)
-            except MaxTurnsExceeded as e:
-                print(f'MaxTurnsExceeded: {e}')
-            user_msg = input('User: ')
 
 
 if __name__ == '__main__':
-    asyncio.run(main(user_msg, agent))
+    asyncio.run(agent.run_interactive())

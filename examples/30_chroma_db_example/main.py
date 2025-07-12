@@ -1,3 +1,5 @@
+"""ChromaDB vector database example."""
+
 from typing import cast
 from chromadb import EmbeddingFunction, Client
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
