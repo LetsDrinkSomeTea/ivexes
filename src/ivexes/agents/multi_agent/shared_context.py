@@ -44,6 +44,9 @@ class AgentMemory:
 class SharedMemory:
     """Simple key-value based shared object for cross-agent information."""
 
+    def _time(self):
+        return datetime.now().strftime('%H:%M:%S')
+
     @dataclass
     class Entry:
         """Entry in shared memory."""
@@ -67,9 +70,7 @@ class SharedMemory:
 
     def set(self, key: str, value: str):
         """Store a value in shared memory."""
-        self.data[key] = self.Entry(
-            value=value, timestamp=datetime.now().strftime('%H:%M:%S')
-        )
+        self.data[key] = self.Entry(value=value, timestamp=self._time())
 
     def get(self, key: str, default=None):
         """Retrieve a value from shared memory."""
@@ -87,9 +88,23 @@ class SharedMemory:
 
         items = []
         for key, item in self.data.items():
-            items.append(f'  -[{item.timestamp}] {key}: {item.value[:40]}')
+            truncated_value = (
+                f'{item.value[:80]}... (truncated)'
+                if len(item.value) > 80
+                else item.value
+            )
+            items.append(f'  -[{item.timestamp}] {key}:\n{truncated_value}\n{"-" * 80}')
 
-        return f'Shared memory contents:\n' + '\n'.join(items)
+        joined_items = '\n'.join(items)
+        return f'Shared memory contents (current time: {self._time()}):\n{joined_items}'
+
+    def __str__(self) -> str:
+        """String representation of the shared memory.
+
+        Returns:
+            Formatted string with all entries in shared memory.
+        """
+        return '\n'.join(f'{key}\n{str(entry)}\n\n' for key, entry in self.data.items())
 
 
 @dataclass
@@ -108,3 +123,21 @@ class MultiAgentContext:
     def get_shared_memory(self) -> SharedMemory:
         """Get shared memory object."""
         return self.shared_memory
+
+    def __str__(self) -> str:
+        """String representation of the multi-agent context.
+
+        Returns:
+            Formatted string with agent memories and shared memory summary.
+        """
+        agent_summaries = [
+            f'Agent: {name}, Messages: {len(memory.messages)}'
+            for name, memory in self.agent_memories.items()
+        ]
+
+        return (
+            'Multi-Agent Context:\n'
+            + '\n'.join(agent_summaries)
+            + '\n\nShared Memory:\n'
+            + str(self.shared_memory)
+        )

@@ -1,8 +1,10 @@
 """Multi-Agent module for coordinating specialized security analysis agents."""
 
-from typing import Optional
+from typing import Optional, override
 
 from agents import Agent, RunConfig
+
+from ivexes.printer.printer import print_and_write_to_file
 
 
 from .shared_context import MultiAgentContext
@@ -146,3 +148,18 @@ class MultiAgent(BaseAgent):
             diff='\n'.join(code_browser.get_diff()),
             bin_path=self.bin_path,
         )
+
+    @override
+    def run_p(self, user_msg: Optional[str] = None) -> None:
+        super().run_p(user_msg)
+        print_and_write_to_file(f'\n\n{"Shared Context":=^}{str(self.context)}')
+
+    @override
+    async def run_streamed_p(self, user_msg: Optional[str] = None) -> None:
+        await super().run_streamed_p(user_msg)
+        print_and_write_to_file(f'\n\n{"Shared Context":=^}{str(self.context)}')
+
+    @override
+    async def run_interactive(self, user_msg: Optional[str] = None) -> None:
+        await super().run_interactive(user_msg)
+        print_and_write_to_file(f'\n\n{"Shared Context":=^}{str(self.context)}')

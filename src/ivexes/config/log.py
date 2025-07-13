@@ -7,10 +7,10 @@ are silenced at WARNING level while ivexes modules can use custom log levels.
 import logging
 from typing import Optional
 
-from ivexes.config import get_settings
+from ivexes.config import get_settings, LogLevels
 
 
-def setup_default_logging(ivexes_level: Optional[str] = None):
+def setup_default_logging(ivexes_level: Optional[LogLevels] = None):
     """Setup default logging configuration.
 
     - Third-party libraries: WARNING

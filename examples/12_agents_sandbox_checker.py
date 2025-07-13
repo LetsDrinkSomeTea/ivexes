@@ -10,7 +10,6 @@ load_dotenv(verbose=True, override=True)
 setup_default_logging()
 
 settings = PartialSettings(
-    log_level='INFO',
     trace_name='bincrypt_breaker',
     model='openai/gpt-4.1-mini',
     model_temperature=0.2,

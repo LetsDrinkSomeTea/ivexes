@@ -34,13 +34,7 @@ def get_sandbox() -> Sandbox:
     global _sandbox
     if _sandbox is None:
         settings = get_settings()
-        if settings.setup_archive:
-            _sandbox = Sandbox(settings.setup_archive)
-        else:
-            logger.error(
-                'Sandbox not initialized: setup_archive must be set in settings.'
-            )
-            exit(1)
+        _sandbox = Sandbox(settings.setup_archive)
     return _sandbox
 
 
@@ -60,7 +54,7 @@ def setup_sandbox() -> str:
     sandbox = get_sandbox()
     if not sandbox.connect():
         return 'Failed to setup sandbox'
-    r = 'Sandbox setup successfully\n'
+    r = 'Sandbox setup successfully (Username: "user" Password: "passwd")\n'
     r += sandbox.write_to_shell(b'whoami')
     r += sandbox.write_to_shell(b'pwd')
     r += sandbox.write_to_shell(b'ls -la')
