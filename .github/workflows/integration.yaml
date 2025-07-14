@@ -28,25 +28,29 @@ jobs:
         with:
           python-version: 3.13
       
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+      
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -e .
+          uv sync
       
       - name: Test CLI help
         run: |
-          python3 manual.py --help
+          uv run python manual.py --help
         env:
           LLM_API_KEY: sk-test-key-for-validation
       
       - name: Test vector database query
         run: |
-          python3 manual.py vector-db query test-value
+          uv run python manual.py vector-db query test-value
         env:
           LLM_API_KEY: sk-test-key-for-validation
       
       - name: Test configuration validation
         run: |
-          python3 -c "from ivexes.config.settings import get_settings; print(get_settings())"
+          uv run python -c "from ivexes.config.settings import get_settings; print(get_settings())"
         env:
           LLM_API_KEY: sk-test-key-for-validation
