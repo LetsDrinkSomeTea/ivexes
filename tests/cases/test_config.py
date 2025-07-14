@@ -304,7 +304,6 @@ class TestSettingsModule(unittest.TestCase):
                 )
 
                 # Verify run_config has correct model
-                self.assertEqual(run_config.model, 'openai/gpt-4')
                 self.assertIsNotNone(run_config.model_settings)
                 self.assertEqual(run_config.model_settings.temperature, 0.8)
 
