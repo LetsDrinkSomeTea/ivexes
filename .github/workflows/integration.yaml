@@ -35,13 +35,13 @@ jobs:
       
       - name: Test CLI help
         run: |
-          python3 examples/manual.py --help
+          python3 manual.py --help
         env:
           LLM_API_KEY: sk-test-key-for-validation
       
       - name: Test vector database query
         run: |
-          python3 examples/manual.py vector-db query test-value
+          python3 manual.py vector-db query test-value
         env:
           LLM_API_KEY: sk-test-key-for-validation
       
