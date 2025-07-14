@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Manual command line interface for ivexes modules."""
 
+from typing import Optional
 import click
 import os
 import logging
 from dotenv import load_dotenv
 
 from ivexes.config import get_settings, setup_default_logging
-from ivexes.config.settings import PartialSettings
+from ivexes.config.settings import PartialSettings, set_settings
 from ivexes.vector_db import CweCapecAttackDatabase
 from ivexes.cve_search.tools import _search_cve_by_id
 
@@ -312,11 +313,7 @@ def cmd_start() -> None:
     """Starts interactive shell in a sandbox environment."""
     from ivexes.sandbox.sandbox import Sandbox
 
-    if not (setup_archive := get_settings().setup_archive):
-        click.echo(
-            'No setup archive configured. Please set it in the settings or via the env vars'
-        )
-        return
+    setup_archive = get_settings().setup_archive
 
     sb = Sandbox(setup_archive=setup_archive)
     if not sb.connect():
@@ -331,21 +328,20 @@ def cmd_start() -> None:
 
 @sandbox.command('run')
 @click.argument('command')
-def cmd_run(command: str) -> None:
+@click.option('-i', '--image')
+def cmd_run(command: str, image: Optional[str]) -> None:
     """Run a command in a sandbox environment.
 
     Args:
-        path_to_executable_archive: Path to the executable archive
         command: The command to run in the sandbox
+        image: Optional Docker image to use for the sandbox
 
     """
     from ivexes.sandbox.sandbox import Sandbox
 
-    if not (setup_archive := get_settings().setup_archive):
-        click.echo(
-            'No setup archive configured. Please set it in the settings or via the env vars'
-        )
-        return
+    if image:
+        set_settings({'sandbox_image': image})
+    setup_archive = get_settings().setup_archive
 
     sb = Sandbox(setup_archive=setup_archive)
     if not sb.connect():

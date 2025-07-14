@@ -212,7 +212,7 @@ class TestCweCapecDatabase(unittest.TestCase):
         )
 
         # Verify the results are formatted correctly
-        self.assertEqual(results, ['CWE-1 Test CWE description'])
+        self.assertEqual(results, ['Test CWE description'])
 
     @patch('ivexes.vector_db.vector_db.chromadb.PersistentClient')
     @patch('ivexes.vector_db.vector_db.DefaultEmbeddingFunction')

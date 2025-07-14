@@ -20,6 +20,7 @@ Example:
 """
 
 import time
+from typing import Optional
 
 import paramiko
 
@@ -64,7 +65,7 @@ class Sandbox:
 
     def __init__(
         self,
-        setup_archive: str,
+        setup_archive: Optional[str] = None,
         username: str = 'user',
         password: str = 'passwd',
         host: str = 'localhost',

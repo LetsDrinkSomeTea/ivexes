@@ -7,23 +7,23 @@ from ivexes.agents import MultiAgent
 from ivexes.config import PartialSettings, setup_default_logging
 
 load_dotenv(verbose=True, override=True)
-setup_default_logging()
+setup_default_logging('WARNING')
 
 settings = PartialSettings(
-    trace_name='Multi-Agent Screen',
+    trace_name='Multi-Agent Sudo',
     model='openai/gpt-4.1',
     reasoning_model='openai/o4-mini',
     model_temperature=0.1,
-    max_turns=25,
+    max_turns=50,
     embedding_provider='local',
     embedding_model='intfloat/multilingual-e5-large-instruct',
-    setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
-    codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/screen/codebase',
-    vulnerable_folder='vulnerable-screen-4.5.0',
-    patched_folder='patched-screen-4.5.1',
+    codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/sudo/codebase',
+    vulnerable_folder='sudo-1.9.17',
+    patched_folder='sudo-1.9.17p1',
+    sandbox_image='vuln-sudo:latest',
 )
 
-agent = MultiAgent(bin_path='/usr/bin/screen', settings=settings)
+agent = MultiAgent(bin_path='/usr/bin/sudo', settings=settings)
 
 
 if __name__ == '__main__':
