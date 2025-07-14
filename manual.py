@@ -4,6 +4,7 @@
 from typing import Optional, cast
 from agents import Agent, FunctionTool
 from agents.models.chatcmpl_converter import Converter
+from typing import Optional
 import click
 import os
 import logging
