@@ -181,8 +181,10 @@ class TestSettingsModule(unittest.TestCase):
         ):
             with self.assertRaises(ValidationError) as cm:
                 Settings()
-            self.assertIn('Log level must be one of:', str(cm.exception))
-
+            self.assertIn(
+                "Input should be 'DEBUG', 'INFO', 'WARNING', 'ERROR' or 'CRITICAL'",
+                str(cm.exception),
+            )
         # Test valid log levels
         valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
         for level in valid_levels:
@@ -198,8 +200,12 @@ class TestSettingsModule(unittest.TestCase):
         with patch.dict(
             os.environ, {'LLM_API_KEY': 'sk-test-key', 'LOG_LEVEL': 'debug'}, clear=True
         ):
-            settings = Settings()
-            self.assertEqual(settings.log_level, 'DEBUG')
+            with self.assertRaises(ValidationError) as cm:
+                settings = Settings()
+            self.assertIn(
+                "Input should be 'DEBUG', 'INFO', 'WARNING', 'ERROR' or 'CRITICAL'",
+                str(cm.exception),
+            )
 
     def test_settings_validation_base_url(self):
         """Test validation of base URL values."""
@@ -287,7 +293,6 @@ class TestSettingsModule(unittest.TestCase):
             {
                 'OPENAI_API_KEY': 'sk-test-key',
                 'LLM_API_KEY': 'sk-llm-key',
-                'MODEL': 'openai/gpt-4',
                 'MODEL_TEMPERATURE': '0.8',
             },
             clear=True,
@@ -438,11 +443,6 @@ class TestSettingsModule(unittest.TestCase):
             with self.assertRaises(ValidationError) as cm:
                 set_settings({'max_turns': -1})
             self.assertIn('Max turns must be a positive integer', str(cm.exception))
-
-            # Test invalid log_level
-            with self.assertRaises(ValidationError) as cm:
-                set_settings({'log_level': 'INVALID'})
-            self.assertIn('Log level must be one of:', str(cm.exception))
 
     def test_set_settings_empty_dict(self):
         """Test set_settings with empty dictionary."""

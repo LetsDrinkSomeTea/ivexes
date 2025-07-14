@@ -6,7 +6,9 @@ environment variable support and lazy loading capabilities.
 
 import os
 import pprint
-from typing import Optional
+from typing import Literal, Optional
+
+LogLevels = Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 from agents import (
     Model,
@@ -84,7 +86,9 @@ class Settings(BaseSettings):
     )
 
     # Logging
-    log_level: str = Field(default_factory=lambda: os.environ.get('LOG_LEVEL', 'INFO'))
+    log_level: LogLevels = Field(
+        default_factory=lambda: os.environ.get('LOG_LEVEL', 'INFO')
+    )  # type: ignore
     trace_name: str = Field(
         default_factory=lambda: os.environ.get('TRACE_NAME', 'ivexes')
     )
@@ -192,7 +196,6 @@ class PartialSettings(TypedDict, total=False):
     model_temperature: float
     reasoning_model: str
     max_turns: int
-    log_level: str
     trace_name: str
     sandbox_image: str
     setup_archive: Optional[str]

@@ -57,13 +57,11 @@ def codebrowser_get_definition(symbol: str) -> str:
     if result:
         definition, file, from_line, to_line = result
         return (
-            f'Definition of {symbol} found in file {file} from line {from_line} to {to_line}:\n'
-            f'<definition>'
-            f'{definition}'
-            f'</definition>'
+            f'Definition of {symbol} found in file {file} from line {from_line} to {to_line}:\n\n'
+            f'<definition>\n{definition}\n</definition>'
         )
     else:
-        return 'No definition found'
+        return 'No definition found for symbol'
 
 
 @function_tool
@@ -79,10 +77,12 @@ def codebrowser_get_references(symbol: str) -> str:
         references = []
         for result in results:
             file, code, line, (col_s, col_e) = result
-            references.append(f'{file}:{line}:{col_s}-{col_e}\t{code}')
-        return f'Found {len(results)} references:\n{"\n".join(references)}'
+            references.append(
+                f'<reference>\n{file}:{line}:{col_s}-{col_e}\t{code}\n</reference>'
+            )
+        return f'Found {len(results)} references for {symbol}:\n\n<references>\n{"\n".join(references)}\n</references>'
     else:
-        return 'No References found'
+        return 'No references found for symbol'
 
 
 @function_tool
@@ -101,7 +101,7 @@ def codebrowser_get_symbols(file: str) -> str:
             symbols.append(
                 f'{symbol_name} ({symbol_type}) at {line_number}:{col_s}-{col_e}'
             )
-        return f'{"\n".join(symbols)}'
+        return f'Found {len(results)} symbols in file {file}:\n\n<symbols>\n{"\n".join(symbols)}\n</symbols>'
     else:
         return f'No symbols found in file {file}'
 
@@ -118,9 +118,9 @@ def codebrowser_get_file_content(file: str, offset: int = 0, limit: int = 50) ->
     logger.info(f'running codebrowser_get_file_content({file=})')
     result = get_code_browser().get_file_content(file, offset, limit)
     if result:
-        return f'Content of {file}:\n<code>{result}</code>'
+        return f'Content of {file}:\n\n<code>\n{result}\n</code>'
     else:
-        return f'file {file} not found, is the path correct?'
+        return f'File {file} not found, is the path correct?'
 
 
 @function_tool
@@ -133,9 +133,9 @@ def codebrowser_get_file_structure(depth: int = 3) -> str:
     logger.info(f'running codebrowser_get_file_structure({depth=})')
     result = get_code_browser().get_codebase_structure(depth)
     if result:
-        return f'Tree of the codebase:\n<tree>{result}</tree>'
+        return f'Codebase file structure (depth {depth}):\n\n<tree>\n{result}\n</tree>'
     else:
-        return 'No files found in the codebase.'
+        return 'No files found in the codebase'
 
 
 @function_tool
@@ -156,11 +156,9 @@ def codebrowser_get_diff(
     logger.info(f'running codebrowser_get_diff({options})')
     result = get_code_browser().get_diff(options, file1, file2)
     if result:
-        return (
-            f'Diff of {file1} and {file2} codebase:\n<diff>{"\n\n".join(result)}</diff>'
-        )
+        return f'Diff between {file1} and {file2}:\n\n<diff>\n{"\n\n".join(result)}\n</diff>'
     else:
-        return 'No diff found in the codebase.'
+        return 'No differences found between codebases'
 
 
 code_browser_tools = cast(

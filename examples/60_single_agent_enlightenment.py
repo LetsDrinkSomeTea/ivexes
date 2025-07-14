@@ -10,7 +10,6 @@ load_dotenv(verbose=True, override=True)
 setup_default_logging()
 
 settings = PartialSettings(
-    log_level='WARNING',
     trace_name='enlightenment',
     model='anthropic/claude-sonnet-4-20250514',
     model_temperature=0.1,

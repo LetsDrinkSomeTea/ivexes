@@ -6,6 +6,7 @@ and configuration.
 """
 
 import time
+from typing import Optional
 
 import docker
 from docker.errors import ContainerError, ImageNotFound
@@ -19,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 def setup_container(
-    setup_archive: str,
-    docker_image: str | None = None,
+    setup_archive: Optional[str] = None,
+    docker_image: Optional[str] = None,
     port: int = 2222,
     renew: bool = True,
 ) -> Container:
@@ -39,9 +40,22 @@ def setup_container(
         AssertionError: If setup_archive is not .tar/.tgz or port is not int
         docker.errors.APIError: If Docker operations fail
     """
-    assert setup_archive.endswith('.tar') or setup_archive.endswith('.tgz'), (
-        'Executable archive must be a .tar or .tgz file'
-    )
+
+    def run_setup_script(container: Container, setup_archive: Optional[str]):
+        if not setup_archive:
+            return
+        if not (setup_archive.endswith('.tar') or setup_archive.endswith('.tgz')):
+            raise ValueError('Executable archive must be a .tar or .tgz file')
+        with open(setup_archive, 'rb') as f:
+            data = f.read()
+        container.put_archive('/tmp', data)
+        logger.info(
+            f'Setup archive {setup_archive} uploaded to container {container.name}'
+        )
+        container.exec_run('chmod a+x /tmp/setup.sh')
+        ret = container.exec_run('sudo -u user bash /tmp/setup.sh')
+        logger.debug(f'Setup script output: {ret.output.decode()}')
+
     assert isinstance(port, int), f'port must be number, got {type(port)}'
     client = docker.from_env()
     settings = get_settings()
@@ -69,16 +83,8 @@ def setup_container(
             # remove=True
         )
         time.sleep(10)  # Wait for the container to start
+        run_setup_script(container, setup_archive)
         logger.info(f'Container {container.name} started')
-        with open(setup_archive, 'rb') as f:
-            data = f.read()
-        container.put_archive('/tmp', data)
-        logger.info(
-            f'Setup archive {setup_archive} uploaded to container {container.name}'
-        )
-        container.exec_run('chmod a+x /tmp/setup.sh')
-        ret = container.exec_run('sudo -u user bash /tmp/setup.sh')
-        logger.debug(f'Setup script output: {ret.output.decode()}')
         return container
     except ContainerError as e:
         logger.error(f'Container error: {e}')

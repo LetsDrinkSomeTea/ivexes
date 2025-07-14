@@ -3,7 +3,7 @@
 from agents import Agent, RunConfig, Runner, Tool, function_tool
 from typing import Optional
 
-from ivexes.printer import stream_result
+from ivexes.printer import stream_result, print_and_write_to_file
 from .shared_context import MultiAgentContext
 
 
@@ -34,6 +34,12 @@ def agent_as_tool(
         description_override=tool_description,
     )
     async def agent_tool_function(input: str):
+        # Print start marker for subagent execution
+        print_and_write_to_file(f'{"":=^80}')
+        print_and_write_to_file(f'Starting {agent.name} execution')
+        print_and_write_to_file(f'Input: {input}')
+        print_and_write_to_file(f'{"":=^80}\n')
+
         if context:
             agent_memory = context.get_agent_memory(agent_name=agent.name)
             input_items = agent_memory.append_messages(input)
@@ -54,6 +60,11 @@ def agent_as_tool(
                 max_turns=max_turns,
             )
             await stream_result(result)
+
+        # Print end marker for subagent execution
+        print_and_write_to_file(f'\n{"":=^80}')
+        print_and_write_to_file(f'{agent.name} execution completed')
+        print_and_write_to_file(f'{"":=^80}')
 
         return result.final_output
 

@@ -9,6 +9,7 @@
 
 data/
 .env
+reports/
 
 site/
 
