@@ -19,17 +19,5 @@ lint:
 tests: 
 	uv run python -m unittest discover -s tests
 
-.PHONY: build-docs
-build-docs:
-	uv run mkdocs build
-
-.PHONY: serve-docs
-serve-docs:
-	uv run mkdocs serve
-
-.PHONY: deploy-docs
-deploy-docs:
-	uv run mkdocs gh-deploy --force --verbose
-
 .PHONY: check
 check: format-check lint tests
