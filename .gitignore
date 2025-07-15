@@ -12,6 +12,7 @@ data/
 reports/
 
 site/
+github_scan.db
 
 CLAUDE.md
 

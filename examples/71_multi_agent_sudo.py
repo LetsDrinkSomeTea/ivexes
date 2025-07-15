@@ -26,6 +26,5 @@ settings = PartialSettings(
 
 agent = MultiAgent(bin_path='/usr/local/bin/sudo', settings=settings)
 
-
 if __name__ == '__main__':
     asyncio.run(agent.run_interactive())

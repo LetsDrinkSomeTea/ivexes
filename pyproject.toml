@@ -3,6 +3,7 @@ name = "ivexes"
 version = "0.2.0"
 description = "A Python package for automating vulnerability analysis and exploit generation"
 readme = "README.md"
+requires-python = ">=3.12"
 license = "GPL-3.0-or-later"
 dependencies = [
   "dotenv",
@@ -29,6 +30,10 @@ dev = [
   "mkdocstrings[python]>=0.29.1",
   "pre-commit",
   "ruff",
+]
+scrape = [
+    "gitpython>=3.1.44",
+    "pygithub>=2.6.1",
 ]
 
 [build-system]

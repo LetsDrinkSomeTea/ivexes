@@ -5,7 +5,7 @@ cybersecurity knowledge from CWE, CAPEC, and MITRE ATT&CK frameworks
 using ChromaDB for similarity search.
 """
 
-from typing import cast
+from typing import Literal, cast
 import chromadb
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from chromadb.config import Settings
@@ -19,6 +19,18 @@ from .attack_parser import insert_attack_all
 from os import path
 
 logger = logging.getLogger(__name__)
+
+
+QueryTypes = Literal[
+    'cwe',
+    'capec',
+    'attack-technique',
+    'attack-mitigation',
+    'attack-group',
+    'attack-malware',
+    'attack-tool',
+    'attack-tactic',
+]
 
 
 class CweCapecAttackDatabase:
@@ -115,7 +127,7 @@ class CweCapecAttackDatabase:
         logger.info('DB cleared')
 
     def query(
-        self, query_text: str, types: list[str] | None = None, n: int = 3
+        self, query_text: str, types: list[QueryTypes] | None = None, n: int = 3
     ) -> list[str]:
         """Query the collection, optionally filtering by type."""
         if types is None:

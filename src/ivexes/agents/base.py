@@ -11,7 +11,6 @@ from agents import (
     Runner,
     TResponseInputItem,
     trace,
-    SQLiteSession,
 )
 from openai.types.responses import EasyInputMessageParam
 
