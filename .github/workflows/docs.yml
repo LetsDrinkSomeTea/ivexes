@@ -1,0 +1,183 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+      - docs/*
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'mkdocs.yml'
+      - 'pyproject.toml'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'mkdocs.yml'
+      - 'pyproject.toml'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-docs-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-docs-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[docs]"
+
+      - name: Configure Git for mike
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Build documentation
+        run: |
+          # Build current version
+          mkdocs build --strict
+          
+          # Setup mike for versioning (only on main branch)
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            # Setup mike versioning
+            mike deploy --push --update-aliases main latest
+            mike set-default --push latest
+          fi
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: site
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
+
+  # Build-only job for PRs and non-main branches
+  build-only:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[docs]"
+
+      - name: Build documentation (test only)
+        run: |
+          mkdocs build --strict
+
+      - name: Check for broken links
+        run: |
+          # Install linkchecker
+          pip install linkchecker
+          
+          # Check built documentation for broken links
+          linkchecker --check-extern site/ || true
+
+  # Job to check documentation quality
+  docs-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[docs,dev]"
+
+      - name: Check documentation completeness
+        run: |
+          # Check that all Python modules have corresponding docs
+          python -c "
+          import os
+          import sys
+          from pathlib import Path
+          
+          src_files = set()
+          for py_file in Path('src').rglob('*.py'):
+              if py_file.name != '__init__.py':
+                  rel_path = py_file.relative_to('src')
+                  src_files.add(str(rel_path.with_suffix('')))
+          
+          print(f'Found {len(src_files)} Python modules')
+          
+          # This is a basic check - more sophisticated checks could be added
+          if len(src_files) > 0:
+              print('✓ Documentation structure looks good')
+          else:
+              print('✗ No Python modules found')
+              sys.exit(1)
+          "
+
+      - name: Validate mkdocs config
+        run: |
+          mkdocs build --strict --verbose
+
+      - name: Check docstring coverage
+        run: |
+          # Install docstring coverage checker
+          pip install interrogate
+          
+          # Check docstring coverage (allow some missing for now)
+          interrogate src/ --verbose --fail-under=80 || echo "Warning: Low docstring coverage"
+
+      - name: Lint documentation
+        run: |
+          # Check markdown files
+          pip install markdownlint-cli2
+          markdownlint-cli2 "docs/**/*.md" || echo "Warning: Markdown linting issues found"

@@ -1,0 +1,133 @@
+/* Custom styles for IVEXES documentation */
+
+/* Improve code block styling */
+.highlight {
+    margin: 1em 0;
+}
+
+.highlight pre {
+    padding: 1em;
+    overflow-x: auto;
+}
+
+/* Custom admonition styling */
+.md-typeset .admonition.warning {
+    border-left: 4px solid #ff9800;
+}
+
+.md-typeset .admonition.danger {
+    border-left: 4px solid #f44336;
+}
+
+/* Enhanced navigation */
+.md-nav__title {
+    font-weight: 600;
+}
+
+/* Logo styling */
+.md-header__button.md-logo img {
+    height: 1.5rem;
+    width: auto;
+}
+
+/* API documentation improvements */
+.doc-contents .md-typeset h2 {
+    border-bottom: 1px solid var(--md-default-fg-color--lighter);
+    padding-bottom: 0.2em;
+    margin-top: 2em;
+}
+
+/* Code signature styling */
+.doc-signature {
+    background-color: var(--md-code-bg-color);
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 0.2em;
+    padding: 0.8em;
+    margin: 1em 0;
+    overflow-x: auto;
+}
+
+/* Parameter lists */
+.doc-parameters .field-list {
+    margin: 0;
+}
+
+.doc-parameters .field-list > dt {
+    font-weight: 600;
+    color: var(--md-typeset-color);
+}
+
+/* Grid cards styling */
+.grid.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.grid.cards > div {
+    border: 1px solid var(--md-default-fg-color--lightest);
+    border-radius: 0.2rem;
+    padding: 1rem;
+    transition: box-shadow 0.2s;
+}
+
+.grid.cards > div:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive improvements */
+@media screen and (max-width: 768px) {
+    .grid.cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dark mode adjustments */
+[data-md-color-scheme="slate"] {
+    --md-hue: 210;
+}
+
+[data-md-color-scheme="slate"] .grid.cards > div {
+    border-color: var(--md-default-fg-color--lighter);
+}
+
+[data-md-color-scheme="slate"] .grid.cards > div:hover {
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+/* Table improvements */
+.md-typeset table:not([class]) {
+    font-size: 0.85rem;
+}
+
+.md-typeset table:not([class]) th {
+    background-color: var(--md-default-fg-color--lightest);
+    font-weight: 600;
+}
+
+/* Search improvements */
+.md-search__result .md-typeset {
+    color: var(--md-default-fg-color);
+}
+
+/* Footer improvements */
+.md-footer {
+    margin-top: 2rem;
+}
+
+/* Version warning */
+.version-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 0.2rem;
+    padding: 0.75rem;
+    margin: 1rem 0;
+    color: #856404;
+}
+
+[data-md-color-scheme="slate"] .version-warning {
+    background-color: #2d2a1e;
+    border-color: #4a4635;
+    color: #d4d4aa;
+}

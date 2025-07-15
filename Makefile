@@ -21,3 +21,15 @@ tests:
 
 .PHONY: check
 check: format-check lint tests
+
+.PHONY: docs-serve
+docs-serve:
+	uv run mkdocs serve
+
+.PHONY: docs-build
+docs-build:
+	uv run mkdocs build
+
+.PHONY: docs-deploy
+docs-deploy:
+	uv run mkdocs gh-deploy

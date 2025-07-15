@@ -1,0 +1,195 @@
+site_name: IVEXES Documentation
+site_description: Intelligent Vulnerability Exploration and Exploitation System - AI-driven cybersecurity analysis framework
+site_author: IVEXES Development Team
+site_url: https://pages.faigle.dev/ivexes/
+
+repo_name: LetsDrinkSomeTea/ivexes
+repo_url: https://github.com/LetsDrinkSomeTea/ivexes
+edit_uri: edit/main/docs/
+
+copyright: Copyright &copy; 2024 IVEXES Project - Licensed under GPL-3.0-or-later
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  language: en
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: blue grey
+      accent: orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: blue grey
+      accent: orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  features:
+    - announce.dismiss
+    - content.action.edit
+    - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - content.tooltips
+    - header.autohide
+    - navigation.expand
+    - navigation.footer
+    - navigation.indexes
+    - navigation.instant
+    - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/LetsDrinkSomeTea/ivexes
+      name: IVEXES on GitHub
+  version:
+    provider: mike
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - getting-started/index.md
+    - Installation: getting-started/installation.md
+    - Quick Start: getting-started/quickstart.md
+    - Configuration: getting-started/configuration.md
+  - User Guide:
+    - user-guide/index.md
+    - Agents Overview: user-guide/agents.md
+    - Single Agent: user-guide/single-agent.md
+    - Multi Agent: user-guide/multi-agent.md
+    - Code Browser: user-guide/code-browser.md
+    - Sandbox Environment: user-guide/sandbox.md
+    - Vector Database: user-guide/vector-db.md
+    - CVE Search: user-guide/cve-search.md
+  - Examples:
+    - examples/index.md
+    - Sandbox Analysis: examples/sandbox-analysis.md
+    - Vulnerability Assessment: examples/vulnerability-assessment.md
+    - CTF Challenges: examples/ctf-challenges.md
+  - API Reference:
+    - api/index.md
+    - Agents: api/agents.md
+    - Code Browser: api/code-browser.md
+    - Configuration: api/config.md
+    - Container: api/container.md
+    - Exceptions: api/exceptions.md
+    - Printer: api/printer.md
+    - Prompts: api/prompts.md
+    - Report: api/report.md
+    - Sandbox: api/sandbox.md
+    - Tools: api/tools.md
+    - Vector Database: api/vector-db.md
+  - Architecture:
+    - architecture/index.md
+    - System Overview: architecture/overview.md
+    - Component Design: architecture/components.md
+    - Security Model: architecture/security.md
+  - Contributing:
+    - contributing/index.md
+    - Development Setup: contributing/development.md
+    - Testing: contributing/testing.md
+    - Code Style: contributing/style.md
+
+plugins:
+  - search:
+      lang: en
+  - gen-files:
+      scripts:
+        - docs/scripts/gen_ref_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - section-index
+  - mkdocstrings:
+      handlers:
+        python:
+          inventories:
+            - https://docs.python.org/3/objects.inv
+            - https://docs.pydantic.dev/latest/objects.inv
+          options:
+            docstring_style: google
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+            show_submodules: true
+            show_source: true
+            show_bases: true
+            show_inheritance_diagram: true
+            group_by_category: true
+            heading_level: 2
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      title: Page Contents
+  - tables
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn

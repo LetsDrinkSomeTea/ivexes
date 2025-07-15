@@ -20,12 +20,22 @@ dependencies = [
   "tiktoken",
   "mitreattack-python",
   "nvdlib",
+  "mkdocs>=1.6.1",
 ]
 
 [dependency-groups]
 dev = [
   "pre-commit",
   "ruff",
+]
+docs = [
+  "mkdocs",
+  "mkdocs-material",
+  "mkdocstrings[python]",
+  "mkdocs-gen-files",
+  "mkdocs-literate-nav",
+  "mkdocs-section-index",
+  "mike",
 ]
 
 [build-system]
