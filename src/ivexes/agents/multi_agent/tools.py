@@ -81,7 +81,7 @@ def create_shared_memory_tools(context: MultiAgentContext) -> list[Tool]:
         A list of tools for interacting with shared memory
     """
 
-    @function_tool
+    @function_tool(strict_mode=True)
     def set_shared_memory(key: str, value: str, override: bool = False):
         """Set a value in shared memory.
 
@@ -95,7 +95,7 @@ def create_shared_memory_tools(context: MultiAgentContext) -> list[Tool]:
         context.shared_memory.set(key, value)
         return f'Successfully set value for key "{key}".'
 
-    @function_tool
+    @function_tool(strict_mode=True)
     def get_shared_memory(key: str):
         """Get a value from shared memory.
 
@@ -107,7 +107,7 @@ def create_shared_memory_tools(context: MultiAgentContext) -> list[Tool]:
         """
         return context.shared_memory.get(key, 'Key not found')
 
-    @function_tool
+    @function_tool(strict_mode=True)
     def list_shared_memory():
         """List all keys and values in shared memory.
 

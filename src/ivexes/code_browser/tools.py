@@ -45,7 +45,7 @@ def get_code_browser() -> CodeBrowser:
     return _code_browser
 
 
-@function_tool
+@function_tool(strict_mode=True)
 def codebrowser_get_definition(symbol: str) -> str:
     """Find the definition of a symbol in the codebase.
 
@@ -64,7 +64,7 @@ def codebrowser_get_definition(symbol: str) -> str:
         return 'No definition found for symbol'
 
 
-@function_tool
+@function_tool(strict_mode=True)
 def codebrowser_get_references(symbol: str) -> str:
     """Find all references to a symbol in the codebase.
 
@@ -85,7 +85,7 @@ def codebrowser_get_references(symbol: str) -> str:
         return 'No references found for symbol'
 
 
-@function_tool
+@function_tool(strict_mode=True)
 def codebrowser_get_symbols(file: str) -> str:
     """Get all symbols (variables, functions, classes) in a file.
 
@@ -106,7 +106,7 @@ def codebrowser_get_symbols(file: str) -> str:
         return f'No symbols found in file {file}'
 
 
-@function_tool
+@function_tool(strict_mode=True)
 def codebrowser_get_file_content(file: str, offset: int = 0, limit: int = 50) -> str:
     """Get the content of a file in the codebase.
 
@@ -123,7 +123,7 @@ def codebrowser_get_file_content(file: str, offset: int = 0, limit: int = 50) ->
         return f'File {file} not found, is the path correct?'
 
 
-@function_tool
+@function_tool(strict_mode=True)
 def codebrowser_get_file_structure(depth: int = 3) -> str:
     """Get the tree of files in the codebase.
 
@@ -138,7 +138,7 @@ def codebrowser_get_file_structure(depth: int = 3) -> str:
         return 'No files found in the codebase'
 
 
-@function_tool
+@function_tool(strict_mode=True)
 def codebrowser_get_diff(
     file1: str = 'vulnerable_folder',
     file2: str = 'patched_folder',

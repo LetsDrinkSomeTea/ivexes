@@ -113,6 +113,7 @@ class MultiAgentContext:
 
     agent_memories: dict[str, AgentMemory] = field(default_factory=dict)
     shared_memory: SharedMemory = field(default_factory=SharedMemory)
+    start_time: datetime = field(default_factory=datetime.now)
 
     def get_agent_memory(self, agent_name: str) -> AgentMemory:
         """Get or create agent memory."""
@@ -137,6 +138,7 @@ class MultiAgentContext:
 
         return (
             'Multi-Agent Context:\n'
+            + f'Total running time: {(datetime.now() - self.start_time).total_seconds()} seconds\n'
             + '\n'.join(agent_summaries)
             + '\n\nShared Memory:\n'
             + str(self.shared_memory)
