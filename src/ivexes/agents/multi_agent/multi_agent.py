@@ -152,14 +152,14 @@ class MultiAgent(BaseAgent):
     @override
     def run_p(self, user_msg: Optional[str] = None) -> None:
         super().run_p(user_msg)
-        print_and_write_to_file(f'\n\n{"Shared Context":=^}{str(self.context)}')
+        print_and_write_to_file(f'\n\n{"Shared Context":=^80}\n{str(self.context)}')
 
     @override
     async def run_streamed_p(self, user_msg: Optional[str] = None) -> None:
         await super().run_streamed_p(user_msg)
-        print_and_write_to_file(f'\n\n{"Shared Context":=^}{str(self.context)}')
+        print_and_write_to_file(f'\n\n{"Shared Context":=^80}\n{str(self.context)}')
 
     @override
     async def run_interactive(self, user_msg: Optional[str] = None) -> None:
         await super().run_interactive(user_msg)
-        print_and_write_to_file(f'\n\n{"Shared Context":=^}{str(self.context)}')
+        print_and_write_to_file(f'\n\n{"Shared Context":=^80}\n{str(self.context)}')

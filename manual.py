@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Manual command line interface for ivexes modules."""
 
-from typing import Optional
+from typing import Optional, cast
+from agents import Agent, FunctionTool
+from agents.models.chatcmpl_converter import Converter
 import click
 import os
 import logging
 from dotenv import load_dotenv
+import json
 
 from ivexes.config import get_settings, setup_default_logging
 from ivexes.config.settings import PartialSettings, set_settings
@@ -399,6 +402,33 @@ def cmd_llm_ask(input: str) -> None:
 
     agent = DefaultAgent()
     click.echo(agent.run(user_msg=input).final_output)
+
+
+@llm.command('tools')
+def cmd_llm_tools() -> None:
+    """List all tools for the LLM module."""
+    from ivexes.tools import (
+        code_browser_tools,
+        cve_tools,
+        date_tools,
+        report_tools,
+        sandbox_tools,
+        vectordb_tools,
+    )
+
+    all_tools = (
+        code_browser_tools
+        + cve_tools
+        + date_tools
+        + report_tools
+        + sandbox_tools
+        + vectordb_tools
+    )
+
+    for tool in all_tools:
+        converted_tool = Converter.tool_to_openai(tool)
+        click.echo(f'{tool.name:=^80}')
+        click.echo(json.dumps(converted_tool.get('function', {})))
 
 
 if __name__ == '__main__':

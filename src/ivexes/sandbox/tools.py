@@ -38,7 +38,7 @@ def get_sandbox() -> Sandbox:
     return _sandbox
 
 
-@function_tool
+@function_tool(strict_mode=True)
 def setup_sandbox() -> str:
     """Sets up a Kali Linux sandbox environment.
 
@@ -54,14 +54,18 @@ def setup_sandbox() -> str:
     sandbox = get_sandbox()
     if not sandbox.connect():
         return 'Failed to setup sandbox'
-    r = 'Sandbox setup successfully (Username: "user" Password: "passwd")\n'
+    r = (
+        'Sandbox setup successfully\n'
+        'Username: "user" Password: "passwd"\n'
+        'Rootuser: "root Password: "passwd" (Only use for setup purposes)\n'
+    )
     r += sandbox.write_to_shell(b'whoami')
     r += sandbox.write_to_shell(b'pwd')
     r += sandbox.write_to_shell(b'ls -la')
     return r
 
 
-@function_tool
+@function_tool(strict_mode=True)
 def teardown_sandbox() -> str:
     """Teardown the Kali Linux sandbox environment.
 
@@ -81,7 +85,7 @@ def teardown_sandbox() -> str:
     return 'Sandbox teardown successfully' if success else 'Failed to teardown sandbox'
 
 
-@function_tool
+@function_tool(strict_mode=True)
 def sandbox_write_to_shell(input: str) -> str:
     """Interactively writes the input to the shell in the Kali Linux sandbox environment.
 
@@ -101,7 +105,7 @@ def sandbox_write_to_shell(input: str) -> str:
     return sandbox.write_to_shell(input.encode())
 
 
-@function_tool
+@function_tool(strict_mode=True)
 def sandbox_create_file(file_path: str, content: str) -> str:
     """Create a file (overriding) with the specified content in the sandbox environment.
 

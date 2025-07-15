@@ -11,6 +11,7 @@ setup_default_logging('WARNING')
 
 settings = PartialSettings(
     trace_name='Multi-Agent Sudo',
+    # model='anthropic/claude-sonnet-4-20250514',
     model='openai/gpt-4.1',
     reasoning_model='openai/o4-mini',
     model_temperature=0.1,
@@ -23,7 +24,7 @@ settings = PartialSettings(
     sandbox_image='vuln-sudo:latest',
 )
 
-agent = MultiAgent(bin_path='/usr/bin/sudo', settings=settings)
+agent = MultiAgent(bin_path='/usr/local/bin/sudo', settings=settings)
 
 
 if __name__ == '__main__':
