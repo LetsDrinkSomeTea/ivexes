@@ -5,8 +5,8 @@ agent interactions including messages, tool calls, handoffs, and reasoning
 steps. It handles output formatting for both console and file display.
 """
 
-from typing import Optional, Union, Any, Callable
-from agents import RunItem, TResponseInputItem
+from typing import Iterable, Optional, Union, Any, Callable
+from agents import RunItem, TResponseInputItem, Tool
 from agents.items import (
     HandoffCallItem,
     HandoffOutputItem,
@@ -18,6 +18,7 @@ from agents.items import (
     ToolCallItem,
     ToolCallOutputItem,
 )
+from agents.models.chatcmpl_converter import Converter
 from agents.result import RunResult, RunResultStreaming
 from openai.types.responses import ResponseFunctionToolCall
 import json
@@ -268,3 +269,14 @@ def print_banner() -> None:
         ),
         truncate=False,
     )
+
+
+def sprint_tools_as_json(tools: Tool | Iterable[Tool]) -> str:
+    """Convert tools to JSON formatted string for OpenAI API."""
+    p = lambda x: json.dumps(Converter.tool_to_openai(x).get('function', {}), indent=2)
+    return p(tools) if isinstance(tools, Tool) else '\n'.join(p(tool) for tool in tools)
+
+
+def print_tools_as_json(tools: Tool | Iterable[Tool]) -> None:
+    """Print tools as JSON formatted string."""
+    print_and_write_to_file(sprint_tools_as_json(tools), truncate=False, end='\n\n')

@@ -8,13 +8,23 @@ from typing import Optional
 import click
 import os
 import logging
+import os
+from typing import Optional
+
+import click
+from agents import Tool
 from dotenv import load_dotenv
-import json
 
 from ivexes.config import get_settings, setup_default_logging
-from ivexes.config.settings import PartialSettings, set_settings
-from ivexes.vector_db import CweCapecAttackDatabase
+from ivexes.config.settings import set_settings
 from ivexes.cve_search.tools import _search_cve_by_id
+from ivexes.printer import sprint_tools_as_json
+from ivexes.vector_db import CweCapecAttackDatabase
+from ivexes.agents.multi_agent.tools import (
+    create_shared_memory_tools,
+    MultiAgentContext,
+    agent_as_tool,
+)
 
 load_dotenv(verbose=True, override=True)
 setup_default_logging()
@@ -406,7 +416,13 @@ def cmd_llm_ask(input: str) -> None:
 
 
 @llm.command('tools')
-def cmd_llm_tools() -> None:
+@click.argument(
+    'type',
+    type=click.Choice(
+        ['code_browser', 'cve', 'context', 'date', 'report', 'sandbox', 'vectordb']
+    ),
+)
+def cmd_llm_tools(type: str) -> None:
     """List all tools for the LLM module."""
     from ivexes.tools import (
         code_browser_tools,
@@ -417,19 +433,27 @@ def cmd_llm_tools() -> None:
         vectordb_tools,
     )
 
-    all_tools = (
-        code_browser_tools
-        + cve_tools
-        + date_tools
-        + report_tools
-        + sandbox_tools
-        + vectordb_tools
-    )
+    tools: list[Tool] = []
+    match type:
+        case 'code_browser':
+            tools = code_browser_tools
+        case 'cve':
+            tools = cve_tools
+        case 'date':
+            tools = date_tools
+        case 'report':
+            tools = report_tools
+        case 'sandbox':
+            tools = sandbox_tools
+        case 'vectordb':
+            tools = vectordb_tools
+        case 'context':
+            tools = create_shared_memory_tools(MultiAgentContext())
+        case _:
+            click.echo('Unknown tool type')
+            return
 
-    for tool in all_tools:
-        converted_tool = Converter.tool_to_openai(tool)
-        click.echo(f'{tool.name:=^80}')
-        click.echo(json.dumps(converted_tool.get('function', {})))
+    click.echo(sprint_tools_as_json(tools))
 
 
 if __name__ == '__main__':
