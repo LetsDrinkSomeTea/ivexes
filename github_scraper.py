@@ -35,6 +35,7 @@ import shutil
 import sqlite3
 import argparse
 from datetime import datetime, timedelta
+from typing import TypedDict
 from github import Github
 from git import Repo
 from rich.console import Console
@@ -215,7 +216,7 @@ def get_stored_results(db_path):
     return list(repo_results.values())
 
 
-def query_cve_commit_matches(db_path):
+def query_cve_matches(db_path):
     """Query database for entries where matches contain CVE and location is a commit message."""
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -223,7 +224,6 @@ def query_cve_commit_matches(db_path):
         SELECT r.full_name, r.url, r.language, sr.location, sr.matches, sr.scan_date
         FROM repositories r
         JOIN scan_results sr ON r.id = sr.repository_id
-        WHERE sr.location LIKE 'commit:%'
         AND sr.matches LIKE '%CVE-%'
         ORDER BY r.full_name, sr.scan_date DESC
     """)
@@ -235,20 +235,27 @@ def query_cve_commit_matches(db_path):
     for full_name, url, language, location, matches_json, scan_date in results:
         matches = json.loads(matches_json)
         # Filter matches to only include CVE entries
-        cve_matches = [match for match in matches if 'CVE-' in match]
+        cve_matches = [
+            match for match in matches if 'CVE-2025' in match or 'CVE-2024' in match
+        ]
         if cve_matches:
             formatted_results.append(
                 {
                     'repository': full_name,
                     'url': url,
                     'language': language,
-                    'commit_sha': location.replace('commit:', ''),
-                    'cve_matches': cve_matches,
+                    'location': location.rsplit('/', 1)[-1],
+                    'cve_matches': sorted(cve_matches, reverse=True),
                     'scan_date': scan_date,
                 }
             )
 
-    return formatted_results
+    # Sort by location
+    sorted_results = sorted(
+        formatted_results,
+        key=lambda x: (x['location'], x['repository'], x['cve_matches'][0]),
+    )
+    return sorted_results
 
 
 def has_new_commits(repo, last_commit_sha, since_date):
@@ -392,7 +399,7 @@ def parse_arguments():
         '-d',
         '--database',
         type=str,
-        default='github_scan.db',
+        default='github_scan.sqlite',
         help='SQLite database file path (default: github_scan.db)',
     )
     parser.add_argument(
@@ -417,7 +424,7 @@ def main():
 
     # Handle query mode
     if args.query_cve_commits:
-        results = query_cve_commit_matches(args.database)
+        results = query_cve_matches(args.database)
 
         if results:
             console.print(
@@ -427,7 +434,7 @@ def main():
             table = Table(show_header=True, header_style='bold magenta')
             table.add_column('Repository', style='cyan', no_wrap=True)
             table.add_column('Language', style='green')
-            table.add_column('Commit SHA', style='yellow', no_wrap=True)
+            table.add_column('Location', style='yellow', no_wrap=True)
             table.add_column('CVE Matches', style='red')
             table.add_column('Scan Date', style='dim')
 
@@ -435,7 +442,7 @@ def main():
                 table.add_row(
                     result['repository'],
                     result['language'] or 'Unknown',
-                    result['commit_sha'][:8],  # Short SHA
+                    result['location'][:32],  # Short SHA
                     ', '.join(result['cve_matches']),
                     result['scan_date'][:10],  # Date only
                 )
