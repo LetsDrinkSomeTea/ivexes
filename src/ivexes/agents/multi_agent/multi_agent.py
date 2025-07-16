@@ -70,6 +70,12 @@ class MultiAgent(BaseAgent):
         if self.subagent_run_config is None:
             self.subagent_run_config = get_run_config()
 
+        # Set up user message
+        code_browser = get_code_browser()
+        codebase_structure = (code_browser.get_codebase_structure(),)
+
+        self.user_msg = user_msg
+
         security_specialist_tool = agent_as_tool(
             agent=Agent(
                 name='Security Specialist',
@@ -88,7 +94,7 @@ class MultiAgent(BaseAgent):
             Agent(
                 name='Code Analyst',
                 handoff_description='Specialist agent for information about the codebase, including code structure, functions, diffs and classes',
-                instructions=code_analyst_system_msg,
+                instructions=f'{code_analyst_system_msg}\n\n{codebase_structure}',
                 tools=code_browser_tools + self.context_tools,
             ),
             tool_name='code-analyst',
@@ -139,14 +145,6 @@ class MultiAgent(BaseAgent):
                 report_journalist_agent,
             ]
             + self.context_tools,
-        )
-
-        # Set up user message
-        code_browser = get_code_browser()
-        self.user_msg = user_msg.format(
-            codebase_structure=code_browser.get_codebase_structure(),
-            diff='\n'.join(code_browser.get_diff()),
-            bin_path=self.bin_path,
         )
 
     @override
