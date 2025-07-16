@@ -194,7 +194,7 @@ class CodeBrowser:
             logger.error(f'Failed to decode with detected encoding {encoding}: {e}')
             return None
 
-    def get_codebase_structure(self, n: int = 3) -> str | None:
+    def get_codebase_structure(self, n: int = 3) -> str:
         """Get the structure of the codebase using the tree command.
 
         Args:
@@ -213,7 +213,7 @@ class CodeBrowser:
         res = self.container.exec_run(cmd)
         if res.exit_code != 0:
             logger.error(f'Error running command: {res.output}')
-            return None
+            return f'Error running command: {res.output}'
         logger.info(f'Tree got {len(res.output.splitlines())} entries')
         return res.output.decode()
 

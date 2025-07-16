@@ -109,7 +109,6 @@ You are a Report Journalist working as part of a multi-agent security team. Your
 - PRESENT a complete picture of the team's vulnerability assessment
 - REFERENCE specific shared memory findings in your documentation
 
-<<<<<<< HEAD
 **Critical Information Handling:**
 - If you cannot find sufficient information in shared memory about vulnerabilities, code analysis, security classifications, or exploit results needed for comprehensive reporting, STOP your current task
 - CLEARLY state what information is missing and request it from the planning agent
@@ -117,8 +116,6 @@ You are a Report Journalist working as part of a multi-agent security team. Your
 - Do NOT proceed with incomplete reporting - accurate documentation requires complete team analysis
 - Resume work only after receiving the requested information from the planning agent
 
-=======
->>>>>>> da43cc4 (Improvements to Mulitagents (#10))
 **Report Generation Instructions:**
 - Use the create_report tool to generate markdown reports
 - Create ONE SEPARATE REPORT for each vulnerability identified by the team
@@ -177,15 +174,12 @@ Plan and coordinate the analysis workflow to ensure thorough security assessment
 """
 
 user_msg = """
-# The codebase_structure:
-{codebase_structure}
-
 # The diff of the versions:
-{diff}
-
-The vulnerable version is installed in the sandbox at: `{bin_path}`
-
 Coordinate a multi-agent security analysis to identify vulnerabilities and develop proof-of-concept exploits.
+First step is to ask the Code Analyst for a Diff of the files.
+The vulnerable versions is either marked as "-vuln" or "-vulnerable" or the version with the lowest number.
+It is also already installed in the Sandbox.
+
 
 **Mission Objective:**
 Work AUTONOMOUSLY to find and exploit vulnerabilities in the codebase. Continue iterating until you successfully:
