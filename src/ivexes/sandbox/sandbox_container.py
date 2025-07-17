@@ -65,24 +65,35 @@ def setup_container(
         f'ivexes-{docker_image.split(":")[0]}-{settings.trace_name}'
     )
 
-    if renew:
-        remove_if_exists(client, container_name)
-    else:
-        c = find_by_name(client, container_name)
-        if c:
-            logger.info(f'Returning: container {c.name}.')
-            return c
-
     try:
+        if renew:
+            remove_if_exists(client, container_name)
+        else:
+            c = find_by_name(client, container_name)
+            if c:
+                logger.info(f'Returning: container {c.name}.')
+                return c
+
         logger.info(f'Starting container {container_name} with {setup_archive=}')
         container: Container = client.containers.run(
             image=docker_image,
             name=container_name,
             detach=True,
-            ports={'22': ('127.0.0.1', port)},
+            environment={
+                'TERM': 'xterm-mono',
+            },
             # remove=True
         )
-        time.sleep(10)  # Wait for the container to start
+        MAX_DELAY = 30
+        time_waited = 0
+        while container.status != 'running':
+            container.reload()
+            time.sleep(1)  # Wait for the container to start
+            time_waited += 1
+            if time_waited > MAX_DELAY:
+                raise TimeoutError(
+                    f'Container {container_name} did not start within {MAX_DELAY} seconds'
+                )
         run_setup_script(container, setup_archive)
         logger.info(f'Container {container.name} started')
         return container
@@ -95,3 +106,6 @@ def setup_container(
     except Exception as e:
         logger.error(f'An error occurred: {e}')
         exit(1)
+    finally:
+        # Always close the docker client to prevent resource leaks
+        client.close()

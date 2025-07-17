@@ -1,28 +1,20 @@
-"""Sandbox module for containerized environment management.
+"""Simplified sandbox module for containerized environment management.
 
-This module provides a Sandbox class that manages containerized environments
-for secure code execution and analysis. It uses SSH connections to interact
-with Docker containers and provides file operations and shell access.
-
-The sandbox environment is isolated and can be used for:
-- Safe code execution
-- Vulnerability analysis
-- Dynamic testing
-- Reverse engineering tasks
-
-Example:
-    Basic sandbox usage:
-
-    >>> sandbox = Sandbox(setup_archive='path/to/archive.tar.gz')
-    >>> if sandbox.connect():
-    ...     result = sandbox.write_to_shell(b'ls -la')
-    ...     sandbox.close()
+This module provides a simplified Sandbox class that manages containerized
+environments for secure code execution with interactive session support.
 """
 
+import io
+import os
+import tarfile
+import threading
+from enum import Enum
 import time
-from typing import Optional
+from typing import Optional, Tuple, Union
 
-import paramiko
+import docker
+from docker.models.containers import Container
+import pexpect
 
 import logging
 from .sandbox_container import setup_container
@@ -31,229 +23,477 @@ logger = logging.getLogger(__name__)
 
 
 class Sandbox:
-    """Containerized sandbox environment for secure code execution and analysis.
+    """Simplified containerized sandbox for secure code execution.
 
-    This class provides a secure, isolated environment for running potentially
-    malicious code, analyzing vulnerabilities, and performing dynamic testing.
-    It manages Docker containers and provides SSH-based access to the sandbox.
-
-    The sandbox automatically sets up and tears down containers as needed,
-    ensuring proper isolation and resource management.
-
-    Attributes:
-        host (str): SSH hostname or IP address.
-        port (int): SSH port number.
-        username (str): SSH username for container access.
-        password (str): SSH password for container access.
-        setup_archive (str): Path to archive containing sandbox setup files.
-        container: Docker container instance.
-        client: Paramiko SSH client instance.
-        shell: Interactive shell channel.
-        prompt_string (str): Last shell prompt for output formatting.
+    Provides basic container management with interactive session support
+    for tools like GDB, Python REPL, and shell commands.
 
     Example:
-        Basic sandbox operations:
-
-        >>> sandbox = Sandbox(setup_archive='malware.tar.gz')
-        >>> if sandbox.connect():
-        ...     # Execute commands safely
-        ...     output = sandbox.write_to_shell(b'./analyze_binary')
-        ...     # Create analysis files
-        ...     sandbox.create_file('report.txt', 'Analysis results...')
-        ...     sandbox.close()
+        >>> sandbox = Sandbox(setup_archive='debug.tar.gz')
+        >>> sandbox.connect()
+        >>> # Simple command
+        >>> exit_code, output = sandbox.run('ls -la')
+        >>> # Interactive session
+        >>> gdb = sandbox.interactive('gdb ./program')
+        >>> gdb.send('break main')
+        >>> gdb.expect('(gdb)')
+        >>> sandbox.close()
     """
 
     def __init__(
         self,
         setup_archive: Optional[str] = None,
         username: str = 'user',
-        password: str = 'passwd',
-        host: str = 'localhost',
-        port: int = 2222,
+        working_dir: str = '/home/user',
     ):
-        """Initialize the sandbox environment.
+        """Initialize the sandbox.
 
         Args:
-            setup_archive (str): Path to the archive file containing setup data
-                for the sandbox environment.
-            username (str, optional): SSH username for container access.
-                Defaults to 'user'.
-            password (str, optional): SSH password for container access.
-                Defaults to 'passwd'.
-            host (str, optional): SSH hostname or IP address.
-                Defaults to 'localhost'.
-            port (int, optional): SSH port number. Defaults to 2222.
+            setup_archive: Path to setup archive file
+            username: Username for container operations
+            working_dir: Working directory inside container
+            port: Port for container setup
         """
-        self.host = host
-        self.port = port
         self.username = username
-        self.password = password
-
-        self.prompt_string = ''  # saved last prompt string for better formatting
-
+        self.working_dir = working_dir
         self.setup_archive = setup_archive
+        self.sessions: dict[str, InteractiveSession] = {}
 
-        self.container = None
-
-        self.client = paramiko.SSHClient()
-        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.shell = None  # This will hold our interactive shell channel
+        self.container: Optional[Container] = None
+        self.docker_client: Optional[docker.DockerClient] = None
 
     def connect(self) -> bool:
-        """Connect to the sandbox SSH server and set up the container.
-
-        This method initializes the Docker container using the provided setup
-        archive and establishes an SSH connection to the sandbox environment.
+        """Set up and connect to the container.
 
         Returns:
-            bool: True if connection succeeded, False otherwise.
-
-        Example:
-            >>> sandbox = Sandbox(setup_archive='test.tar.gz')
-            >>> if sandbox.connect():
-            ...     print('Sandbox ready for use')
-            ... else:
-            ...     print('Failed to connect to sandbox')
+            bool: True if successful, False otherwise
         """
         try:
-            self.container = setup_container(self.setup_archive)
-            self.client.connect(
-                hostname=self.host,
-                port=self.port,
-                username=self.username,
-                password=self.password,
-                timeout=10,
-            )
-            logger.debug(f'Connected to {self.host}:{self.port} as {self.username}')
+            if not self.docker_client:
+                self.docker_client = docker.from_env()
+            self.container = setup_container(setup_archive=self.setup_archive)
+            logger.debug(f'Container {self.container.name} ready')
             return True
         except Exception as e:
-            logger.error(f'Failed to connect: {e}')
+            logger.error(f'Failed to setup container: {e}')
             return False
 
-    def get_shell(self):
-        """Get an interactive shell channel for command execution.
-
-        Creates a new shell channel if one does not exist or if the existing
-        channel is closed. The shell is configured with xterm-mono terminal
-        type for better compatibility.
-
-        Returns:
-            paramiko.Channel: The interactive shell channel.
-
-        Note:
-            This method automatically handles shell initialization and flushes
-            any initial output to ensure clean command execution.
-        """
-        if self.shell is None or self.shell.closed:
-            self.shell = self.client.invoke_shell(
-                term='xterm-mono'
-            )  # try dumb, linux-m
-            logger.info('Interactive shell started.')
-            # Optionally, wait for the shell to be ready
-            time.sleep(1)
-            # Flush any initial output
-            if self.shell.recv_ready():
-                initial_output = self.shell.recv(4096).decode('utf-8')
-                logger.debug(f'Initial shell output: {initial_output}')
-                self.prompt_string = initial_output.splitlines()[-1]
-        return self.shell
-
-    def write_to_shell(self, command: bytes, wait: float = 1.0) -> str:
-        """Send a command to the interactive shell and return the output.
-
-        This method sends a command to the sandbox shell, waits for output,
-        and returns the formatted response. It handles shell prompt formatting
-        and ensures proper command termination.
+    def run(
+        self, command: Union[str, bytes], user: Optional[str] = None, timeout: int = 60
+    ) -> Tuple[int, str]:
+        """Execute a command in the container with 10s timeout and partial results.
 
         Args:
-            command (bytes): The command to send to the shell. Must be bytes.
-            wait (float, optional): Seconds to wait for output before reading.
-                Defaults to 1.0.
+            command: Command to execute
+            user: User to run as (defaults to self.username)
+            timeout: Timeout in seconds (default 60)
 
         Returns:
-            str: The formatted output received after sending the command,
-                including the previous prompt string for better formatting.
-
-        Example:
-            >>> sandbox = Sandbox(setup_archive='test.tar.gz')
-            >>> sandbox.connect()
-            >>> output = sandbox.write_to_shell(b'ls -la')
-            >>> print(output)
+            Tuple of (exit_code, output)
+            - exit_code: 0 for success, 2 for timeout with partial results, 1 for error
+            - output: Full output or partial output with timeout indicator
         """
-        shell = self.get_shell()
-        if not command.endswith(b'\n'):
-            command += b'\n'  # Ensure command ends with newline
-        logger.debug(f'Sending command: {command}')
-        shell.send(command)
-        # Wait a bit for the command to produce output.
-        time.sleep(wait)
-        output = ''
-        while shell.recv_ready():
-            output_chunk = shell.recv(4096).decode('utf-8')
-            output += output_chunk
-            time.sleep(wait)  # Slight delay in reading further chunks
-        output = output.strip()
-        # Formatting the output to use the latest prompt_string as prefix
-        new_prompt = output.splitlines()[-1]
-        stripped_output = ''.join(output.splitlines(keepends=True)[:-1])
-        ret = self.prompt_string + stripped_output
-        self.prompt_string = new_prompt
-        return ret
+        if not self.container:
+            raise RuntimeError('Container not connected. Call connect() first.')
 
-    def create_file(self, filename: str, content: str) -> bool:
-        """Create a file in the sandbox with the given content.
+        if user is None:
+            user = self.username
 
-        This method uses SFTP to create a file within the sandbox environment.
-        It's useful for transferring analysis scripts, configuration files,
-        or any other data needed for sandbox operations.
+        if isinstance(command, bytes):
+            command = command.decode('utf-8')
 
-        Args:
-            filename (str): The name/path of the file to create within the sandbox.
-            content (str): The content to write to the file.
+        # Shared buffer for collecting results as they come in
+        result_buffer = {'data': b'', 'finished': False, 'error': None, 'stream': None}
 
-        Returns:
-            bool: True if the file was created successfully, False otherwise.
+        def read_stream():
+            """Your original logic with shared buffer updates."""
+            try:
+                _, result_stream = self.container.exec_run(
+                    cmd=['sh', '-c', command],
+                    workdir=self.working_dir,
+                    user=user,
+                    stream=True,
+                )
 
-        Example:
-            >>> sandbox = Sandbox(setup_archive='test.tar.gz')
-            >>> sandbox.connect()
-            >>> success = sandbox.create_file('script.py', "print('Hello')")
-            >>> if success:
-            ...     print('File created successfully')
-        """
-        sftp_client = self.client.open_sftp()
-        success = True
+                # Store stream reference for cleanup
+                result_buffer['stream'] = result_stream
+
+                # Read events and update buffer in real-time
+                try:
+                    for event in result_stream:
+                        result_buffer['data'] += event
+                finally:
+                    result_stream.close()
+                    result_buffer['stream'] = None
+
+                result_buffer['finished'] = True
+
+            except Exception as e:
+                result_buffer['error'] = e
+            finally:
+                # Ensure stream is closed even on exception
+                if result_buffer['stream'] is not None:
+                    try:
+                        result_buffer['stream'].close()
+                    except Exception as cleanup_error:
+                        logger.debug(
+                            f'Error closing stream on exception: {cleanup_error}'
+                        )
+
         try:
-            with sftp_client.file(filename=filename, mode='w') as f:
-                f.write(content)
-        except IOError as e:
-            logger.error(f'Failed to create file {filename}: {e}')
-            success = False
-        sftp_client.close()
-        return success
+            # Start reading in background thread
+            thread = threading.Thread(target=read_stream)
+            thread.daemon = True
+            thread.start()
+
+            # Wait for completion or timeout (10 seconds)
+            thread.join(timeout=timeout)
+
+            if thread.is_alive():
+                # Timeout occurred - cleanup stream and return partial results
+                if result_buffer['stream'] is not None:
+                    try:
+                        result_buffer['stream'].close()
+                    except Exception as e:
+                        logger.debug(f'Error closing stream on timeout: {e}')
+                    result_buffer['stream'] = None
+
+                partial_output = result_buffer['data'].decode('utf-8', errors='replace')
+                timeout_msg = (
+                    f'\n[TIMEOUT after {timeout}s - partial results shown above]'
+                )
+                logger.warning(f'Command timed out after {timeout} seconds: {command}')
+                return 2, partial_output + timeout_msg
+
+            # Check for errors
+            if result_buffer['error']:
+                raise result_buffer['error']
+
+            # Command completed successfully
+            output = result_buffer['data'].decode('utf-8', errors='replace')
+            return 0, output
+
+        except Exception as e:
+            logger.error(f'Failed to execute command: {e}')
+            return 1, f'Error: {e}'
+        finally:
+            # Ensure stream is always closed
+            if result_buffer['stream'] is not None:
+                try:
+                    result_buffer['stream'].close()
+                except Exception as e:
+                    logger.debug(f'Error closing stream in cleanup: {e}')
+
+    def interactive(
+        self,
+        command: str = '/bin/sh',
+        user: str = 'root',
+        session: Optional[str] = None,
+        timeout: int = 60,
+    ) -> 'InteractiveSession':
+        """Start an interactive session.
+
+        Args:
+            command: Command to run interactively
+            user: User to run the session
+            session: Optional session identifier
+            timeout: Timeout for session operations
+
+        Returns:
+            InteractiveSession object
+        """
+        if not self.container:
+            raise RuntimeError('Container not connected. Call connect() first.')
+
+        if session in self.sessions:
+            logger.debug(f'Reusing existing session: {session}')
+            return self.sessions[session]
+
+        if not user:
+            user = self.username
+
+        s = InteractiveSession(
+            container=self.container,
+            command=command,
+            working_dir=self.working_dir,
+            user=user,
+            timeout=timeout,
+        )
+
+        if session:
+            self.sessions[session] = s
+
+        return s
+
+    def write_file(self, filename: str, content: str) -> bool:
+        """Create a file in the container.
+
+        Args:
+            filename: File path in container
+            content: File content
+
+        Returns:
+            bool: True if successful
+        """
+        if not self.container:
+            return False
+
+        try:
+            # Handle absolute vs relative paths
+            if filename.startswith('/'):
+                # Absolute path - split into directory and filename
+                file_name = os.path.basename(filename)
+                target_path = os.path.dirname(filename)
+            else:
+                # Relative path - use working directory
+                file_name = filename
+                target_path = self.working_dir
+
+            # Ensure target directory exists
+            if target_path != '/':
+                self.container.exec_run(f'mkdir -p {target_path}', user=self.username)
+
+            # Create tar archive with just the filename (not full path)
+            tar_stream = io.BytesIO()
+            with tarfile.open(fileobj=tar_stream, mode='w') as tar:
+                tarinfo = tarfile.TarInfo(name=file_name)
+                tarinfo.size = len(content.encode('utf-8'))
+                tarinfo.mode = 0o644
+                tar.addfile(tarinfo, io.BytesIO(content.encode('utf-8')))
+
+            tar_stream.seek(0)
+
+            # Put archive in the target directory
+            self.container.put_archive(path=target_path, data=tar_stream.getvalue())
+
+            logger.debug(f'File {filename} written successfully')
+            return True
+
+        except Exception as e:
+            logger.error(f'Failed to write file {filename}: {e}')
+            return False
+
+    def read_file(self, filename: str) -> Optional[str]:
+        """Read a file from the container.
+
+        Args:
+            filename: File path in container
+
+        Returns:
+            File content or None if failed
+        """
+        if not self.container:
+            return None
+
+        try:
+            archive_data, _ = self.container.get_archive(filename)
+            archive_bytes = b''.join(archive_data)
+            with io.BytesIO(archive_bytes) as tar_stream:
+                with tarfile.open(fileobj=tar_stream, mode='r') as tar:
+                    for member in tar.getmembers():
+                        if member.isfile():
+                            try:
+                                with tar.extractfile(member) as extracted_file:
+                                    if extracted_file:
+                                        return extracted_file.read().decode('utf-8')
+                            except Exception as e:
+                                logger.error(f'Error reading file {filename}: {e}')
+            return None
+
+        except Exception as e:
+            logger.error(f'Failed to read file {filename}: {e}')
+            return None
+
+    def is_running(self) -> bool:
+        """Check if container is running."""
+        if not self.container:
+            return False
+        try:
+            self.container.reload()
+            return self.container.status == 'running'
+        except Exception:
+            return False
 
     def close(self):
-        """Close the SSH connection and clean up resources.
+        """Close sandbox and cleanup resources."""
+        for s in self.sessions.values():
+            s.close()
+        self.sessions.clear()
 
-        This method properly terminates the SSH connection, closes any open
-        shell channels, and stops the associated Docker container. It ensures
-        proper cleanup of all resources used by the sandbox.
+        try:
+            if self.container:
+                self.container.stop()
+                self.container = None
+            if self.docker_client:
+                self.docker_client.close()
+                self.docker_client = None
+            logger.info('Sandbox closed')
+        except Exception as e:
+            logger.error(f'Error closing sandbox: {e}')
+
+    def __enter__(self):
+        """Context manager entry."""
+        if not self.connect():
+            raise RuntimeError('Failed to connect to sandbox')
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit."""
+        self.close()
+
+
+class InteractiveSession:
+    """Simplified interactive session handler.
+
+    Manages interactive programs running in Docker containers using pexpect.
+    """
+
+    class STATUS(Enum):
+        """Session status enumeration for pexpect session states."""
+
+        ALIVE = 1
+        CLOSED = 2
+        TIMEOUT = 3
+        EMPTY = 4
+        EOF = 4
+        ERROR = 5
+
+    def __init__(
+        self,
+        container: Container,
+        command: str,
+        working_dir: str,
+        user: str,
+        timeout: int = 30,
+    ):
+        """Initialize interactive session.
+
+        Args:
+            container: Docker container
+            command: Command to run
+            working_dir: Working directory
+            user: User to run as
+            timeout: Default timeout for operations
+        """
+        self.container = container
+        self.timeout = timeout
+
+        # Build docker exec command
+        docker_cmd = [
+            'docker',
+            'exec',
+            '-it',
+            '-w',
+            working_dir,
+            '-u',
+            user,
+            container.name,
+            'sh',
+            '-c',
+            command,
+        ]
+
+        try:
+            self.process = pexpect.spawn(' '.join(docker_cmd), timeout=timeout)
+            self.process.encoding = 'utf-8'
+            logger.debug(f'Started interactive session: {command}')
+        except Exception as e:
+            logger.error(f'Failed to start session: {e}')
+            raise
+
+    def send(self, text: Union[str, bytes]):
+        """Send text to the session."""
+        if isinstance(text, str):
+            text = text.encode('utf-8')
+
+        text.strip(b'\n')
+        self.process.send(text)
+        self.read_available()
+        self.process.send(b'\n')
+
+    def expect(
+        self, patterns: Union[str, list, bytes], timeout: Optional[int] = None
+    ) -> Tuple[int, str]:
+        """Wait for expected patterns.
+
+        Args:
+            patterns: Pattern(s) to wait for
+            timeout: Timeout in seconds
 
         Returns:
-            bool: True indicating successful cleanup.
-
-        Example:
-            >>> sandbox = Sandbox(setup_archive='test.tar.gz')
-            >>> sandbox.connect()
-            >>> # ... use sandbox ...
-            >>> sandbox.close()  # Always cleanup when done
+            Tuple of (pattern_index, matched_output)
         """
-        if self.shell:
-            self.shell.close()
-        self.client.close()
-        logger.debug('SSH connection closed.')
-        if self.container:
-            self.container.stop()
-        logger.debug('Container stopped.')
-        logger.info('Sandbox closed.')
-        return True
+        if timeout is None:
+            timeout = self.timeout
+
+        if not isinstance(patterns, list):
+            patterns = [patterns]
+
+        if isinstance(patterns, list):
+            patterns = [
+                p.encode('utf-8') if isinstance(p, str) else p for p in patterns
+            ]
+
+        try:
+            index = self.process.expect(patterns, timeout=timeout)
+            output = self.process.before + self.process.after
+            if isinstance(output, bytes):
+                output = output.decode('utf-8').replace('\r\n', '\n')
+            return index, output
+        except pexpect.TIMEOUT:
+            return -1, self.process.before
+        except pexpect.EOF:
+            return -1, self.process.before
+
+    def read_until(
+        self, pattern: Union[str, list], timeout: Optional[int] = None
+    ) -> tuple[STATUS, str]:
+        """Read until pattern is found."""
+        if isinstance(pattern, str):
+            pattern = [pattern]
+        try:
+            _, output = self.expect(pattern, timeout)
+            return self.STATUS.ALIVE, output
+        except pexpect.TIMEOUT:
+            logger.warning('Read until timeout')
+            return self.STATUS.TIMEOUT, ''
+        except pexpect.EOF:
+            logger.warning('Read until EOF')
+            return self.STATUS.EOF, ''
+
+    def read_available(self) -> tuple[STATUS, str]:
+        """Read any available output without blocking."""
+        try:
+            time.sleep(0.2)  # Allow some time for output to be available
+            val = self.process.read_nonblocking(size=10000, timeout=1)
+            val = (
+                val.decode('utf-8').replace('\r\n', '\n')
+                if isinstance(val, bytes)
+                else val
+            )
+            return self.STATUS.ALIVE, val
+        except pexpect.TIMEOUT:
+            return self.STATUS.EMPTY, 'Nothing to read'
+        except pexpect.EOF:
+            return self.STATUS.EOF, 'End-of-file reached'
+
+    def is_alive(self) -> bool:
+        """Check if session is alive."""
+        return self.process.isalive()
+
+    def close(self):
+        """Close the session."""
+        try:
+            if self.process.isalive():
+                self.process.close()
+            logger.debug('Interactive session closed')
+        except Exception as e:
+            logger.error(f'Error closing session: {e}')
+
+    def __enter__(self):
+        """Enter context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context manager and close session."""
+        self.close()
