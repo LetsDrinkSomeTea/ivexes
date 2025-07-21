@@ -32,7 +32,7 @@ def agent_as_tool(
         A tool that executes the agent with the given configuration
     """
     session = SQLiteSession(
-        session_id=f'{tool_name}-{get_settings().trace_name}-{datetime.isoformat}',
+        session_id=f'{tool_name}-{get_settings().trace_name}-{datetime.now().isoformat()}',
         db_path=get_settings().session_db_path,
     )
 

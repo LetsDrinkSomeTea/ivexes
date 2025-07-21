@@ -14,7 +14,7 @@ settings = PartialSettings(
     model='openai/gpt-4.1-mini',
     model_temperature=0.1,
     max_turns=25,
-    setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/behind_the_scenes/upload.tgz',
+    setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/htb_behind_the_scenes/upload.tgz',
 )
 
 agent = HTBChallengeAgent(

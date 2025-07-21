@@ -15,12 +15,13 @@ dependencies = [
   "docker",
   "chardet",
   "openai",
-  "openai-agents",
+  "openai-agents>=0.2.2",
   "python-dotenv",
   "click",
   "tiktoken",
   "mitreattack-python",
   "nvdlib",
+  "sentence-transformers>=5.0.0",
 ]
 
 [dependency-groups]

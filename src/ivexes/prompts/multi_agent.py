@@ -174,7 +174,6 @@ Plan and coordinate the analysis workflow to ensure thorough security assessment
 """
 
 user_msg = """
-# The diff of the versions:
 Coordinate a multi-agent security analysis to identify vulnerabilities and develop proof-of-concept exploits.
 First step is to ask the Code Analyst for a Diff of the files.
 The vulnerable versions is either marked as "-vuln" or "-vulnerable" or the version with the lowest number.
