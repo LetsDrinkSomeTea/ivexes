@@ -11,6 +11,7 @@ setup_default_logging('WARNING')
 
 settings = PartialSettings(
     trace_name='Multi-Agent Sudo',
+    # model='anthropic/claude-sonnet-4-20250514',
     model='openai/gpt-4.1',
     reasoning_model='openai/o4-mini',
     model_temperature=0.1,
