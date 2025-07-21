@@ -1,8 +1,11 @@
 """Agent wrapper tools for converting agents into reusable tools."""
 
-from agents import Agent, RunConfig, Runner, Tool, function_tool
+from datetime import datetime
+
+from agents import Agent, RunConfig, Runner, SQLiteSession, Tool, function_tool
 from typing import Optional
 
+from ivexes.config.settings import get_settings
 from ivexes.printer import stream_result, print_and_write_to_file
 from .shared_context import MultiAgentContext
 
@@ -28,6 +31,10 @@ def agent_as_tool(
     Returns:
         A tool that executes the agent with the given configuration
     """
+    session = SQLiteSession(
+        session_id=f'{tool_name}-{get_settings().trace_name}-{datetime.isoformat}',
+        db_path=get_settings().session_db_path,
+    )
 
     @function_tool(
         name_override=tool_name,
@@ -58,6 +65,7 @@ def agent_as_tool(
                 input=input,
                 run_config=run_config,
                 max_turns=max_turns,
+                session=session,
             )
             await stream_result(result)
 

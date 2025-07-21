@@ -1,6 +1,7 @@
 """Base Agent module providing common functionality for all agents."""
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Optional, Any, Dict
 
 from agents import (
@@ -11,6 +12,7 @@ from agents import (
     Runner,
     TResponseInputItem,
     trace,
+    SQLiteSession,
 )
 from openai.types.responses import EasyInputMessageParam
 
@@ -44,6 +46,10 @@ class BaseAgent(ABC):
         self.settings = get_settings()
         self.agent: Optional[Agent] = None
         self.user_msg: Optional[str] = None
+        self.session = SQLiteSession(
+            session_id=f'{self.__class__.__name__}-{self.settings.trace_name}-{datetime.isoformat}',
+            db_path=self.settings.session_db_path,
+        )
         self._setup_agent()
 
     def __del__(self):
@@ -87,6 +93,7 @@ class BaseAgent(ABC):
             'starting_agent': self.agent,
             'run_config': get_run_config(),
             'max_turns': self.settings.max_turns,
+            'session': self.session,
         }
 
     def run_p(self, user_msg: Optional[str] = None) -> None:
