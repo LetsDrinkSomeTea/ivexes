@@ -15,19 +15,22 @@ dependencies = [
   "docker",
   "chardet",
   "openai",
-  "openai-agents",
+  "openai-agents>=0.2.2",
   "python-dotenv",
   "click",
   "tiktoken",
   "mitreattack-python",
   "nvdlib",
+  "sentence-transformers>=5.0.0",
 ]
 
 [dependency-groups]
 dev = [
+  "jupyter>=1.1.1",
   "mkdocs>=1.6.1",
   "mkdocs-material>=9.6.15",
   "mkdocstrings[python]>=0.29.1",
+  "pexpect>=4.9.0",
   "pre-commit",
   "ruff",
 ]

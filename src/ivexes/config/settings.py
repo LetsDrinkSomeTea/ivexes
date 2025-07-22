@@ -84,6 +84,9 @@ class Settings(BaseSettings):
     max_turns: int = Field(
         default_factory=lambda: int(os.environ.get('MAX_TURNS', '10'))
     )
+    session_db_path: str = Field(
+        default_factory=lambda: os.environ.get('SESSION_DB_PATH', './sessions.sqlite')
+    )
 
     # Logging
     log_level: LogLevels = Field(

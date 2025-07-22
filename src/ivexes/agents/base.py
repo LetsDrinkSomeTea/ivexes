@@ -1,6 +1,7 @@
 """Base Agent module providing common functionality for all agents."""
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Optional, Any, Dict
 
 from agents import (
@@ -9,10 +10,9 @@ from agents import (
     RunResult,
     RunResultStreaming,
     Runner,
-    TResponseInputItem,
     trace,
+    SQLiteSession,
 )
-from openai.types.responses import EasyInputMessageParam
 
 from ivexes import print_result, print_banner, stream_result
 
@@ -44,6 +44,10 @@ class BaseAgent(ABC):
         self.settings = get_settings()
         self.agent: Optional[Agent] = None
         self.user_msg: Optional[str] = None
+        self.session = SQLiteSession(
+            session_id=f'{self.__class__.__name__}-{self.settings.trace_name}-{datetime.now().isoformat()}',
+            db_path=self.settings.session_db_path,
+        )
         self._setup_agent()
 
     def __del__(self):
@@ -87,6 +91,7 @@ class BaseAgent(ABC):
             'starting_agent': self.agent,
             'run_config': get_run_config(),
             'max_turns': self.settings.max_turns,
+            'session': self.session,
         }
 
     def run_p(self, user_msg: Optional[str] = None) -> None:
@@ -151,16 +156,17 @@ class BaseAgent(ABC):
         self._check_settings(user_msg)
         print_banner()
         with trace(self.settings.trace_name):
-            input_items: list[TResponseInputItem] = []
             user_msg = user_msg if user_msg else self.user_msg
+            if not user_msg:
+                raise ValueError(
+                    f'User message is not set. Please provide a message in _setup_agent or run command.'
+                )
             runner_config = self._get_runner_config()
 
             while user_msg not in ['exit', 'quit', 'q']:
-                user_input_item = EasyInputMessageParam(content=user_msg, role='user')
-                input_items.append(user_input_item)
                 try:
-                    result = Runner.run_streamed(input=input_items, **runner_config)
-                    input_items = await stream_result(result)
+                    result = Runner.run_streamed(input=user_msg, **runner_config)
+                    await stream_result(result)
                 except MaxTurnsExceeded as e:
                     print(f'MaxTurnsExceeded: {e}')
                 user_msg = input('User: ')

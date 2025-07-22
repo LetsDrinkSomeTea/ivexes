@@ -24,7 +24,7 @@ Example:
 
 import os
 import re
-from typing import Optional
+from typing import Literal, Optional
 import chardet
 import sys
 from time import sleep
@@ -155,7 +155,11 @@ class CodeBrowser:
         return file_path, line, col
 
     def get_file_content(
-        self, file: str, offset: int = 0, limit: int = 50
+        self,
+        file: str,
+        offset: int = 0,
+        limit: int = 50,
+        encode: Literal['auto', 'raw'] = 'auto',
     ) -> str | None:
         """Get the content of a file from the container.
 
@@ -163,6 +167,8 @@ class CodeBrowser:
             file: Path to the file within the container
             offset: Start line number (0-indexed, default: 0)
             limit: Maximum number of lines to return (default: 50)
+            encode: Encoding type to use for decoding the file content (default: auto).
+                Default 'auto' uses chardet to detect encoding, 'raw' returns bytes without decoding.
 
         Returns:
             The content of the file as a string
@@ -176,6 +182,9 @@ class CodeBrowser:
             return None
 
         raw_bytes = res.output
+        if encode == 'raw':
+            logger.debug(f'Returning raw bytes for file {file}')
+            return raw_bytes
         detected = chardet.detect(raw_bytes)
         encoding = detected.get('encoding', 'utf-8')
         confidence = detected.get('confidence', 0)
@@ -194,7 +203,7 @@ class CodeBrowser:
             logger.error(f'Failed to decode with detected encoding {encoding}: {e}')
             return None
 
-    def get_codebase_structure(self, n: int = 3) -> str | None:
+    def get_codebase_structure(self, n: int = 3) -> str:
         """Get the structure of the codebase using the tree command.
 
         Args:
@@ -213,7 +222,7 @@ class CodeBrowser:
         res = self.container.exec_run(cmd)
         if res.exit_code != 0:
             logger.error(f'Error running command: {res.output}')
-            return None
+            return f'Error running command: {res.output}'
         logger.info(f'Tree got {len(res.output.splitlines())} entries')
         return res.output.decode()
 

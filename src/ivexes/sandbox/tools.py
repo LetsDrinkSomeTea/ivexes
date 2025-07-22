@@ -8,7 +8,7 @@ All sandbox operations are performed within Docker containers to ensure
 proper isolation and security.
 """
 
-from typing import cast
+from typing import Literal, Optional, cast
 
 from agents import function_tool, Tool
 from .sandbox import Sandbox
@@ -59,9 +59,9 @@ def setup_sandbox() -> str:
         'Username: "user" Password: "passwd"\n'
         'Rootuser: "root Password: "passwd" (Only use for setup purposes)\n'
     )
-    r += sandbox.write_to_shell(b'whoami')
-    r += sandbox.write_to_shell(b'pwd')
-    r += sandbox.write_to_shell(b'ls -la')
+    r += sandbox.run('whoami')[1]
+    r += sandbox.run('pwd')[1]
+    r += sandbox.run('ls -la')[1]
     return r
 
 
@@ -86,27 +86,53 @@ def teardown_sandbox() -> str:
 
 
 @function_tool(strict_mode=True)
-def sandbox_write_to_shell(input: str) -> str:
-    """Interactively writes the input to the shell in the Kali Linux sandbox environment.
+def sandbox_run(
+    input: str,
+    user: Literal['root', 'user'] = 'user',
+    session: Optional[str] = None,
+    timeout: int = 60,
+) -> str:
+    r"""Interactively writes the input to the shell in the Kali Linux sandbox environment.
 
     Executes commands in the sandbox shell and returns the output. Useful for
     running analysis tools, scripts, and system commands within the secure environment.
 
     Args:
         input (str): The input to write to the shell.
+        user (Literal['root', 'user']): The user context to run the command as.
+        session (Optional[str]): Optional session identifier for interactive commands.
+        timeout (int): Timeout for the command execution in seconds. Defaults to 60.
 
     Returns:
         str: The output of the shell command execution.
+
+    Example:
+        >>> sandbox_run('ls -la')
+        'total 0
+        drwxr-xr-x 1 user user 0 Oct 10 12:00 .
+        drwxr-xr-x 1 user user 0 Oct 10 12:00 ..'
+
+        >>> sandbox_run('python3', session='python')
+        'Python 3.13.5 (main, Jun 21 2025, 09:35:00) [GCC 15.1.1 20250425] on linux
+        Type "help", "copyright", "credits" or "license" for more information.'
+
+        >>> sandbox_run('print("Hello, World!")', session='python')
+        'Hello, World!'
+
     """
-    logger.info(f'running write_to_shell({input=})')
+    logger.info(f'running run({input=}, {session=})')
     sandbox = get_sandbox()
     if not sandbox:
         return 'Sandbox is not set up. Please run setup_sandbox() first.'
-    return sandbox.write_to_shell(input.encode())
+    if session:
+        s = sandbox.interactive(session=session, timeout=timeout)
+        s.send(input)
+        return s.read()[1]
+    return sandbox.run(input.encode(), user=user, timeout=timeout)[1]
 
 
 @function_tool(strict_mode=True)
-def sandbox_create_file(file_path: str, content: str) -> str:
+def sandbox_write_file(file_path: str, content: str) -> str:
     """Create a file (overriding) with the specified content in the sandbox environment.
 
     Creates or overwrites a file at the specified path with the given content.
@@ -124,7 +150,7 @@ def sandbox_create_file(file_path: str, content: str) -> str:
     sandbox = get_sandbox()
     if not sandbox:
         return 'Sandbox is not set up. Please run setup_sandbox() first.'
-    success = sandbox.create_file(file_path, content)
+    success = sandbox.write_file(file_path, content)
     return (
         f'File {file_path} created successfully.'
         if success
@@ -134,5 +160,5 @@ def sandbox_create_file(file_path: str, content: str) -> str:
 
 sandbox_tools = cast(
     list[Tool],
-    [setup_sandbox, teardown_sandbox, sandbox_write_to_shell, sandbox_create_file],
+    [setup_sandbox, teardown_sandbox, sandbox_run, sandbox_write_file],
 )
