@@ -1,7 +1,7 @@
 """Base Agent module providing common functionality for all agents."""
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+import time
 from typing import Optional, Any, Dict
 
 from agents import (
@@ -45,7 +45,7 @@ class BaseAgent(ABC):
         self.agent: Optional[Agent] = None
         self.user_msg: Optional[str] = None
         self.session = SQLiteSession(
-            session_id=f'{self.__class__.__name__}-{self.settings.trace_name}-{datetime.now().isoformat()}',
+            session_id=f'{self.__class__.__name__}-{self.settings.trace_name}-{time.strftime("%H:%M:%S", time.localtime())}',
             db_path=self.settings.session_db_path,
         )
         self._setup_agent()

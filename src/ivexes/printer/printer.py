@@ -27,7 +27,7 @@ import time
 from .components import banner
 from ..config import get_settings
 
-TIME_STRING: str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+TIME_STRING: str = time.strftime('%H:%M:%S', time.localtime())
 
 
 def print_and_write_to_file(text: str, truncate: bool = True, end: str = '\n') -> None:
@@ -42,7 +42,7 @@ def print_and_write_to_file(text: str, truncate: bool = True, end: str = '\n') -
     if truncate and len(lines) > 10:
         lines = lines[:10] + [f'... truncated {len(lines) - 10} lines']
     print('\n'.join(lines), end=end)
-    with open(f'output-{TIME_STRING}.txt', 'a') as f:
+    with open(f'output-{get_settings().trace_name}-{TIME_STRING}.txt', 'a') as f:
         f.write(text + end)
 
 

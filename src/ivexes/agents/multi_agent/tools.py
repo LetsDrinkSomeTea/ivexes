@@ -1,9 +1,8 @@
 """Agent wrapper tools for converting agents into reusable tools."""
 
-from datetime import datetime
+import time
 
 from agents import Agent, RunConfig, Runner, SQLiteSession, Tool, function_tool
-from typing import Optional
 
 from ivexes.config.settings import get_settings
 from ivexes.printer import stream_result, print_and_write_to_file
@@ -16,7 +15,6 @@ def agent_as_tool(
     tool_description: str,
     max_turns: int,
     run_config: RunConfig,
-    context: Optional[MultiAgentContext] = None,
 ) -> Tool:
     """Convert an agent into a tool that can be used by other agents.
 
@@ -32,7 +30,7 @@ def agent_as_tool(
         A tool that executes the agent with the given configuration
     """
     session = SQLiteSession(
-        session_id=f'{tool_name}-{get_settings().trace_name}-{datetime.now().isoformat()}',
+        session_id=f'{tool_name}-{get_settings().trace_name}-{time.strftime("%H:%M:%S", time.localtime())}',
         db_path=get_settings().session_db_path,
     )
 
@@ -47,27 +45,14 @@ def agent_as_tool(
         print_and_write_to_file(f'Input: {input}')
         print_and_write_to_file(f'{"":=^80}\n')
 
-        if context:
-            agent_memory = context.get_agent_memory(agent_name=agent.name)
-            input_items = agent_memory.append_messages(input)
-            result = Runner.run_streamed(
-                starting_agent=agent,
-                input=input_items,
-                run_config=run_config,
-                max_turns=max_turns,
-            )
-            await stream_result(result)
-            agent_memory.messages = result.to_input_list()
-
-        else:
-            result = Runner.run_streamed(
-                starting_agent=agent,
-                input=input,
-                run_config=run_config,
-                max_turns=max_turns,
-                session=session,
-            )
-            await stream_result(result)
+        result = Runner.run_streamed(
+            starting_agent=agent,
+            input=input,
+            run_config=run_config,
+            max_turns=max_turns,
+            session=session,
+        )
+        await stream_result(result)
 
         # Print end marker for subagent execution
         print_and_write_to_file(f'\n{"":=^80}')

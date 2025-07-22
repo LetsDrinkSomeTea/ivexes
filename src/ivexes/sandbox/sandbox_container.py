@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 def setup_container(
     setup_archive: Optional[str] = None,
     docker_image: Optional[str] = None,
-    port: int = 2222,
     renew: bool = True,
 ) -> Container:
     """Set up a Docker container for sandbox execution.
@@ -56,7 +55,35 @@ def setup_container(
         ret = container.exec_run('sudo -u user bash /tmp/setup.sh')
         logger.debug(f'Setup script output: {ret.output.decode()}')
 
-    assert isinstance(port, int), f'port must be number, got {type(port)}'
+    def create_user(container: Container, username: str):
+        """Create a user in the container if it doesn't exist.
+
+        Args:
+            container: Docker container object
+            username: Username to create
+        """
+        try:
+            # Check if user already exists
+            result = container.exec_run(f'id -u {username}', user='root')
+            if result.exit_code == 0:
+                logger.debug(
+                    f'User {username} already exists in container {container.name}'
+                )
+                return
+
+            # Create user with home directory and no password
+            result = container.exec_run(
+                ['useradd', '-m', '-p', 'passwd', '-s', '/bin/sh', username],
+                user='root',
+            )
+            if result.exit_code != 0:
+                logger.error(
+                    f'Failed to create user {username}: {result.output.decode()}'
+                )
+            logger.info(f'Created user {username} in container {container.name}')
+        except Exception as e:
+            logger.error(f'Failed to create user {username}: {e}')
+
     client = docker.from_env()
     settings = get_settings()
     if docker_image is None:
@@ -111,6 +138,7 @@ def setup_container(
                 raise TimeoutError(
                     f'Container {container_name} did not start within {MAX_DELAY} seconds'
                 )
+        create_user(container, 'user')
         run_setup_script(container, setup_archive)
         logger.info(f'Container {container.name} started')
         return container

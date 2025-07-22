@@ -10,7 +10,7 @@ import tarfile
 import threading
 from enum import Enum
 import time
-from typing import Optional, Tuple, Union
+from typing import Literal, Optional, Tuple, Union
 
 import docker
 from docker.models.containers import Container
@@ -45,8 +45,8 @@ class Sandbox:
     def __init__(
         self,
         setup_archive: Optional[str] = None,
-        username: str = 'root',
-        working_dir: str = '/root',
+        username: Literal['user', 'root'] = 'user',
+        working_dir: str = '/home/user',
     ):
         """Initialize the sandbox.
 
@@ -176,7 +176,8 @@ class Sandbox:
             return 0, output
 
         except Exception as e:
-            logger.error(f'Failed to execute command: {e}')
+            cmd = ' '.join(['sh', '-c', command])
+            logger.error(f'Failed to execute command ({cmd}): {e}')
             return 1, f'Error: {e}'
         finally:
             # Ensure stream is always closed
@@ -189,7 +190,7 @@ class Sandbox:
     def interactive(
         self,
         command: str = '/bin/sh',
-        user: str = 'root',
+        user: Literal['user', 'root'] = 'root',
         session: Optional[str] = None,
         timeout: int = 60,
     ) -> 'InteractiveSession':
@@ -211,9 +212,6 @@ class Sandbox:
             logger.debug(f'Reusing existing session: {session}')
             return self.sessions[session]
 
-        if not user:
-            user = self.username
-
         s = InteractiveSession(
             container=self.container,
             command=command,
@@ -226,6 +224,28 @@ class Sandbox:
             self.sessions[session] = s
 
         return s
+
+    def _handle_path(self, filename: str) -> tuple[str, str]:
+        """Handle file paths for reading/writing in the container.
+
+        Args:
+            filename: Relative (to self.working_dir) or absolute file path in container
+        Returns:
+            tuple: (target_path, file_name)
+                - target_path: Directory path in container
+                - file_name: Name of the file
+        """
+        # Handle absolute vs relative paths
+        if filename.startswith('/'):
+            # Absolute path - split into directory and filename
+            file_name = os.path.basename(filename)
+            target_path = os.path.dirname(filename)
+        else:
+            # Relative path - use working directory
+            file_name = filename
+            target_path = self.working_dir
+
+        return target_path, file_name
 
     def write_file(self, filename: str, content: str) -> bool:
         """Create a file in the container.
@@ -240,21 +260,12 @@ class Sandbox:
         if not self.container:
             return False
 
+        target_path, file_name = self._handle_path(filename)
+        # Ensure target directory exists
+        if target_path != '/':
+            self.container.exec_run(f'mkdir -p {target_path}', user=self.username)
+
         try:
-            # Handle absolute vs relative paths
-            if filename.startswith('/'):
-                # Absolute path - split into directory and filename
-                file_name = os.path.basename(filename)
-                target_path = os.path.dirname(filename)
-            else:
-                # Relative path - use working directory
-                file_name = filename
-                target_path = self.working_dir
-
-            # Ensure target directory exists
-            if target_path != '/':
-                self.container.exec_run(f'mkdir -p {target_path}', user=self.username)
-
             # Create tar archive with just the filename (not full path)
             tar_stream = io.BytesIO()
             with tarfile.open(fileobj=tar_stream, mode='w') as tar:
@@ -287,8 +298,12 @@ class Sandbox:
         if not self.container:
             return None
 
+        target_path, file_name = self._handle_path(filename)
+
         try:
-            archive_data, _ = self.container.get_archive(filename)
+            archive_data, _ = self.container.get_archive(
+                os.path.join(target_path, file_name)
+            )
             archive_bytes = b''.join(archive_data)
             with io.BytesIO(archive_bytes) as tar_stream:
                 with tarfile.open(fileobj=tar_stream, mode='r') as tar:
@@ -365,7 +380,7 @@ class InteractiveSession:
         container: Container,
         command: str,
         working_dir: str,
-        user: str,
+        user: Literal['root', 'user'],
         timeout: int = 30,
     ):
         """Initialize interactive session.

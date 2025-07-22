@@ -24,7 +24,7 @@ from .sandbox.tools import sandbox_tools as sandbox_tools
 from .vector_db.tools import vectordb_tools as vectordb_tools
 from .date.tools import date_tools as date_tools
 from .cve_search.tools import cve_tools as cve_tools
-from .report.tools import report_tools as report_tools
+from .report.tools import create_report_tools as create_report_tools
 
 __all__ = [
     'date_tools',
@@ -32,5 +32,5 @@ __all__ = [
     'code_browser_tools',
     'vectordb_tools',
     'cve_tools',
-    'report_tools',
+    'create_report_tools',
 ]

@@ -21,7 +21,7 @@ class TestSandboxModule(unittest.TestCase):
             os.environ,
             {
                 'LLM_API_KEY': 'sk-test-key',
-                'SANDBOX_IMAGE': 'python:3.13-alpine',
+                'SANDBOX_IMAGE': 'python:3.13',
             },
             clear=True,
         ):
@@ -61,7 +61,7 @@ class TestSandboxModule(unittest.TestCase):
         # Test command execution
         exit_code, output = self.sandbox.run('whoami')
         self.assertEqual(exit_code, 0)
-        self.assertEqual(output.strip(), 'root')
+        self.assertEqual(output.strip(), 'user')
 
         # Test command execution with different user
         exit_code, output = self.sandbox.run('whoami', user='root')

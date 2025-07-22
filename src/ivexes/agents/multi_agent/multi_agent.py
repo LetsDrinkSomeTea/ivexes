@@ -15,7 +15,7 @@ from ...tools import (
     sandbox_tools,
     vectordb_tools,
     cve_tools,
-    report_tools,
+    create_report_tools,
 )
 from ...prompts.multi_agent import (
     security_specialist_system_msg,
@@ -87,7 +87,6 @@ class MultiAgent(BaseAgent):
             tool_description='Expert in CVE, CWE, CAPEC, and ATT&CK frameworks. Provides security vulnerability analysis, attack pattern identification, and mitigation strategies based on industry standards.',
             run_config=self.subagent_run_config,
             max_turns=self.settings.max_turns,
-            context=self.context,
         )
 
         code_analyst_tool = agent_as_tool(
@@ -101,7 +100,6 @@ class MultiAgent(BaseAgent):
             tool_description='Specialist for codebase analysis and vulnerability identification. Analyzes code structure, functions, classes, and diffs to identify potential security weaknesses.',
             run_config=self.subagent_run_config,
             max_turns=self.settings.max_turns,
-            context=self.context,
         )
 
         red_team_operator_tool = agent_as_tool(
@@ -115,7 +113,6 @@ class MultiAgent(BaseAgent):
             tool_description='Specialist for creating and testing Proof-of-Concept exploits. Develops bash/Python scripts, tests exploits in sandbox, and validates exploitation techniques.',
             run_config=self.subagent_run_config,
             max_turns=self.settings.max_turns,
-            context=self.context,
         )
 
         report_journalist_agent = agent_as_tool(
@@ -123,13 +120,14 @@ class MultiAgent(BaseAgent):
                 name='Report Journalist',
                 handoff_description='Specialist agent for generating reports and summaries',
                 instructions=report_journalist_system_msg,
-                tools=date_tools + report_tools + self.context_tools,
+                tools=date_tools
+                + create_report_tools(self.context)
+                + self.context_tools,
             ),
             tool_name='report_journalist',
             tool_description='Specialist for generating comprehensive reports and summaries. Compiles findings from security analysis, code review, and exploitation into structured reports.',
             run_config=self.subagent_run_config,
             max_turns=self.settings.max_turns,
-            context=self.context,
         )
 
         # Create planning agent

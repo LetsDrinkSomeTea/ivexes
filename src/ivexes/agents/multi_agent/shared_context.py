@@ -111,15 +111,8 @@ class SharedMemory:
 class MultiAgentContext:
     """Combined context with agent memories and shared data."""
 
-    agent_memories: dict[str, AgentMemory] = field(default_factory=dict)
     shared_memory: SharedMemory = field(default_factory=SharedMemory)
     start_time: datetime = field(default_factory=datetime.now)
-
-    def get_agent_memory(self, agent_name: str) -> AgentMemory:
-        """Get or create agent memory."""
-        if agent_name not in self.agent_memories:
-            self.agent_memories[agent_name] = AgentMemory(agent_name=agent_name)
-        return self.agent_memories[agent_name]
 
     def get_shared_memory(self) -> SharedMemory:
         """Get shared memory object."""
@@ -131,15 +124,9 @@ class MultiAgentContext:
         Returns:
             Formatted string with agent memories and shared memory summary.
         """
-        agent_summaries = [
-            f'Agent: {name}, Messages: {len(memory.messages)}'
-            for name, memory in self.agent_memories.items()
-        ]
-
         return (
             'Multi-Agent Context:\n'
             + f'Total running time: {(datetime.now() - self.start_time).total_seconds()} seconds\n'
-            + '\n'.join(agent_summaries)
             + '\n\nShared Memory:\n'
             + str(self.shared_memory)
         )
