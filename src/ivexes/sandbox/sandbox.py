@@ -409,7 +409,7 @@ class InteractiveSession:
         if isinstance(text, str):
             text = text.encode('utf-8')
 
-        text.strip(b'\n')
+        text = text.strip(b'\n')
         self.process.send(text)
         self.read()
         self.process.send(b'\n')

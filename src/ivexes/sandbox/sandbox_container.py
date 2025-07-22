@@ -92,7 +92,7 @@ def setup_container(
             container.reload()
             if container.status == 'exited':
                 logger.info(
-                    f'Container {container_name} exited immidiatly, trying to restart with CMD sleep infinity'
+                    f'Container {container_name} exited immediately, trying to restart with CMD sleep infinity'
                 )
                 container.remove()
                 container: Container = client.containers.run(
