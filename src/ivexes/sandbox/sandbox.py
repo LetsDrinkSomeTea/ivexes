@@ -21,6 +21,8 @@ from .sandbox_container import setup_container
 
 logger = logging.getLogger(__name__)
 
+DELAY = 0.2  # Delay for reading output in interactive sessions
+
 
 class Sandbox:
     """Simplified containerized sandbox for secure code execution.
@@ -43,8 +45,8 @@ class Sandbox:
     def __init__(
         self,
         setup_archive: Optional[str] = None,
-        username: str = 'user',
-        working_dir: str = '/home/user',
+        username: str = 'root',
+        working_dir: str = '/root',
     ):
         """Initialize the sandbox.
 
@@ -395,6 +397,7 @@ class InteractiveSession:
 
         try:
             self.process = pexpect.spawn(' '.join(docker_cmd), timeout=timeout)
+            time.sleep(DELAY)  # Allow some time for the process to start
             self.process.encoding = 'utf-8'
             logger.debug(f'Started interactive session: {command}')
         except Exception as e:
@@ -408,70 +411,20 @@ class InteractiveSession:
 
         text.strip(b'\n')
         self.process.send(text)
-        self.read_available()
+        self.read()
         self.process.send(b'\n')
 
-    def expect(
-        self, patterns: Union[str, list, bytes], timeout: Optional[int] = None
-    ) -> Tuple[int, str]:
-        """Wait for expected patterns.
-
-        Args:
-            patterns: Pattern(s) to wait for
-            timeout: Timeout in seconds
-
-        Returns:
-            Tuple of (pattern_index, matched_output)
-        """
-        if timeout is None:
-            timeout = self.timeout
-
-        if not isinstance(patterns, list):
-            patterns = [patterns]
-
-        if isinstance(patterns, list):
-            patterns = [
-                p.encode('utf-8') if isinstance(p, str) else p for p in patterns
-            ]
-
-        try:
-            index = self.process.expect(patterns, timeout=timeout)
-            output = self.process.before + self.process.after
-            if isinstance(output, bytes):
-                output = output.decode('utf-8').replace('\r\n', '\n')
-            return index, output
-        except pexpect.TIMEOUT:
-            return -1, self.process.before
-        except pexpect.EOF:
-            return -1, self.process.before
-
-    def read_until(
-        self, pattern: Union[str, list], timeout: Optional[int] = None
-    ) -> tuple[STATUS, str]:
-        """Read until pattern is found."""
-        if isinstance(pattern, str):
-            pattern = [pattern]
-        try:
-            _, output = self.expect(pattern, timeout)
-            return self.STATUS.ALIVE, output
-        except pexpect.TIMEOUT:
-            logger.warning('Read until timeout')
-            return self.STATUS.TIMEOUT, ''
-        except pexpect.EOF:
-            logger.warning('Read until EOF')
-            return self.STATUS.EOF, ''
-
-    def read_available(self) -> tuple[STATUS, str]:
+    def read(self) -> tuple[STATUS, str]:
         """Read any available output without blocking."""
         try:
-            time.sleep(0.2)  # Allow some time for output to be available
+            time.sleep(DELAY)  # Allow some time for output to be available
             val = self.process.read_nonblocking(size=10000, timeout=1)
             val = (
                 val.decode('utf-8').replace('\r\n', '\n')
                 if isinstance(val, bytes)
                 else val
             )
-            return self.STATUS.ALIVE, val
+            return self.STATUS.ALIVE, val.strip('\n')
         except pexpect.TIMEOUT:
             return self.STATUS.EMPTY, 'Nothing to read'
         except pexpect.EOF:

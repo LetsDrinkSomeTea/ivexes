@@ -127,7 +127,7 @@ def sandbox_run(
     if session:
         s = sandbox.interactive(session=session, timeout=timeout)
         s.send(input)
-        return s.read_available()[1]
+        return s.read()[1]
     return sandbox.run(input.encode(), user=user, timeout=timeout)[1]
 
 

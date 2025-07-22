@@ -1,11 +1,12 @@
 """Tests for sandbox functionality."""
 
 import io
-import unittest
 import os
 import time
+import unittest
 from unittest.mock import patch
-from ivexes.config import set_settings, PartialSettings
+
+from ivexes.config import PartialSettings, set_settings
 from ivexes.sandbox import Sandbox
 
 
@@ -16,7 +17,14 @@ class TestSandboxModule(unittest.TestCase):
         """Set up test fixtures before each test method."""
         self.sandbox = None
         self.temp_files = []
-        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
+        with patch.dict(
+            os.environ,
+            {
+                'LLM_API_KEY': 'sk-test-key',
+                'SANDBOX_IMAGE': 'python:3.13-alpine',
+            },
+            clear=True,
+        ):
             set_settings(PartialSettings(llm_api_key='llm-key-for-verification'))
 
     def tearDown(self):
@@ -53,7 +61,7 @@ class TestSandboxModule(unittest.TestCase):
         # Test command execution
         exit_code, output = self.sandbox.run('whoami')
         self.assertEqual(exit_code, 0)
-        self.assertEqual(output.strip(), 'user')
+        self.assertEqual(output.strip(), 'root')
 
         # Test command execution with different user
         exit_code, output = self.sandbox.run('whoami', user='root')
@@ -74,19 +82,9 @@ class TestSandboxModule(unittest.TestCase):
             self.assertTrue(session.is_alive())
 
             # Wait for shell prompt
-            index, output = session.expect(['$', '#'], timeout=5)
-            self.assertIn(index, [0, 1])  # Should match one of the prompts
-
-            # Send a simple command
             session.send('echo "Hello World"')
-            output = session.read_until(['$', '#'])
+            output = session.read()
             self.assertIn('Hello World', output[1])
-
-            # Test read_available
-            session.send('echo "test"')
-            time.sleep(0.1)  # Give time for output
-            available = session.read_available()
-            # available might be empty or contain the output depending on timing
 
         # Session should be closed after context manager
         self.assertFalse(session.is_alive())
@@ -147,6 +145,7 @@ class TestSandboxModule(unittest.TestCase):
             self.assertTrue(sandbox.is_running())
             exit_code, output = sandbox.run('echo "test"')
             self.assertEqual(exit_code, 0)
+            self.assertIn('test', output)
 
         # Sandbox should be closed after context manager
         self.assertFalse(sandbox.is_running())
@@ -169,24 +168,10 @@ class TestSandboxModule(unittest.TestCase):
 
         with self.sandbox.interactive('python3') as session:
             # Test multiple pattern matching
-            index, output = session.expect(['>>>', 'Python', '>>>'], timeout=10)
-            self.assertIn(index, [0, 1, 2])
-
-            # If we got Python banner, wait for prompt
-            if index == 1:
-                session.expect('>>>')
-
-            # Test command execution
             session.send('print("Hello from Python")')
-            output = session.read_until('>>>')
+            output = session.read()
             self.assertIn('Hello from Python', output[1])
 
-            # Test timeout behavior
-            session.send('import time; time.sleep(0.1)')
-            index, output = session.expect(['>>>', 'timeout_pattern'], timeout=1)
-            self.assertEqual(index, 0)  # Should match >>> before timeout
-
-            # Test exit
             session.send('exit()')
 
     def test_error_handling(self):
@@ -345,29 +330,22 @@ echo "Setup script executed" > /tmp/setup_log.txt
 
         with self.sandbox.interactive('python3') as py_session:
             # Wait for Python prompt
-            index, output = py_session.expect(['>>>', 'Python'], timeout=10)
-            if index == 1:  # Got Python banner
-                py_session.expect('>>>')
-
-            # Test basic Python commands
             py_session.send('x = 42')
-            py_session.read_available()
+            py_session.read()
 
             py_session.send('print(x)')
-            output = py_session.read_until('>>>')
+            output = py_session.read()
             self.assertIn('42', output[1])
 
             # Test multiline input
             py_session.send('def test_func():')
-            py_session.expect('...')
             py_session.send('    return "hello"')
-            py_session.expect('...')
             py_session.send('')  # Empty line to complete function
-            py_session.expect('>>>')
+            output = py_session.read()
 
             py_session.send('print(test_func())')
-            output = py_session.read_until('>>>')
-            self.assertIn('hello', output)
+            output = py_session.read()
+            self.assertIn('hello', output[1])
 
 
 if __name__ == '__main__':

@@ -82,14 +82,31 @@ def setup_container(
             environment={
                 'TERM': 'xterm-mono',
             },
-            # remove=True
+            # remove=True,
         )
         MAX_DELAY = 30
         time_waited = 0
         while container.status != 'running':
-            container.reload()
             time.sleep(1)  # Wait for the container to start
             time_waited += 1
+            container.reload()
+            if container.status == 'exited':
+                logger.info(
+                    f'Container {container_name} exited immidiatly, trying to restart with CMD sleep infinity'
+                )
+                container.remove()
+                container: Container = client.containers.run(
+                    image=docker_image,
+                    name=container_name,
+                    detach=True,
+                    environment={
+                        'TERM': 'xterm-mono',
+                    },
+                    # remove=True,
+                    command=['sleep', 'infinity'],
+                )
+                time_waited = 0
+
             if time_waited > MAX_DELAY:
                 raise TimeoutError(
                     f'Container {container_name} did not start within {MAX_DELAY} seconds'
