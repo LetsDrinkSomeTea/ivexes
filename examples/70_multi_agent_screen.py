@@ -7,11 +7,11 @@ from ivexes.agents import MultiAgent
 from ivexes.config import PartialSettings, setup_default_logging
 
 load_dotenv(verbose=True, override=True)
-setup_default_logging()
+setup_default_logging('WARNING')
 
 settings = PartialSettings(
     trace_name='Multi-Agent Screen',
-    model='openai/gpt-4.1',
+    model='openai/gpt-4.1-mini',
     reasoning_model='openai/o4-mini',
     model_temperature=0.1,
     max_turns=50,
@@ -26,5 +26,12 @@ settings = PartialSettings(
 agent = MultiAgent(bin_path='/usr/bin/screen', settings=settings)
 
 
+async def main():
+    """Run the multi-agent screen vulnerability analysis."""
+    context, session = await agent.run_ensured_report()
+    print(f'Context: {context}')
+    print(f'Session: {session}')
+
+
 if __name__ == '__main__':
-    asyncio.run(agent.run_interactive())
+    asyncio.run(main())
