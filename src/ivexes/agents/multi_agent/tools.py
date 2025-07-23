@@ -8,6 +8,10 @@ from ivexes.config.settings import get_settings
 from ivexes.printer import stream_result, print_and_write_to_file
 from .shared_context import MultiAgentContext
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def agent_as_tool(
     agent: Agent,
@@ -15,6 +19,7 @@ def agent_as_tool(
     tool_description: str,
     max_turns: int,
     run_config: RunConfig,
+    context: MultiAgentContext,
 ) -> Tool:
     """Convert an agent into a tool that can be used by other agents.
 
@@ -45,6 +50,8 @@ def agent_as_tool(
         print_and_write_to_file(f'Input: {input}')
         print_and_write_to_file(f'{"":=^80}\n')
 
+        input = f'{context.get_shared_memory().summary()}\n\nNew Task:\n{input}'
+
         result = Runner.run_streamed(
             starting_agent=agent,
             input=input,
@@ -53,6 +60,8 @@ def agent_as_tool(
             session=session,
         )
         await stream_result(result)
+
+        context.update_usage(result, tool_name)
 
         # Print end marker for subagent execution
         print_and_write_to_file(f'\n{"":=^80}')

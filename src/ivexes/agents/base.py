@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 import time
-from typing import Optional, Any, Dict
+from typing import Callable, Optional, Any, Dict
 
 from agents import (
     Agent,
@@ -15,6 +15,7 @@ from agents import (
 )
 
 from ivexes import print_result, print_banner, stream_result
+from ivexes.printer.printer import print_usage_summary
 
 from ..config import (
     PartialSettings,
@@ -100,7 +101,10 @@ class BaseAgent(ABC):
         Args:
             user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
         """
-        print_result(self.run(user_msg))
+        print_banner()
+        result = self.run(user_msg)
+        print_result(result)
+        print_usage_summary(result)
 
     def run(self, user_msg: Optional[str] = None) -> RunResult:
         """Run the agent synchronously.
@@ -112,11 +116,11 @@ class BaseAgent(ABC):
             RunResult: The result of the agent execution.
         """
         self._check_settings(user_msg)
-        print_banner()
         with trace(self.settings.trace_name):
             runner_config = self._get_runner_config()
             runner_config['input'] = user_msg if user_msg else self.user_msg
             result = Runner.run_sync(**runner_config)
+            print_usage_summary(result)
             return result
 
     async def run_streamed_p(self, user_msg: Optional[str] = None) -> None:
@@ -125,7 +129,10 @@ class BaseAgent(ABC):
         Args:
             user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
         """
-        await stream_result(self.run_streamed(user_msg))
+        print_banner()
+        result = self.run_streamed(user_msg)
+        await stream_result(result)
+        print_usage_summary(result)
 
     def run_streamed(self, user_msg: Optional[str] = None) -> RunResultStreaming:
         """Run the agent with streaming results.
@@ -137,14 +144,17 @@ class BaseAgent(ABC):
             RunResultStreaming: The streaming result of the agent execution.
         """
         self._check_settings(user_msg)
-        print_banner()
         with trace(self.settings.trace_name):
             runner_config = self._get_runner_config()
             runner_config['input'] = user_msg if user_msg else self.user_msg
             result = Runner.run_streamed(**runner_config)
             return result
 
-    async def run_interactive(self, user_msg: Optional[str] = None) -> None:
+    async def run_interactive(
+        self,
+        user_msg: Optional[str] = None,
+        result_hook: Callable[[RunResultStreaming], None] | None = None,
+    ) -> None:
         """Run the agent in interactive mode with continuous user input.
 
         Allows users to have a conversation with the agent. The session continues
@@ -152,9 +162,10 @@ class BaseAgent(ABC):
 
         Args:
             user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
+            result_hook: Optional callback function to process the result after each interaction.
         """
-        self._check_settings(user_msg)
         print_banner()
+        self._check_settings(user_msg)
         with trace(self.settings.trace_name):
             user_msg = user_msg if user_msg else self.user_msg
             if not user_msg:
@@ -167,6 +178,9 @@ class BaseAgent(ABC):
                 try:
                     result = Runner.run_streamed(input=user_msg, **runner_config)
                     await stream_result(result)
+                    print_usage_summary(result)
+                    if result_hook:
+                        result_hook(result)
                 except MaxTurnsExceeded as e:
                     print(f'MaxTurnsExceeded: {e}')
                 user_msg = input('User: ')

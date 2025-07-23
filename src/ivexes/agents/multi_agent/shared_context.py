@@ -2,8 +2,14 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from agents import TResponseInputItem
+from typing import Union
+from agents import RunResult, RunResultStreaming, TResponseInputItem
+from agents.usage import Usage
 from openai.types.responses import EasyInputMessageParam
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -113,10 +119,91 @@ class MultiAgentContext:
 
     shared_memory: SharedMemory = field(default_factory=SharedMemory)
     start_time: datetime = field(default_factory=datetime.now)
+    agents_usage: dict[str, Usage] = field(default_factory=dict)
+    report_generated: bool = False
 
     def get_shared_memory(self) -> SharedMemory:
         """Get shared memory object."""
         return self.shared_memory
+
+    def get_usage(self) -> str:
+        """Get a summary of token usage across all agents.
+
+        Returns:
+            Formatted string with total token usage and subagent usage.
+        """
+        ret = '## Usage Summary:\n'
+
+        def format_usage(u: Usage) -> str:
+            return (
+                f'{u.input_tokens:,} input + '
+                f'{u.output_tokens:,} output = '
+                f'{u.total_tokens:,} total tokens ({u.requests} requests)'
+            )
+
+        total_usage = Usage()
+        for usage in self.agents_usage.values():
+            total_usage.add(usage)
+
+        ret += f'Total tokens used: {format_usage(total_usage)}\n'
+
+        if self.agents_usage:
+            lines = []
+            active_agents = {
+                name: usage
+                for name, usage in self.agents_usage.items()
+                if usage.total_tokens > 0
+                or usage.input_tokens > 0
+                or usage.output_tokens > 0
+            }
+
+            if active_agents:
+                agent_names = list(active_agents.keys())
+                for i, (agent_name, usage) in enumerate(active_agents.items()):
+                    prefix = '├─' if i < len(agent_names) - 1 else '└─'
+                    agent_line = f'{prefix} {agent_name}: {format_usage(usage)}'
+                    lines.append(agent_line)
+            ret += '\nUsage per agent:\n' + '\n'.join(lines)
+        return ret or 'No usage information available'
+
+    def update_usage(
+        self,
+        result: Union[RunResult, RunResultStreaming],
+        subagent: str = 'planning-agent',
+    ) -> None:
+        """Update the total usage for this multi-agent context.
+
+        Args:
+            result: The RunResult or RunResultStreaming object
+            subagent: Optional name of the subagent that generated this usage
+        """
+        try:
+            usage = result.context_wrapper.usage
+        except AttributeError:
+            logger.warning('No usage information available in result')
+            return None
+
+        if not usage:
+            logger.debug(f'usage is none for subagent {subagent}')
+            return
+
+        total_tokens = (
+            usage.total_tokens
+            if usage.total_tokens > 0
+            else (usage.input_tokens + usage.output_tokens)
+        )
+        total_usage = Usage(
+            requests=usage.requests,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
+            total_tokens=total_tokens,
+            input_tokens_details=usage.input_tokens_details,
+            output_tokens_details=usage.output_tokens_details,
+        )
+        if subagent not in self.agents_usage:
+            self.agents_usage[subagent] = total_usage
+        else:
+            self.agents_usage[subagent].add(total_usage)
 
     def __str__(self) -> str:
         """String representation of the multi-agent context.
@@ -124,9 +211,12 @@ class MultiAgentContext:
         Returns:
             Formatted string with agent memories and shared memory summary.
         """
-        return (
+        context_info = (
             'Multi-Agent Context:\n'
-            + f'Total running time: {(datetime.now() - self.start_time).total_seconds()} seconds\n'
-            + '\n\nShared Memory:\n'
-            + str(self.shared_memory)
+            + f'Total running time: {(datetime.now() - self.start_time).total_seconds():.1f} seconds\n'
         )
+
+        context_info += self.get_usage() + '\n'
+
+        context_info += '\n\nShared Memory:\n' + str(self.shared_memory)
+        return context_info

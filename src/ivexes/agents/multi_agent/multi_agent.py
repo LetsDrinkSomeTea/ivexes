@@ -1,10 +1,11 @@
 """Multi-Agent module for coordinating specialized security analysis agents."""
 
-from typing import Optional, override
+from typing import Callable, Optional, override
 
-from agents import Agent, RunConfig
+from agents import Agent, RunConfig, RunResultStreaming, SQLiteSession, trace
 
-from ivexes.printer.printer import print_and_write_to_file
+from ivexes.printer import print_and_write_to_file, print_usage_summary
+from ivexes import stream_result
 
 
 from .shared_context import MultiAgentContext
@@ -15,7 +16,6 @@ from ...tools import (
     sandbox_tools,
     vectordb_tools,
     cve_tools,
-    create_report_tools,
 )
 from ...prompts.multi_agent import (
     security_specialist_system_msg,
@@ -44,7 +44,6 @@ class MultiAgent(BaseAgent):
         bin_path: str,
         settings: Optional[PartialSettings] = None,
         subagent_run_config: Optional[RunConfig] = None,
-        shared_context: bool = True,
     ):
         """Initialize Multi Agent.
 
@@ -56,16 +55,14 @@ class MultiAgent(BaseAgent):
         """
         self.bin_path = bin_path
         self.subagent_run_config = subagent_run_config
-        self.context = None
-        self.context_tools = []
-
-        if shared_context:
-            self.context = MultiAgentContext()
-            self.context_tools = create_shared_memory_tools(self.context)
+        self.context = MultiAgentContext()
+        self.context_tools = create_shared_memory_tools(self.context)
         super().__init__(settings or {})
 
     def _setup_agent(self):
         """Set up the multi-agent system with specialized agents."""
+        from ...tools import create_report_tools
+
         # Create specialized agent tools
         if self.subagent_run_config is None:
             self.subagent_run_config = get_run_config()
@@ -87,6 +84,7 @@ class MultiAgent(BaseAgent):
             tool_description='Expert in CVE, CWE, CAPEC, and ATT&CK frameworks. Provides security vulnerability analysis, attack pattern identification, and mitigation strategies based on industry standards.',
             run_config=self.subagent_run_config,
             max_turns=self.settings.max_turns,
+            context=self.context,
         )
 
         code_analyst_tool = agent_as_tool(
@@ -100,6 +98,7 @@ class MultiAgent(BaseAgent):
             tool_description='Specialist for codebase analysis and vulnerability identification. Analyzes code structure, functions, classes, and diffs to identify potential security weaknesses.',
             run_config=self.subagent_run_config,
             max_turns=self.settings.max_turns,
+            context=self.context,
         )
 
         red_team_operator_tool = agent_as_tool(
@@ -113,6 +112,7 @@ class MultiAgent(BaseAgent):
             tool_description='Specialist for creating and testing Proof-of-Concept exploits. Develops bash/Python scripts, tests exploits in sandbox, and validates exploitation techniques.',
             run_config=self.subagent_run_config,
             max_turns=self.settings.max_turns,
+            context=self.context,
         )
 
         report_journalist_agent = agent_as_tool(
@@ -124,10 +124,11 @@ class MultiAgent(BaseAgent):
                 + create_report_tools(self.context)
                 + self.context_tools,
             ),
-            tool_name='report_journalist',
+            tool_name='report-journalist',
             tool_description='Specialist for generating comprehensive reports and summaries. Compiles findings from security analysis, code review, and exploitation into structured reports.',
             run_config=self.subagent_run_config,
             max_turns=self.settings.max_turns,
+            context=self.context,
         )
 
         # Create planning agent
@@ -147,15 +148,43 @@ class MultiAgent(BaseAgent):
 
     @override
     def run_p(self, user_msg: Optional[str] = None) -> None:
-        super().run_p(user_msg)
+        from ivexes import print_result
+
+        result = self.run(user_msg)
+        print_result(result)
+        print_usage_summary(result)
+        self.context.update_usage(result)
         print_and_write_to_file(f'\n\n{"Shared Context":=^80}\n{str(self.context)}')
+
+    async def run_ensured_report(self) -> tuple[MultiAgentContext, SQLiteSession]:
+        """Run the multi-agent system until a report is generated.
+
+        This method ensures that the planning agent continues to run until
+        a report is generated, updating the shared context with each run.
+
+        Returns:
+            A tuple containing the updated MultiAgentContext and the SQLiteSession.
+        """
+        await self.run_streamed_p()
+        while not self.context.report_generated:
+            await self.run_streamed_p('continue with your plan or generate a report')
+        return self.context, self.session
 
     @override
     async def run_streamed_p(self, user_msg: Optional[str] = None) -> None:
-        await super().run_streamed_p(user_msg)
+        result = self.run_streamed(user_msg)
+        await stream_result(result)
+        print_usage_summary(result)
+        self.context.update_usage(result)
         print_and_write_to_file(f'\n\n{"Shared Context":=^80}\n{str(self.context)}')
 
     @override
-    async def run_interactive(self, user_msg: Optional[str] = None) -> None:
-        await super().run_interactive(user_msg)
+    async def run_interactive(
+        self,
+        user_msg: Optional[str] = None,
+        result_hook: Callable[[RunResultStreaming], None] | None = None,
+    ) -> None:
+        if not result_hook:
+            result_hook = self.context.update_usage
+        await super().run_interactive(user_msg, result_hook=result_hook)
         print_and_write_to_file(f'\n\n{"Shared Context":=^80}\n{str(self.context)}')
