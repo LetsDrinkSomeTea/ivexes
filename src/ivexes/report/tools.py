@@ -9,6 +9,7 @@ from datetime import datetime
 import os
 
 from agents import function_tool, Tool
+
 from ..config import get_settings
 from ..agents.multi_agent import MultiAgentContext
 
@@ -82,9 +83,10 @@ def create_report_tools(context: Optional[MultiAgentContext]) -> list[Tool]:
         if context:
             report_content += f"""
 ---
-## Appendix
-{str(context.get_shared_memory())}
 
+{str(context)}
+
+---
 """
         report_content += f"""
 ---
@@ -95,6 +97,8 @@ def create_report_tools(context: Optional[MultiAgentContext]) -> list[Tool]:
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(report_content)
 
+            if context:
+                context.report_generated = True
             return f'Report successfully created: {filename}\n\n<report_path>\n{filepath}\n</report_path>'
 
         except Exception as e:
