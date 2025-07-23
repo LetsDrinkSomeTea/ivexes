@@ -24,7 +24,7 @@ from openai.types.responses import ResponseFunctionToolCall
 import json
 import time
 
-from .components import banner
+from .components import banner, format_usage_display
 from ..config import get_settings
 
 TIME_STRING: str = time.strftime('%H:%M:%S', time.localtime())
@@ -280,3 +280,23 @@ def sprint_tools_as_json(tools: Tool | Iterable[Tool]) -> str:
 def print_tools_as_json(tools: Tool | Iterable[Tool]) -> None:
     """Print tools as JSON formatted string."""
     print_and_write_to_file(sprint_tools_as_json(tools), truncate=False, end='\n\n')
+
+
+def print_usage_summary(result: Union[RunResult, RunResultStreaming]) -> None:
+    """Print token usage summary for a completed run.
+
+    Displays total token usage for the run. This is automatically called at the end of
+    agent runs to provide visibility into resource consumption.
+
+    Args:
+        result: The completed run result containing usage information
+    """
+    usage = result.context_wrapper.usage
+    if not usage:
+        return
+
+    # Always use simple usage display format
+    # Multi-agent sub-agent breakdown is not available due to tool-based architecture
+    usage_display = format_usage_display(usage, show_details=True)
+
+    print_and_write_to_file(f'\n{usage_display}\n')

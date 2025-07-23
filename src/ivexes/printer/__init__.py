@@ -7,6 +7,8 @@ from .printer import sprint_tools_as_json as sprint_tools_as_json
 from .printer import print_tools_as_json as print_tools_as_json
 
 from .printer import print_and_write_to_file as print_and_write_to_file
+from .printer import print_usage_summary as print_usage_summary
+from .components import format_usage_display as format_usage_display
 
 __all__ = [
     'print_result',
@@ -15,4 +17,5 @@ __all__ = [
     'print_and_write_to_file',
     'sprint_tools_as_json',
     'print_tools_as_json',
+    'print_usage_summary',
 ]
