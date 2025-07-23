@@ -23,7 +23,8 @@ class TestContainerModule(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
 
         # Call the function
-        result = find_by_name(mock_client, 'test-container')
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            result = find_by_name('test-container')
 
         # Verify the result
         self.assertEqual(result, mock_container)
@@ -36,7 +37,8 @@ class TestContainerModule(unittest.TestCase):
         mock_client.containers.list.return_value = []
 
         # Call the function
-        result = find_by_name(mock_client, 'non-existent-container')
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            result = find_by_name('non-existent-container')
 
         # Verify the result
         self.assertIsNone(result)
@@ -59,7 +61,8 @@ class TestContainerModule(unittest.TestCase):
         ]
 
         # Call the function
-        result = find_by_name(mock_client, 'target-container')
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            result = find_by_name('target-container')
 
         # Verify the result
         self.assertEqual(result, mock_container2)
@@ -74,8 +77,9 @@ class TestContainerModule(unittest.TestCase):
         )
 
         # Verify that the function raises the exception
-        with self.assertRaises(docker.errors.DockerException):
-            find_by_name(mock_client, 'test-container')
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            with self.assertRaises(docker.errors.DockerException):
+                find_by_name('test-container')
 
     def test_remove_if_exists_container_exists(self):
         """Test removing a container that exists."""
@@ -86,7 +90,8 @@ class TestContainerModule(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
 
         # Call the function
-        result = remove_if_exists(mock_client, 'test-container')
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            result = remove_if_exists('test-container')
 
         # Verify the container was removed
         self.assertTrue(result)
@@ -101,7 +106,8 @@ class TestContainerModule(unittest.TestCase):
         mock_client.containers.list.return_value = []
 
         # Call the function (should not raise any exception)
-        result = remove_if_exists(mock_client, 'non-existent-container')
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            result = remove_if_exists('non-existent-container')
 
         # Verify no removal was attempted
         self.assertFalse(result)
@@ -119,8 +125,9 @@ class TestContainerModule(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
 
         # Verify that the function raises the exception
-        with self.assertRaises(docker.errors.APIError):
-            remove_if_exists(mock_client, 'test-container')
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            with self.assertRaises(docker.errors.APIError):
+                remove_if_exists('test-container')
 
         # Verify removal was attempted
         mock_container.stop.assert_called_once()
@@ -134,7 +141,8 @@ class TestContainerModule(unittest.TestCase):
         mock_client.containers.list.return_value = []
 
         # Call the function with empty name
-        result = find_by_name(mock_client, '')
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            result = find_by_name('')
 
         # Verify the result
         self.assertIsNone(result)
@@ -147,7 +155,8 @@ class TestContainerModule(unittest.TestCase):
         mock_client.containers.list.return_value = []
 
         # Call the function with None name
-        result = find_by_name(mock_client, None)
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            result = find_by_name(None)
 
         # Verify the result
         self.assertIsNone(result)
@@ -164,7 +173,8 @@ class TestContainerModule(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container1, mock_container2]
 
         # Call the function with partial name
-        result = find_by_name(mock_client, 'test-container')
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            result = find_by_name('test-container')
 
         # Verify no container is found (exact match required)
         self.assertIsNone(result)
@@ -179,7 +189,8 @@ class TestContainerModule(unittest.TestCase):
         mock_client.containers.list.return_value = [mock_container]
 
         # Call the function with different case
-        result = find_by_name(mock_client, 'test-container')
+        with patch('ivexes.container.get_client', return_value=mock_client):
+            result = find_by_name('test-container')
 
         # Verify no container is found (case sensitive)
         self.assertIsNone(result)

@@ -7,13 +7,12 @@ lifecycle management including creation, configuration, and cleanup.
 
 import time
 
-import docker
 from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
 import logging
 from ..config import get_settings
-from ..container import find_by_name, remove_if_exists, santize_name
+from ..container import find_by_name, remove_if_exists, santize_name, get_client
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +28,13 @@ def setup_container(code_base: str, port: int = 8080, renew: bool = False) -> Co
     Returns:
         The Docker container object if successful, None otherwise
     """
-    client = docker.from_env()
+    client = get_client()
     container_name = santize_name(f'ivexes-nvim-lsp-{get_settings().trace_name}')
 
     if renew:
-        remove_if_exists(client, container_name)
+        remove_if_exists(container_name)
     else:
-        c = find_by_name(client, container_name)
+        c = find_by_name(container_name)
         if c:
             logger.info(f'Returning: container {c.name}.')
             return c

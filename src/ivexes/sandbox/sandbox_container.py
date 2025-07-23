@@ -8,13 +8,12 @@ and configuration.
 import time
 from typing import Optional
 
-import docker
 from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
 import logging
 from ..config import get_settings
-from ..container import find_by_name, remove_if_exists, santize_name
+from ..container import find_by_name, get_client, remove_if_exists, santize_name
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +83,7 @@ def setup_container(
         except Exception as e:
             logger.error(f'Failed to create user {username}: {e}')
 
-    client = docker.from_env()
+    client = get_client()
     settings = get_settings()
     if docker_image is None:
         docker_image = settings.sandbox_image
@@ -94,9 +93,9 @@ def setup_container(
 
     try:
         if renew:
-            remove_if_exists(client, container_name)
+            remove_if_exists(container_name)
         else:
-            c = find_by_name(client, container_name)
+            c = find_by_name(container_name)
             if c:
                 logger.info(f'Returning: container {c.name}.')
                 return c
@@ -151,6 +150,3 @@ def setup_container(
     except Exception as e:
         logger.error(f'An error occurred: {e}')
         exit(1)
-    finally:
-        # Always close the docker client to prevent resource leaks
-        client.close()
