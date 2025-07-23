@@ -31,5 +31,16 @@ serve-docs:
 deploy-docs:
 	uv run mkdocs gh-deploy --force --verbose
 
+.PHONY: build-images
+build-images:
+	docker compose --profile images build
+
+.PHONY: run-litellm
+run-litellm:
+	docker compose up -d
+
+.PHONY: setup
+setup: build-images sync run-litellm
+
 .PHONY: check
 check: format-check lint tests
