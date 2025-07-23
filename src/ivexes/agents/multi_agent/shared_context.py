@@ -3,47 +3,12 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Union
-from agents import RunResult, RunResultStreaming, TResponseInputItem
+from agents import RunResult, RunResultStreaming
 from agents.usage import Usage
-from openai.types.responses import EasyInputMessageParam
 
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class AgentMemory:
-    """Stores complete conversation history for an agent."""
-
-    agent_name: str
-    messages: list[TResponseInputItem] = field(default_factory=list)
-    created_at: datetime = field(default_factory=datetime.now)
-
-    def clear_messages(self):
-        """Clear conversation history."""
-        self.messages.clear()
-
-    def append_messages(
-        self, messages: list[TResponseInputItem] | TResponseInputItem | str
-    ) -> list[TResponseInputItem]:
-        """Append messages to the agent's memory.
-
-        Args:
-            messages: A single message or a list of messages to append.
-
-        Returns:
-            The updated list of messages in the agent's memory.
-        """
-        if isinstance(messages, list):
-            self.messages.extend(messages)
-        else:
-            self.messages.append(
-                EasyInputMessageParam(content=messages, role='user')
-                if isinstance(messages, str)
-                else messages
-            )
-        return self.messages
 
 
 @dataclass
@@ -121,6 +86,7 @@ class MultiAgentContext:
     start_time: datetime = field(default_factory=datetime.now)
     agents_usage: dict[str, Usage] = field(default_factory=dict)
     report_generated: bool = False
+    times_reprompted: int = 0
 
     def get_shared_memory(self) -> SharedMemory:
         """Get shared memory object."""

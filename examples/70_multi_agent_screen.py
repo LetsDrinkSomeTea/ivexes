@@ -28,9 +28,7 @@ agent = MultiAgent(bin_path='/usr/bin/screen', settings=settings)
 
 async def main():
     """Run the multi-agent screen vulnerability analysis."""
-    context, session = await agent.run_ensured_report()
-    print(f'Context: {context}')
-    print(f'Session: {session}')
+    _, _ = await agent.run_ensured_report()
 
 
 if __name__ == '__main__':

@@ -70,7 +70,9 @@ class Settings(BaseSettings):
             'LLM_BASE_URL', 'https://api.openai.com/v1'
         )
     )
-
+    max_reprompts: int = Field(
+        default_factory=lambda: int(os.environ.get('MAX_REPROMPTS', '5'))
+    )
     # Agent settings
     model: str = Field(
         default_factory=lambda: os.environ.get('MODEL', 'openai/gpt-4o-mini')

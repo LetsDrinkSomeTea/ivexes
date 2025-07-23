@@ -2,7 +2,7 @@
 
 from typing import Callable, Optional, override
 
-from agents import Agent, RunConfig, RunResultStreaming, SQLiteSession, trace
+from agents import Agent, RunConfig, RunResultStreaming, SQLiteSession
 
 from ivexes.printer import print_and_write_to_file, print_usage_summary
 from ivexes import stream_result
@@ -166,8 +166,16 @@ class MultiAgent(BaseAgent):
             A tuple containing the updated MultiAgentContext and the SQLiteSession.
         """
         await self.run_streamed_p()
-        while not self.context.report_generated:
+        while (
+            not self.context.report_generated
+            and self.context.times_reprompted < self.settings.max_reprompts
+        ):
+            self.context.times_reprompted += 1
+            print_and_write_to_file(f'\n\n{"=" * 120}\nREPROMPTING{"=" * 120}\n')
             await self.run_streamed_p('continue with your plan or generate a report')
+        if not self.context.report_generated:
+            print_and_write_to_file(f'\n\n{"=" * 120}\nREPROMPTING{"=" * 120}\n')
+            await self.run_streamed_p('generate a report')
         return self.context, self.session
 
     @override
