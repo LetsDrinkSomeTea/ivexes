@@ -19,7 +19,7 @@ load_dotenv(verbose=True)
 setup_default_logging()
 
 total_runs: int = 1
-try_run = False
+dry_run = False
 
 GENERAL_SETTINGS = PartialSettings(
     embedding_provider='local',

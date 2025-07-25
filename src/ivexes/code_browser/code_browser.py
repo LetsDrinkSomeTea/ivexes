@@ -28,6 +28,8 @@ from typing import Literal, Optional
 import chardet
 import sys
 from time import sleep
+import asyncio
+import concurrent.futures
 
 import pynvim
 
@@ -114,7 +116,24 @@ class CodeBrowser:
         logger.debug(f'{self.patched_folder=}')
         self.container = setup_container(self.path)
         try:
-            self.nvim = pynvim.attach('tcp', address='127.0.0.1', port=port)
+            # Run the pynvim connection in a thread pool to avoid event loop conflicts
+            loop = None
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                pass
+
+            if loop is not None:
+                # We're in an async context, use thread pool
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        pynvim.attach, 'tcp', address='127.0.0.1', port=port
+                    )
+                    self.nvim = future.result(timeout=30)
+            else:
+                # We're not in an async context, use direct connection
+                self.nvim = pynvim.attach('tcp', address='127.0.0.1', port=port)
+
             logger.info(f'Connected to Neovim with {self.path}')
         except Exception as e:
             logger.critical(f'Error connecting to Neovim (127.0.0.1:{port}): {e}')
