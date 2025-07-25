@@ -7,6 +7,7 @@ from typing import Callable, Optional, Any, Dict
 from agents import (
     Agent,
     MaxTurnsExceeded,
+    MessageOutputItem,
     RunResult,
     RunResultStreaming,
     Runner,
@@ -43,6 +44,7 @@ class BaseAgent(ABC):
         """
         set_settings(settings)
         self.settings = get_settings()
+        self.turns_left: int = self.settings.max_turns
         self.agent: Optional[Agent] = None
         self.user_msg: Optional[str] = None
         self.session = SQLiteSession(
@@ -91,7 +93,7 @@ class BaseAgent(ABC):
         return {
             'starting_agent': self.agent,
             'run_config': get_run_config(),
-            'max_turns': self.settings.max_turns,
+            'max_turns': self.turns_left,
             'session': self.session,
         }
 
@@ -105,6 +107,8 @@ class BaseAgent(ABC):
         result = self.run(user_msg)
         print_result(result)
         print_usage_summary(result)
+        turns = sum([1 for r in result.new_items if isinstance(r, MessageOutputItem)])
+        self.turns_left -= turns
 
     def run(self, user_msg: Optional[str] = None) -> RunResult:
         """Run the agent synchronously.
@@ -133,6 +137,7 @@ class BaseAgent(ABC):
         result = self.run_streamed(user_msg)
         await stream_result(result)
         print_usage_summary(result)
+        self.turns_left -= result.current_turn
 
     def run_streamed(self, user_msg: Optional[str] = None) -> RunResultStreaming:
         """Run the agent with streaming results.
@@ -179,8 +184,9 @@ class BaseAgent(ABC):
                     result = Runner.run_streamed(input=user_msg, **runner_config)
                     await stream_result(result)
                     print_usage_summary(result)
+                    self.turns_left -= result.current_turn
                     if result_hook:
                         result_hook(result)
                 except MaxTurnsExceeded as e:
                     print(f'MaxTurnsExceeded: {e}')
-                user_msg = input('User: ')
+                user_msg = input(f'User ({self.turns_left} turns left): ')

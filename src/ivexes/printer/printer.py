@@ -5,6 +5,7 @@ agent interactions including messages, tool calls, handoffs, and reasoning
 steps. It handles output formatting for both console and file display.
 """
 
+import os
 from typing import Iterable, Optional, Union, Any, Callable
 from agents import RunItem, TResponseInputItem, Tool
 from agents.items import (
@@ -42,7 +43,13 @@ def print_and_write_to_file(text: str, truncate: bool = True, end: str = '\n') -
     if truncate and len(lines) > 10:
         lines = lines[:10] + [f'... truncated {len(lines) - 10} lines']
     print('\n'.join(lines), end=end)
-    with open(f'output-{get_settings().trace_name}-{TIME_STRING}.txt', 'a') as f:
+    path = os.path.join(
+        'output',
+        f'{get_settings().trace_name}',
+        f'{get_settings().model}-{TIME_STRING}.txt',
+    )
+    os.makedirs(name=os.path.dirname(path), exist_ok=True)
+    with open(path, 'a') as f:
         f.write(text + end)
 
 
