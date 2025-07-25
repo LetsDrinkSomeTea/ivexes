@@ -21,6 +21,7 @@ CLAUDE.md
 chroma/
 chroma-*/
 output-*.txt
+!output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
