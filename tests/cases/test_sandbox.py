@@ -26,7 +26,9 @@ class TestSandboxModule(unittest.TestCase):
             clear=True,
         ):
             self.settings = create_settings(
-                PartialSettings(llm_api_key='llm-key-for-verification')
+                PartialSettings(
+                    llm_api_key='llm-key-for-verification', sandbox_image='python:3.13'
+                )
             )
 
     def tearDown(self):

@@ -115,10 +115,10 @@ def setup_container(
         )
         MAX_DELAY = 30
         time_waited = 0
+        restarted = False
         while container.status != 'running':
             time.sleep(1)  # Wait for the container to start
             time_waited += 1
-            restarted = False
             try:
                 container.reload()
             except docker.errors.NotFound:
