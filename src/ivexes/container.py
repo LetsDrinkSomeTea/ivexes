@@ -77,6 +77,7 @@ def cleanup(prefix: str = 'ivexes-') -> None:
             for c in client.containers.list(all=True)
             if c.name.startswith(prefix)
         ]
+    time.sleep(5)  # Give some time for cleanup to complete
 
 
 def remove_if_exists(container_name: str) -> bool:
@@ -96,6 +97,8 @@ def remove_if_exists(container_name: str) -> bool:
     container.wait()
     container.remove(force=True)
     logger.info(f'Container {container.name} removed')
+    while find_by_name(container_name):
+        time.sleep(1)
     return True
 
 

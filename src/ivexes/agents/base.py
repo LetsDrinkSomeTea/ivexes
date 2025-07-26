@@ -15,16 +15,15 @@ from agents import (
     SQLiteSession,
 )
 
-from ivexes import print_result, print_banner, stream_result
-from ivexes.printer.printer import print_usage_summary
+from ..printer import Printer
 
 from ..config import (
     PartialSettings,
-    get_settings,
-    set_settings,
-    reset_settings,
+    create_settings,
     get_run_config,
 )
+from ..code_browser import CodeBrowser
+from ..vector_db import CweCapecAttackDatabase
 
 
 class BaseAgent(ABC):
@@ -42,8 +41,7 @@ class BaseAgent(ABC):
             settings: Partial settings to configure the agent. Settings not provided
                 will be loaded from environment variables.
         """
-        set_settings(settings)
-        self.settings = get_settings()
+        self.settings = create_settings(settings)
         self.turns_left: int = self.settings.max_turns
         self.agent: Optional[Agent] = None
         self.user_msg: Optional[str] = None
@@ -51,6 +49,23 @@ class BaseAgent(ABC):
             session_id=f'{self.__class__.__name__}-{self.settings.trace_name}-{time.strftime("%H:%M:%S", time.localtime())}',
             db_path=self.settings.session_db_path,
         )
+
+        # Initialize CodeBrowser service if settings are available
+        self.code_browser: Optional[CodeBrowser] = None
+        if (
+            self.settings.codebase_path
+            and self.settings.vulnerable_folder
+            and self.settings.patched_folder
+        ):
+            self.code_browser = CodeBrowser(
+                self.settings,
+            )
+
+        self.printer = Printer(self.settings)
+
+        # Initialize VectorDB service
+        self.vector_db = CweCapecAttackDatabase(self.settings)
+
         self._setup_agent()
 
     def __del__(self):
@@ -92,7 +107,7 @@ class BaseAgent(ABC):
         """
         return {
             'starting_agent': self.agent,
-            'run_config': get_run_config(),
+            'run_config': get_run_config(self.settings),
             'max_turns': self.turns_left,
             'session': self.session,
         }
@@ -103,10 +118,10 @@ class BaseAgent(ABC):
         Args:
             user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
         """
-        print_banner()
+        self.printer.print_banner()
         result = self.run(user_msg)
-        print_result(result)
-        print_usage_summary(result)
+        self.printer.print_result(result)
+        self.printer.print_usage_summary(result)
         turns = sum([1 for r in result.new_items if isinstance(r, MessageOutputItem)])
         self.turns_left -= turns
 
@@ -124,7 +139,7 @@ class BaseAgent(ABC):
             runner_config = self._get_runner_config()
             runner_config['input'] = user_msg if user_msg else self.user_msg
             result = Runner.run_sync(**runner_config)
-            print_usage_summary(result)
+            self.printer.print_usage_summary(result)
             return result
 
     async def run_streamed_p(self, user_msg: Optional[str] = None) -> None:
@@ -133,10 +148,10 @@ class BaseAgent(ABC):
         Args:
             user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
         """
-        print_banner()
+        self.printer.print_banner()
         result = self.run_streamed(user_msg)
-        await stream_result(result)
-        print_usage_summary(result)
+        await self.printer.stream_result(result)
+        self.printer.print_usage_summary(result)
         self.turns_left -= result.current_turn
 
     def run_streamed(self, user_msg: Optional[str] = None) -> RunResultStreaming:
@@ -169,7 +184,7 @@ class BaseAgent(ABC):
             user_msg: Optional user message to override the default. If not provided, uses the user_msg set during agent initialization.
             result_hook: Optional callback function to process the result after each interaction.
         """
-        print_banner()
+        self.printer.print_banner()
         self._check_settings(user_msg)
         with trace(self.settings.trace_name):
             user_msg = user_msg if user_msg else self.user_msg
@@ -182,8 +197,8 @@ class BaseAgent(ABC):
             while user_msg not in ['exit', 'quit', 'q']:
                 try:
                     result = Runner.run_streamed(input=user_msg, **runner_config)
-                    await stream_result(result)
-                    print_usage_summary(result)
+                    await self.printer.stream_result(result)
+                    self.printer.print_usage_summary(result)
                     self.turns_left -= result.current_turn
                     if result_hook:
                         result_hook(result)

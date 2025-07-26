@@ -17,13 +17,10 @@ Example:
     >>> ivexes.print_banner()
 """
 
-from .printer import print_result as print_result
-from .printer import stream_result as stream_result
-from .printer import print_banner as print_banner
 from . import printer as printer
 
 from .config import get_run_config as get_run_config
-from .config import get_settings as get_settings
+from .config import create_settings as create_settings
 from .config import setup_default_logging as setup_default_logging
 from . import config as config
 
@@ -32,12 +29,9 @@ from . import prompts as prompts
 from . import tools as tools
 
 __all__ = [
-    'print_result',
-    'stream_result',
-    'print_banner',
     'printer',
     'get_run_config',
-    'get_settings',
+    'create_settings',
     'setup_default_logging',
     'config',
     'token',

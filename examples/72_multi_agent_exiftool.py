@@ -24,7 +24,7 @@ settings = PartialSettings(
     sandbox_image='vuln-exiftool:latest',
 )
 
-agent = MultiAgent(bin_path='/usr/local/bin/exiftool', settings=settings)
+agent = MultiAgent(settings=settings)
 
 if __name__ == '__main__':
     asyncio.run(agent.run_interactive())

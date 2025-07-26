@@ -24,7 +24,7 @@ settings = PartialSettings(
     sandbox_image='vuln-sudo:latest',
 )
 
-agent = MultiAgent(bin_path='/usr/local/bin/sudo', settings=settings)
+agent = MultiAgent(settings=settings)
 
 if __name__ == '__main__':
     asyncio.run(agent.run_interactive())

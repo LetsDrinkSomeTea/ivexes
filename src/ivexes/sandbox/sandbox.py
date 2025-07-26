@@ -17,7 +17,9 @@ from docker.models.containers import Container
 import pexpect
 
 import logging
+
 from .sandbox_container import setup_container
+from ..config.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -44,28 +46,30 @@ class Sandbox:
 
     def __init__(
         self,
-        setup_archive: Optional[str] = None,
+        settings: Settings,
         username: Literal['user', 'root'] = 'user',
         working_dir: str = '/home/user',
     ):
         """Initialize the sandbox.
 
         Args:
-            setup_archive: Path to setup archive file
+            settings: Settings containing setup_archive and other configuration
             username: Username for container operations
             working_dir: Working directory inside container
-            port: Port for container setup
         """
+        self.settings = settings
         self.username = username
         self.working_dir = working_dir
-        self.setup_archive = setup_archive
         self.sessions: dict[str, InteractiveSession] = {}
 
         self.container: Optional[Container] = None
         self.docker_client: Optional[docker.DockerClient] = None
 
-    def connect(self) -> bool:
+    def connect(self, reset: bool = True) -> bool:
         """Set up and connect to the container.
+
+        Args:
+            reset: Whether to reset the container (default False)
 
         Returns:
             bool: True if successful, False otherwise
@@ -73,7 +77,7 @@ class Sandbox:
         try:
             if not self.docker_client:
                 self.docker_client = docker.from_env()
-            self.container = setup_container(setup_archive=self.setup_archive)
+            self.container = setup_container(self.settings, renew=reset)
             logger.debug(f'Container {self.container.name} ready')
             return True
         except Exception as e:
@@ -110,6 +114,8 @@ class Sandbox:
         def read_stream():
             """Your original logic with shared buffer updates."""
             try:
+                if not self.container:
+                    return None
                 _, result_stream = self.container.exec_run(
                     cmd=['sh', '-c', command],
                     workdir=self.working_dir,
@@ -310,9 +316,11 @@ class Sandbox:
                     for member in tar.getmembers():
                         if member.isfile():
                             try:
-                                with tar.extractfile(member) as extracted_file:
-                                    if extracted_file:
-                                        return extracted_file.read().decode('utf-8')
+                                file = tar.extractfile(member)
+                                if file:
+                                    with file as extracted_file:
+                                        if extracted_file:
+                                            return extracted_file.read().decode('utf-8')
                             except Exception as e:
                                 logger.error(f'Error reading file {filename}: {e}')
             return None

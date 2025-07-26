@@ -23,7 +23,7 @@ settings = PartialSettings(
     patched_folder='patched-screen-4.5.1',
 )
 
-agent = MultiAgent(bin_path='/usr/bin/screen', settings=settings)
+agent = MultiAgent(settings=settings)
 
 
 async def main():

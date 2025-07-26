@@ -2,11 +2,11 @@
 
 import time
 
-from agents import Agent, RunConfig, Runner, SQLiteSession, Tool, function_tool
+from agents import Agent, Runner, SQLiteSession, Tool, function_tool
 
-from ivexes.config.settings import get_settings
-from ivexes.printer import stream_result, print_and_write_to_file
+from ...printer import Printer
 from .shared_context import MultiAgentContext
+from ...config.settings import Settings, get_run_config
 
 import logging
 
@@ -17,8 +17,7 @@ def agent_as_tool(
     agent: Agent,
     tool_name: str,
     tool_description: str,
-    max_turns: int,
-    run_config: RunConfig,
+    settings: Settings,
     context: MultiAgentContext,
 ) -> Tool:
     """Convert an agent into a tool that can be used by other agents.
@@ -27,16 +26,16 @@ def agent_as_tool(
         agent: The agent to wrap as a tool
         tool_name: Name of the created tool
         tool_description: Description of the tool's functionality
-        max_turns: Maximum number of turns for the agent
-        run_config: Configuration for running the agent
+        settings: Settings for the agent execution
         context: Optional shared context for multi-agent interactions
 
     Returns:
         A tool that executes the agent with the given configuration
     """
+    printer = Printer(settings=settings)
     session = SQLiteSession(
-        session_id=f'{tool_name}-{get_settings().trace_name}-{time.strftime("%H:%M:%S", time.localtime())}',
-        db_path=get_settings().session_db_path,
+        session_id=f'{tool_name}-{settings.trace_name}-{time.strftime("%H:%M:%S", time.localtime())}',
+        db_path=settings.session_db_path,
     )
 
     @function_tool(
@@ -45,28 +44,28 @@ def agent_as_tool(
     )
     async def agent_tool_function(input: str):
         # Print start marker for subagent execution
-        print_and_write_to_file(f'{"":=^80}')
-        print_and_write_to_file(f'Starting {agent.name} execution')
-        print_and_write_to_file(f'Input: {input}')
-        print_and_write_to_file(f'{"":=^80}\n')
+        printer.print_and_write_to_file(f'{"":=^80}')
+        printer.print_and_write_to_file(f'Starting {agent.name} execution')
+        printer.print_and_write_to_file(f'Input: {input}')
+        printer.print_and_write_to_file(f'{"":=^80}\n')
 
         input = f'{context.get_shared_memory().summary()}\n\nNew Task:\n{input}'
 
         result = Runner.run_streamed(
             starting_agent=agent,
             input=input,
-            run_config=run_config,
-            max_turns=max_turns,
+            run_config=get_run_config(settings),
+            max_turns=settings.max_turns,
             session=session,
         )
-        await stream_result(result)
+        await printer.stream_result(result)
 
         context.update_usage(result, tool_name)
 
         # Print end marker for subagent execution
-        print_and_write_to_file(f'\n{"":=^80}')
-        print_and_write_to_file(f'{agent.name} execution completed')
-        print_and_write_to_file(f'{"":=^80}')
+        printer.print_and_write_to_file(f'\n{"":=^80}')
+        printer.print_and_write_to_file(f'{agent.name} execution completed')
+        printer.print_and_write_to_file(f'{"":=^80}')
 
         return result.final_output
 

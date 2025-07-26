@@ -12,16 +12,13 @@ from dotenv import load_dotenv
 from agents.exceptions import MaxTurnsExceeded
 
 from ivexes.agents import HTBChallengeAgent, MultiAgent
-from ivexes.config import PartialSettings, setup_default_logging, reset_settings
-from ivexes.container import cleanup
+from ivexes.config import PartialSettings, setup_default_logging
 
 from testdata import HTB_CHALLENGES, VULNERABILITIES, MODELS
 
 load_dotenv(verbose=True)
 setup_default_logging()
 
-total_runs: int = 1
-dry_run = False
 
 GENERAL_SETTINGS = PartialSettings(
     embedding_provider='local',
@@ -38,14 +35,20 @@ MODELS = [  # Limit to two models for testing
 ]
 # FIXME: Remove the above limits for full testing
 
-max_tests = len(MODELS) * (len(HTB_CHALLENGES) + len(VULNERABILITIES))
 
+async def run_htb_tests(
+    dry_run: bool = False, total_runs: int = 1, max_tests: int = 0
+) -> int:
+    """Run all HTB Challenge tests.
 
-async def run_htb_tests():
-    """Run all HTB Challenge tests."""
-    global total_runs
-    global try_run
-    global max_tests
+    Args:
+        dry_run: Whether to run in dry mode without executing tests
+        total_runs: Current test run counter
+        max_tests: Maximum number of tests
+
+    Returns:
+        Updated total_runs counter
+    """
     for model in MODELS:
         for htb_settings, challenge_name, description in HTB_CHALLENGES:
             print(
@@ -63,8 +66,6 @@ async def run_htb_tests():
                 setup_archive=htb_settings.get('setup_archive', None),
             )
 
-            print(sets)
-
             agent = HTBChallengeAgent(
                 program=challenge_name,
                 challenge=description,
@@ -79,16 +80,26 @@ async def run_htb_tests():
                     f"Error during HTB Challenge '{challenge_name} with model {model}': {e}"
                 )
             finally:
-                cleanup()
+                pass  # Each agent cleans up its own containers
+
+    return total_runs
 
 
-async def run_multi_agent_tests():
-    """Run all Multi-Agent tests."""
-    global total_runs
-    global dry_run
-    global max_tests
-    need_more_turns: list[tuple[PartialSettings, str]] = []
-    for vulnerability, bin_path in VULNERABILITIES:
+async def run_multi_agent_tests(
+    dry_run: bool = False, total_runs: int = 1, max_tests: int = 0
+) -> int:
+    """Run all Multi-Agent tests.
+
+    Args:
+        dry_run: Whether to run in dry mode without executing tests
+        total_runs: Current test run counter
+        max_tests: Maximum number of tests
+
+    Returns:
+        Updated total_runs counter
+    """
+    need_more_turns: list[PartialSettings] = []
+    for vulnerability in VULNERABILITIES:
         for model in MODELS:
             trace_name = vulnerability.get('trace_name', 'Unknown Trace')
             print(
@@ -101,22 +112,20 @@ async def run_multi_agent_tests():
                 model=model,
                 max_turns=20,
             )
-            if not dry_run:
-                agent = MultiAgent(bin_path=bin_path, settings=sets)
-                try:
+            agent = MultiAgent(settings=sets)
+            try:
+                if not dry_run:
                     await agent.run_ensured_report()
-                except MaxTurnsExceeded as e:
-                    print(
-                        f'Error: {e} - Max turns exceeded for {trace_name} with model {model}'
-                    )
-                    need_more_turns.append((sets, bin_path))
-                    max_tests += 1
-                except Exception as e:
-                    print(f"Error during '{trace_name} with model {model}': {e}")
-                finally:
-                    cleanup()
+            except MaxTurnsExceeded as e:
+                print(
+                    f'Error: {e} - Max turns exceeded for {trace_name} with model {model}'
+                )
+                need_more_turns.append((sets))
+                max_tests += 1
+            except Exception as e:
+                print(f"Error during '{trace_name} with model {model}': {e}")
 
-    for sets, bin_path in need_more_turns:
+    for sets in need_more_turns:
         trace_name = sets.get('trace_name', 'Unknown Trace')
         model = sets.get('model', 'Unknown Model')
 
@@ -125,14 +134,14 @@ async def run_multi_agent_tests():
         )
         total_runs += 1
         sets.update(max_turns=50)
-        if not dry_run:
-            agent = MultiAgent(bin_path=bin_path, settings=sets)
-            try:
+        agent = MultiAgent(settings=sets)
+        try:
+            if not dry_run:
                 await agent.run_ensured_report()
-            except Exception as e:
-                print(f"Error during '{trace_name} with model {model}': {e}")
-            finally:
-                cleanup()
+        except Exception as e:
+            print(f"Error during '{trace_name} with model {model}': {e}")
+
+    return total_runs
 
 
 async def main():
@@ -155,18 +164,20 @@ async def main():
 
     args = parser.parse_args()
 
-    if args.dry_run:
+    dry_run = args.dry_run
+    if dry_run:
         print('Dry run mode enabled. No tests will be executed.')
-        global dry_run
-        dry_run = True
+
+    total_runs = 1
+    max_tests = len(MODELS) * (len(HTB_CHALLENGES) + len(VULNERABILITIES))
 
     if not args.no_htb_challenges:
         print('Running HTB Challenge tests...')
-        await run_htb_tests()
+        total_runs = await run_htb_tests(dry_run, total_runs, max_tests)
 
     if not args.no_multi_agent:
         print('Running Multi-Agent tests...')
-        await run_multi_agent_tests()
+        total_runs = await run_multi_agent_tests(dry_run, total_runs, max_tests)
 
     print('All tests completed.')
 

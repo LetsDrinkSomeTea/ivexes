@@ -74,9 +74,9 @@ def get_attack_data(domain='enterprise'):
     except Exception as e:
         logger.error(f'Failed to process ATT&CK {domain} data: {e}')
         # Clean up temporary file if it exists
-        if 'file_name' in locals() and os.path.exists(file_name):
+        if 'file_name' in locals() and os.path.exists(file_name):  # type: ignore
             try:
-                os.unlink(file_name)
+                os.unlink(file_name)  # type: ignore
             except Exception:
                 pass
         raise

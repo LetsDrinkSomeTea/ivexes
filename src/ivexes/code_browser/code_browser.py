@@ -31,11 +31,13 @@ from time import sleep
 import asyncio
 import concurrent.futures
 
+from docker.models.containers import Container
 import pynvim
 
 import logging
 from .nvim import setup_container
 from .parser import parse_symbols, parse_references
+from ..config.settings import Settings
 
 logger = logging.getLogger(__name__)
 NVIM_DELAY = 0.5
@@ -83,38 +85,63 @@ class CodeBrowser:
 
     def __init__(
         self,
-        codebase: str,
-        vulnerable_folder: str,
-        patched_folder: str,
+        settings: Settings,
         port: int = 8080,
+        load: Literal['lazy', 'eager'] = 'lazy',
     ) -> None:
         """Initialize the CodeBrowser with codebase and connection parameters.
 
         Args:
-            codebase (str): Path to the codebase directory to analyze.
-            vulnerable_folder (str): Name of the folder containing vulnerable code.
-            patched_folder (str): Name of the folder containing patched code.
+            settings (Settings): Settings instance containing codebase paths and other configurations.
             port (int, optional): Port number for Neovim TCP connection.
                 Defaults to 8080.
+            load (Literal['lazy', 'eager'], optional): Load mode for the browser.
 
         Raises:
             SystemExit: If connection to Neovim fails.
 
         Example:
             >>> browser = CodeBrowser(
-            ...     codebase='/path/to/project',
-            ...     vulnerable_folder='vulnerable_version',
-            ...     patched_folder='fixed_version',
+            ...     settings=settings,
             ...     port=8080,
             ... )
         """
-        self.path = os.path.abspath(codebase)
-        self.vulnerable_folder = os.path.basename(vulnerable_folder)
-        self.patched_folder = os.path.basename(patched_folder)
+        if (
+            not settings.codebase_path
+            or not settings.vulnerable_folder
+            or not settings.patched_folder
+        ):
+            raise ValueError(
+                'Codebase path, vulnerable folder, and patched folder must be set in settings to instance a CodeBrowser.'
+            )
+        self.settings = settings
+        self.path = os.path.abspath(settings.codebase_path)
+        self.vulnerable_folder = os.path.basename(settings.vulnerable_folder)
+        self.patched_folder = os.path.basename(settings.patched_folder)
+        self.port = port
+        self.container: Container = None  # type: ignore[assignment] This won't be None, because it will be set in `initialize()` and checked in `_check_init()`
+        self.nvim: pynvim.Nvim = None  # type: ignore[assignment] This won't be None, because it will be set in `initialize()` and checked in `_check_init()`
+        if load == 'eager':
+            self.initialize()
+
+    def _check_init(self) -> None:
+        if not self.container or not self.nvim:
+            self.initialize()
+
+    def initialize(self) -> None:
+        """Initialize the CodeBrowser by setting up the Docker container and connecting to Neovim.
+
+        This method sets up the Docker container for the codebase, ensuring that
+        the necessary environment is ready for code analysis. It also establishes
+        a connection to Neovim using PyNvim for LSP capabilities.
+
+        Raises:
+            SystemExit: If connection to Neovim fails.
+        """
         logger.info(f'Codebase: {self.path} starting container ...')
         logger.debug(f'{self.vulnerable_folder=}')
         logger.debug(f'{self.patched_folder=}')
-        self.container = setup_container(self.path)
+        self.container = setup_container(self.path, self.settings)
         try:
             # Run the pynvim connection in a thread pool to avoid event loop conflicts
             loop = None
@@ -127,16 +154,16 @@ class CodeBrowser:
                 # We're in an async context, use thread pool
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     future = executor.submit(
-                        pynvim.attach, 'tcp', address='127.0.0.1', port=port
+                        pynvim.attach, 'tcp', address='127.0.0.1', port=self.port
                     )
                     self.nvim = future.result(timeout=30)
             else:
                 # We're not in an async context, use direct connection
-                self.nvim = pynvim.attach('tcp', address='127.0.0.1', port=port)
+                self.nvim = pynvim.attach('tcp', address='127.0.0.1', port=self.port)
 
             logger.info(f'Connected to Neovim with {self.path}')
         except Exception as e:
-            logger.critical(f'Error connecting to Neovim (127.0.0.1:{port}): {e}')
+            logger.critical(f'Error connecting to Neovim (127.0.0.1:{self.port}): {e}')
             sys.exit(1)
 
     def _search_symbol(self, symbol: str) -> tuple[str, int, int]:
@@ -148,6 +175,7 @@ class CodeBrowser:
         Returns:
             A tuple containing (file_path, line_number, column_number) of the first occurrence
         """
+        self._check_init()
         cmd = [
             'rg',
             '--vimgrep',
@@ -192,6 +220,7 @@ class CodeBrowser:
         Returns:
             The content of the file as a string
         """
+        self._check_init()
         cmd = ['cat', file]
         logger.info(f'Running: {" ".join(cmd)}')
         res = self.container.exec_run(cmd)
@@ -231,6 +260,7 @@ class CodeBrowser:
         Returns:
             A string representation of the codebase directory structure
         """
+        self._check_init()
         cmd = [
             'tree',
             '-L',
@@ -260,6 +290,7 @@ class CodeBrowser:
 
 
         """
+        self._check_init()
         self.nvim.command(f'edit {file}')
         sleep(NVIM_DELAY)
         # Get the symbols from the buffer
@@ -286,6 +317,7 @@ class CodeBrowser:
             - line_number (int): Line number where reference appears
             - range (tuple): Reference range as (start_col, end_col)
         """
+        self._check_init()
         file, line, col = self._search_symbol(symbol)
         references = []
         try:
@@ -314,6 +346,7 @@ class CodeBrowser:
         Returns:
             A tuple containing (definition_content, begin_line, end_line)
         """
+        self._check_init()
         file, line, col = self._search_symbol(symbol)
         logger.info(f'open {file=} at {line=} {col=}')
         self.nvim.command(f'edit {file}')
@@ -351,6 +384,7 @@ class CodeBrowser:
         Returns:
             List of strings, each containing the diff for one file, or None if error
         """
+        self._check_init()
         if not options:
             options = ['-u', '-w']
         if not file1:

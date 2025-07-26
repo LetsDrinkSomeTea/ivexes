@@ -4,10 +4,11 @@ from typing import cast, Optional
 
 from agents import Agent, Tool
 
-from ..tools import sandbox_tools, code_browser_tools, vectordb_tools
+from ..vector_db import create_vectordb_tools
+from ..sandbox.tools import create_sandbox_tools
+from ..code_browser.tools import create_code_browser_tools
 from ..prompts.single_agent import system_msg, user_msg
 from ..config import PartialSettings
-from ..code_browser import get_code_browser
 
 from .base import BaseAgent
 
@@ -31,12 +32,25 @@ class SingleAgent(BaseAgent):
 
     def _setup_agent(self):
         """Set up the single agent with comprehensive tools."""
-        code_browser = get_code_browser()
+        # SingleAgent requires code browser to be configured
+        if not self.code_browser:
+            raise ValueError(
+                'SingleAgent requires codebase_path, vulnerable_folder, and patched_folder '
+                'to be set in settings for code browser functionality.'
+            )
+
         self.user_msg = user_msg.format(
-            codebase_structure=code_browser.get_codebase_structure(),
-            diff=code_browser.get_diff(),
+            codebase_structure=self.code_browser.get_codebase_structure(),
+            diff=self.code_browser.get_diff(),
             bin_path=self.bin_path,
         )
+
+        # Create tools using mixed service/factory pattern
+        sandbox_tools = create_sandbox_tools(self.settings)  # Factory pattern
+        code_browser_tools = create_code_browser_tools(
+            self.code_browser
+        )  # Service pattern
+        vectordb_tools = create_vectordb_tools(self.vector_db)  # Service pattern
 
         tools = cast(list[Tool], sandbox_tools + code_browser_tools + vectordb_tools)
         self.agent = Agent(

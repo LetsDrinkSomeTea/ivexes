@@ -212,93 +212,67 @@ class PartialSettings(TypedDict, total=False):
     embedding_provider: str
 
 
-# Global settings instance - lazily initialized
-_settings: Settings | None = None
+def create_settings(partial_settings: Optional[PartialSettings] = None) -> Settings:
+    """Create a Settings instance by merging environment variables with partial overrides.
 
+    This function creates a new Settings instance by first loading from environment
+    variables (without validation) and then applying any partial settings overrides.
+    Final validation is performed on the merged result to ensure all required fields
+    are properly set.
 
-def get_settings() -> Settings:
-    """Get the global settings instance, creating it if necessary.
-
-    This function implements the singleton pattern for settings management,
-    ensuring that only one Settings instance exists throughout the application
-    lifecycle. It provides lazy initialization and proper error handling.
+    Args:
+        partial_settings: Optional dictionary containing settings to override.
+                         Only the specified fields will be updated.
 
     Returns:
-        Settings: The global settings instance.
+        Settings: A new settings instance with merged configuration.
 
     Raises:
         RuntimeError: If settings validation fails with details about
             which configuration values are invalid.
 
     Example:
-        >>> settings = get_settings()
-        >>> print(settings.model)
-        >>> print(settings.log_level)
-    """
-    global _settings
-    if _settings is None:
-        try:
-            _settings = Settings()
-        except ValidationError as e:
-            error_msg = 'Configuration validation failed:\n'
-            for error in e.errors():
-                field = error.get('loc', ['unknown'])[0]
-                msg = error.get('msg', 'Invalid value')
-                error_msg += f'  - {field}: {msg}\n'
-            raise RuntimeError(error_msg) from e
-    return _settings
-
-
-def set_settings(partial_settings: PartialSettings) -> None:
-    """Override global settings with partial settings.
-
-    This function allows you to update the global settings instance with
-    a subset of configuration values. Useful for creating predefined Agent
-    classes that need specific configuration overrides.
-
-    Args:
-        partial_settings: Dictionary containing settings to override.
-                         Only the specified fields will be updated.
-
-    Example:
-        >>> set_settings(
-        ...     {'model': 'openai/gpt-4', 'model_temperature': 0.7, 'max_turns': 20}
+        >>> # Use environment variables only
+        >>> settings = create_settings()
+        >>> # Override specific values
+        >>> settings = create_settings(
+        ...     {
+        ...         'model': 'openai/gpt-4',
+        ...         'model_temperature': 0.7,
+        ...         'max_turns': 20,
+        ...         'llm_api_key': 'sk-custom-key',
+        ...     }
         ... )
-        >>> settings = get_settings()
         >>> print(settings.model)  # 'openai/gpt-4'
     """
-    global _settings
-    if _settings is None:
-        _settings = Settings()
+    try:
+        # Create base settings from environment variables without validation
+        # We use model_validate with from_attributes=False to skip validation
+        env_data = {}
+        for field_name, field_info in Settings.model_fields.items():
+            default_factory = getattr(field_info, 'default_factory', None)
+            if default_factory is not None:
+                env_data[field_name] = default_factory()
+            elif hasattr(field_info, 'default') and field_info.default is not None:
+                env_data[field_name] = field_info.default
 
-    # Get current settings data and update with partial settings
-    current_data = _settings.model_dump()
-    current_data.update(partial_settings)
+        if partial_settings:
+            # Update with partial settings - partial_settings is a dict
+            env_data.update(partial_settings)
 
-    # Create new settings instance with updated data
-    _settings = Settings(**current_data)
+        # Create final settings instance with full validation
+        return Settings(**env_data)
 
-
-def reset_settings() -> None:
-    """Reset global settings to reload from environment variables.
-
-    This function clears the global settings instance, forcing it to be
-    recreated from environment variables on the next call to get_settings().
-    Useful for reverting any programmatic changes made via set_settings().
-
-    Example:
-        >>> set_settings({'model': 'openai/gpt-4'})
-        >>> settings = get_settings()
-        >>> print(settings.model)  # 'openai/gpt-4'
-        >>> reset_settings()
-        >>> settings = get_settings()
-        >>> print(settings.model)  # Back to env var or default value
-    """
-    global _settings
-    _settings = None
+    except ValidationError as e:
+        error_msg = 'Configuration validation failed:\n'
+        for error in e.errors():
+            field = error.get('loc', ['unknown'])[0]
+            msg = error.get('msg', 'Invalid value')
+            error_msg += f'  - {field}: {msg}\n'
+        raise RuntimeError(error_msg) from e
 
 
-def get_run_config() -> RunConfig:
+def get_run_config(settings: Settings) -> RunConfig:
     """Get the RunConfig for the application, configured with the current settings.
 
     This function creates a RunConfig instance that contains all necessary
@@ -317,7 +291,6 @@ def get_run_config() -> RunConfig:
     import logging
 
     logger = logging.getLogger(__name__)
-    settings = get_settings()
 
     client = AsyncOpenAI(base_url=settings.llm_base_url, api_key=settings.llm_api_key)
 
