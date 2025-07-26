@@ -9,10 +9,9 @@ import click
 from agents import Tool
 from dotenv import load_dotenv
 
-from ivexes.config import get_settings, setup_default_logging
-from ivexes.config.settings import set_settings
+from ivexes.config import create_settings, setup_default_logging
 from ivexes.cve_search.tools import _search_cve_by_id
-from ivexes.printer import sprint_tools_as_json
+from ivexes.printer.formatter import sprint_tools_as_json
 from ivexes.vector_db import CweCapecAttackDatabase
 from ivexes.agents.multi_agent.tools import (
     create_shared_memory_tools,
@@ -24,6 +23,11 @@ load_dotenv(verbose=True, override=True)
 setup_default_logging()
 
 logger = logging.getLogger(__name__)
+
+
+def get_settings():
+    """Get settings instance for CLI commands."""
+    return create_settings()
 
 
 @click.group()
@@ -85,7 +89,8 @@ def cmd_clear() -> None:
 
     This command removes all entries from the vector database.
     """
-    db = CweCapecAttackDatabase()
+    settings = get_settings()
+    db = CweCapecAttackDatabase(settings)
     db.clear()
     click.echo('Database cleared successfully')
 
@@ -93,7 +98,8 @@ def cmd_clear() -> None:
 @vector_db.command('size')
 def cmd_size() -> None:
     """Get the size of the vector database."""
-    db = CweCapecAttackDatabase()
+    settings = get_settings()
+    db = CweCapecAttackDatabase(settings)
     click.echo(f' Size of DB: {db.collection.count()}')
 
 
@@ -101,7 +107,8 @@ def cmd_size() -> None:
 @click.argument('type_of_data', type=click.Choice(['cwe', 'capec', 'attack', 'all']))
 def init_verctor_db(type_of_data: str):
     """Initialize vector database with specified data type."""
-    db = CweCapecAttackDatabase()
+    settings = get_settings()
+    db = CweCapecAttackDatabase(settings)
     if type_of_data == 'cwe':
         db.initialize_cwe()
     elif type_of_data == 'capec':
@@ -126,7 +133,8 @@ def cmd_query(query_text: str, type: str, count: int) -> None:
         type: Filter results by entry type (cwe or capec)
         count: Maximum number of results to return
     """
-    db = CweCapecAttackDatabase()
+    settings = get_settings()
+    db = CweCapecAttackDatabase(settings)
     types = [type] if type else None
     results = db.query(query_text, types, count)
     for result in results:
@@ -143,7 +151,8 @@ def cmd_query_cwe(query_text: str, count: int) -> None:
         query_text: The text to search for in CWE entries
         count: Maximum number of results to return
     """
-    db = CweCapecAttackDatabase()
+    settings = get_settings()
+    db = CweCapecAttackDatabase(settings)
     results = db.query_cwe(query_text, count)
     for result in results:
         click.echo(result)
@@ -159,7 +168,8 @@ def cmd_query_capec(query_text: str, count: int) -> None:
         query_text: The text to search for in CAPEC entries
         count: Maximum number of results to return
     """
-    db = CweCapecAttackDatabase()
+    settings = get_settings()
+    db = CweCapecAttackDatabase(settings)
     results = db.query_capec(query_text, count)
     for result in results:
         click.echo(result)
@@ -181,12 +191,12 @@ def cmd_get_definition(symbol: str) -> None:
     """Find the definition of a symbol in the codebase.
 
     Args:
-        path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find the definition for
     """
-    from ivexes.code_browser import get_code_browser
+    from ivexes.code_browser import CodeBrowser
 
-    cb = get_code_browser()
+    settings = get_settings()
+    cb = CodeBrowser(settings)
 
     result = cb.get_definition(symbol)
     if result:
@@ -207,9 +217,10 @@ def cmd_get_references(symbol: str) -> None:
         path_to_codebase: Path to the codebase directory
         symbol: The symbol name to find references for
     """
-    from ivexes.code_browser import get_code_browser
+    from ivexes.code_browser import CodeBrowser
 
-    cb = get_code_browser()
+    settings = get_settings()
+    cb = CodeBrowser(settings)
 
     results = cb.get_references(symbol)
     if results:
@@ -231,9 +242,10 @@ def cmd_get_diff(file1: str, file2: str) -> None:
         file1: Path to the first file
         file2: Path to the second file
     """
-    from ivexes.code_browser import get_code_browser
+    from ivexes.code_browser import CodeBrowser
 
-    cb = get_code_browser()
+    settings = get_settings()
+    cb = CodeBrowser(settings)
 
     results = cb.get_diff(file1=file1, file2=file2)
     if results:
@@ -253,9 +265,10 @@ def cmd_get_symbols(file: str) -> None:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to analyze
     """
-    from ivexes.code_browser import get_code_browser
+    from ivexes.code_browser import CodeBrowser
 
-    cb = get_code_browser()
+    settings = get_settings()
+    cb = CodeBrowser(settings)
 
     symbols = cb.get_symbols(file)
     for symbol in symbols:
@@ -271,9 +284,10 @@ def cmd_get_file(file: str) -> None:
         path_to_codebase: Path to the codebase directory
         file: Path to the file within the codebase to retrieve
     """
-    from ivexes.code_browser import get_code_browser
+    from ivexes.code_browser import CodeBrowser
 
-    cb = get_code_browser()
+    settings = get_settings()
+    cb = CodeBrowser(settings)
 
     content = cb.get_file_content(file)
     click.echo(content)
@@ -288,9 +302,10 @@ def cmd_get_tree(count: int) -> None:
         path_to_codebase: Path to the codebase directory
         count: Maximum depth level for the directory tree
     """
-    from ivexes.code_browser import get_code_browser
+    from ivexes.code_browser import CodeBrowser
 
-    cb = get_code_browser()
+    settings = get_settings()
+    cb = CodeBrowser(settings)
 
     content = cb.get_codebase_structure(n=count)
     click.echo(content)
@@ -321,9 +336,9 @@ def cmd_start() -> None:
     """Starts interactive shell in a sandbox environment."""
     from ivexes.sandbox.sandbox import Sandbox
 
-    setup_archive = get_settings().setup_archive
+    settings = get_settings()
 
-    sb = Sandbox(setup_archive=setup_archive)
+    sb = Sandbox(settings)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return
@@ -347,11 +362,12 @@ def cmd_run(command: str, image: Optional[str]) -> None:
     """
     from ivexes.sandbox.sandbox import Sandbox
 
+    settings = get_settings()
     if image:
-        set_settings({'sandbox_image': image})
-    setup_archive = get_settings().setup_archive
+        # Override sandbox image in settings
+        settings = create_settings({'sandbox_image': image})
 
-    sb = Sandbox(setup_archive=setup_archive)
+    sb = Sandbox(settings)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return
@@ -372,13 +388,14 @@ def create_file(path: str, content: str) -> None:
     """
     from ivexes.sandbox.sandbox import Sandbox
 
-    if not (setup_archive := get_settings().setup_archive):
+    settings = get_settings()
+    if not settings.setup_archive:
         click.echo(
             'No setup archive configured. Please set it in the settings or via the env vars'
         )
         return
 
-    sb = Sandbox(setup_archive=setup_archive)
+    sb = Sandbox(settings)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return
@@ -419,28 +436,33 @@ def cmd_llm_ask(input: str) -> None:
 def cmd_llm_tools(type: str) -> None:
     """List all tools for the LLM module."""
     from ivexes.tools import (
-        code_browser_tools,
+        create_code_browser_tools,
         cve_tools,
         date_tools,
-        report_tools,
-        sandbox_tools,
-        vectordb_tools,
+        create_report_tools,
+        create_sandbox_tools,
+        create_vectordb_tools,
     )
+    from ivexes.code_browser import CodeBrowser
+    from ivexes.vector_db import CweCapecAttackDatabase
 
+    settings = get_settings()
     tools: list[Tool] = []
     match type:
         case 'code_browser':
-            tools = code_browser_tools
+            cb = CodeBrowser(settings)
+            tools = create_code_browser_tools(cb)
         case 'cve':
             tools = cve_tools
         case 'date':
             tools = date_tools
         case 'report':
-            tools = report_tools
+            tools = create_report_tools(settings)
         case 'sandbox':
-            tools = sandbox_tools
+            tools = create_sandbox_tools(settings)
         case 'vectordb':
-            tools = vectordb_tools
+            db = CweCapecAttackDatabase(settings)
+            tools = create_vectordb_tools(db)
         case 'context':
             tools = create_shared_memory_tools(MultiAgentContext())
         case _:

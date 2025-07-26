@@ -7,11 +7,12 @@ using ChromaDB for similarity search.
 
 from typing import Literal, cast
 import chromadb
+from chromadb.api import ClientAPI
 from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
 from chromadb.config import Settings
 
 import logging
-from ..config import get_settings
+from ..config.settings import Settings as IvexesSettings
 from .downloader import get_cwe_tree, get_capec_tree
 from .parser import insert_capec, insert_cwe
 from .attack_parser import insert_attack_all
@@ -43,38 +44,58 @@ class CweCapecAttackDatabase:
     The database uses ChromaDB for vector storage and similarity search.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        settings: IvexesSettings,
+        load: Literal['lazy', 'eager'] = 'lazy',
+    ) -> None:
         """Initialize the CWE/CAPEC/ATT&CK vector database.
 
         Sets up ChromaDB client with appropriate embedding function based
-        on configuration settings and initializes the database if empty.
+        on configuration self.settings and initializes the database if empty.
         """
+        self.settings = settings
+        self.chroma_client: ClientAPI = None  # type: ignore Gets checked and loader later
+        self.collection: chromadb.Collection = None  # type: ignore Gets checked and loader later
+        if load == 'eager':
+            self.initialize()
+
+    def _check_database(self) -> None:
+        if (
+            not self.chroma_client
+            or not self.collection
+            or self.collection.count() == 0
+        ):
+            self.initialize()
+
+    def initialize(self) -> None:
+        """Download and load CWE, CAPEC, and ATT&CK datasets into the Chroma collection with error handling."""
         embedding_function = DefaultEmbeddingFunction()
-        settings = get_settings()
-        if settings.embedding_provider == 'openai':
+        if self.settings.embedding_provider == 'openai':
             from chromadb.utils.embedding_functions.openai_embedding_function import (
                 OpenAIEmbeddingFunction,
             )
 
             embedding_function = OpenAIEmbeddingFunction(
-                model_name=settings.embedding_model, api_key=settings.openai_api_key
+                model_name=self.settings.embedding_model,
+                api_key=self.settings.openai_api_key,
             )
-        if settings.embedding_provider == 'local':
+        if self.settings.embedding_provider == 'local':
             from chromadb.utils.embedding_functions.sentence_transformer_embedding_function import (
                 SentenceTransformerEmbeddingFunction,
             )
 
             embedding_function = SentenceTransformerEmbeddingFunction(
-                model_name=settings.embedding_model
+                model_name=self.settings.embedding_model
             )
-        db_path = path.join(settings.chroma_path, settings.embedding_model)
+        db_path = path.join(self.settings.chroma_path, self.settings.embedding_model)
         logger.info(f'Using database path: {db_path}')
 
         self.chroma_client = chromadb.PersistentClient(
             settings=Settings(allow_reset=True), path=db_path
         )
         logger.info(
-            f'using {settings.embedding_provider=} and embedding_function={type(embedding_function)}'
+            f'using {self.settings.embedding_provider=} and embedding_function={type(embedding_function)}'
         )
         self.collection = self.chroma_client.get_or_create_collection(
             name='collection-local',
@@ -85,9 +106,6 @@ class CweCapecAttackDatabase:
         if self.collection.count() == 0:
             logger.info('Initializing database...')
             self.initialize()
-
-    def initialize(self) -> None:
-        """Download and load CWE, CAPEC, and ATT&CK datasets into the Chroma collection with error handling."""
         self.initialize_attack()
         self.initialize_cwe()
         self.initialize_capec()
@@ -142,12 +160,16 @@ class CweCapecAttackDatabase:
                 'attack-tactic',
             ]
 
+        self._check_database()
+
         logger.info('Querying the collection for types: %s', types)
         results = self.collection.query(
-            query_texts=query_text, n_results=n, where={'type': {'$in': types}}
+            query_texts=query_text,
+            n_results=n,
+            where={'type': {'$in': types}},  # type: ignore
         )
         logger.debug(results)
-        documents = results.get('documents', [[]])[0]
+        documents = results.get('documents', [[]])[0]  # type: ignore
         return documents
 
     def query_cwe(self, query_text: str, n: int = 3) -> list[str]:

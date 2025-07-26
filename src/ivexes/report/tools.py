@@ -10,7 +10,7 @@ import os
 
 from agents import function_tool, Tool
 
-from ..config import get_settings
+from ..config.settings import Settings
 from ..agents.multi_agent import MultiAgentContext
 
 import logging
@@ -18,13 +18,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def create_report_tools(context: Optional[MultiAgentContext] = None) -> list[Tool]:
+def create_report_tools(
+    settings: Settings, context: Optional[MultiAgentContext] = None
+) -> list[Tool]:
     """Create a tool for generating vulnerability analysis reports.
 
     This tool allows agents to create and save markdown reports based on
     vulnerability analysis results or general security assessments.
 
     Args:
+        settings: The configuration settings for the IVEXES system.
         context: The multi-agent context providing shared memory and settings.
 
     Returns:
@@ -43,7 +46,7 @@ def create_report_tools(context: Optional[MultiAgentContext] = None) -> list[Too
         """
         logger.info(f'running create_report({report_name=})')
 
-        settings = get_settings()
+        # settings parameter is provided to create_report_tools
 
         # Create reports directory if it doesn't exist
         reports_dir = os.path.join(os.getcwd(), 'output', 'reports')

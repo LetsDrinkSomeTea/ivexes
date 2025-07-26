@@ -19,18 +19,18 @@ Example:
     >>> # Use vectordb tools for knowledge queries
 """
 
-from .code_browser.tools import code_browser_tools as code_browser_tools
-from .sandbox.tools import sandbox_tools as sandbox_tools
-from .vector_db.tools import vectordb_tools as vectordb_tools
+from .code_browser.tools import create_code_browser_tools as create_code_browser_tools
+from .sandbox.tools import create_sandbox_tools as create_sandbox_tools
+from .vector_db.tools import create_vectordb_tools as create_vectordb_tools
 from .date.tools import date_tools as date_tools
 from .cve_search.tools import cve_tools as cve_tools
 from .report.tools import create_report_tools as create_report_tools
 
 __all__ = [
     'date_tools',
-    'sandbox_tools',
-    'code_browser_tools',
-    'vectordb_tools',
+    'create_sandbox_tools',
+    'create_code_browser_tools',
+    'create_vectordb_tools',
     'cve_tools',
     'create_report_tools',
 ]

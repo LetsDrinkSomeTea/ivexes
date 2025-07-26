@@ -12,21 +12,21 @@ from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
 import logging
-from ..config import get_settings
+from ..config.settings import Settings
 from ..container import find_by_name, get_client, remove_if_exists, santize_name
 
 logger = logging.getLogger(__name__)
 
 
 def setup_container(
-    setup_archive: Optional[str] = None,
+    settings: Settings,
     docker_image: Optional[str] = None,
     renew: bool = True,
 ) -> Container:
     """Set up a Docker container for sandbox execution.
 
     Args:
-        setup_archive: Path to the setup archive file (.tar or .tgz)
+        settings: Settings instance containing configuration parameters
         port: Port number to map for container access
         docker_image: Docker image to use (defaults to settings.sandbox_image)
         renew: Whether to remove existing container with same name
@@ -84,7 +84,7 @@ def setup_container(
             logger.error(f'Failed to create user {username}: {e}')
 
     client = get_client()
-    settings = get_settings()
+    # settings parameter is provided
     if docker_image is None:
         docker_image = settings.sandbox_image
     container_name = santize_name(
@@ -100,7 +100,9 @@ def setup_container(
                 logger.info(f'Returning: container {c.name}.')
                 return c
 
-        logger.info(f'Starting container {container_name} with {setup_archive=}')
+        logger.info(
+            f'Starting container {container_name} with {settings.setup_archive=}'
+        )
         container: Container = client.containers.run(
             image=docker_image,
             name=container_name,
@@ -108,7 +110,7 @@ def setup_container(
             environment={
                 'TERM': 'xterm-mono',
             },
-            # remove=True,
+            remove=True,
         )
         MAX_DELAY = 30
         time_waited = 0
@@ -138,7 +140,7 @@ def setup_container(
                     f'Container {container_name} did not start within {MAX_DELAY} seconds'
                 )
         create_user(container, 'user')
-        run_setup_script(container, setup_archive)
+        run_setup_script(container, settings.setup_archive)
         logger.info(f'Container {container.name} started')
         return container
     except ContainerError as e:

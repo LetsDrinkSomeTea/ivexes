@@ -12,19 +12,19 @@ logger = logging.getLogger(__name__)
 __all__ = ['get_text_statistics', 'get_file_statistics', 'get_directory_statistics']
 
 
-def get_text_statistics(string: str) -> tuple[int, int, int]:
+def get_text_statistics(string: str, model: str = 'gpt-4') -> tuple[int, int, int]:
     """Get the number of tokens, characters, and words in a given string.
 
     Args:
         string: The input string to analyze.
+        model: The model name to use for token encoding.
 
     Returns:
         tuple[int, int, int]: A tuple containing the number of tokens, characters, and words.
     """
     import tiktoken
-    from .config import get_settings
 
-    encoding = tiktoken.encoding_for_model(get_settings().model)
+    encoding = tiktoken.encoding_for_model(model)
     tokens = encoding.encode(string)
     return len(tokens), len(string), len(string.split())
 

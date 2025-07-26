@@ -11,17 +11,20 @@ from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
 import logging
-from ..config import get_settings
+from ..config.settings import Settings
 from ..container import find_by_name, remove_if_exists, santize_name, get_client
 
 logger = logging.getLogger(__name__)
 
 
-def setup_container(code_base: str, port: int = 8080, renew: bool = False) -> Container:
+def setup_container(
+    code_base: str, settings: Settings, port: int = 8080, renew: bool = False
+) -> Container:
     """Set up a Docker container with the codebase mounted for Neovim LSP analysis.
 
     Args:
         code_base: Path to the codebase directory to be mounted
+        settings: Configuration settings for the container
         port: Port number to expose from the container (default: '8080')
         renew: Whether to remove existing container and create a new one (default: False)
 
@@ -29,7 +32,7 @@ def setup_container(code_base: str, port: int = 8080, renew: bool = False) -> Co
         The Docker container object if successful, None otherwise
     """
     client = get_client()
-    container_name = santize_name(f'ivexes-nvim-lsp-{get_settings().trace_name}')
+    container_name = santize_name(f'ivexes-nvim-lsp-{settings.trace_name}')
 
     if renew:
         remove_if_exists(container_name)
@@ -49,7 +52,7 @@ def setup_container(code_base: str, port: int = 8080, renew: bool = False) -> Co
             ports={
                 '8080': ('127.0.0.1', port)  # Bind to a random port
             },
-            # remove=True
+            remove=True,
         )
         time.sleep(30)  # Wait for the container to start
         logger.info(f'Container {container.name} started')

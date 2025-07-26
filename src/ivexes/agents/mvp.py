@@ -4,7 +4,7 @@ from typing import cast, Optional
 
 from agents import Agent, Tool
 
-from ..tools import sandbox_tools
+from ..sandbox.tools import create_sandbox_tools
 from ..prompts.mvp import system_msg, user_msg
 from ..config import PartialSettings
 
@@ -42,6 +42,7 @@ class MVPAgent(BaseAgent):
             patched_version=self.patched_version,
         )
 
+        sandbox_tools = create_sandbox_tools(self.settings)
         tools = cast(list[Tool], sandbox_tools)
         self.agent = Agent(
             name='Exploiter',

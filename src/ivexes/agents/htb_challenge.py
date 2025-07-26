@@ -5,7 +5,7 @@ from typing import cast, Optional
 from agents import Agent, Tool
 
 
-from ..tools import sandbox_tools
+from ..sandbox.tools import create_sandbox_tools
 from ..prompts.htb_reversing import system_msg, user_msg
 from ..config import PartialSettings
 
@@ -42,7 +42,8 @@ class HTBChallengeAgent(BaseAgent):
             challenge=self.challenge,
         )
 
-        tools = cast(list[Tool], sandbox_tools + create_report_tools())
+        sandbox_tools = create_sandbox_tools(self.settings)
+        tools = cast(list[Tool], sandbox_tools + create_report_tools(self.settings))
         self.agent = Agent(
             name='Exploiter',
             instructions=system_msg,
