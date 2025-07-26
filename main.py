@@ -40,8 +40,8 @@ async def run_htb_tests(
     Returns:
         Updated total_runs counter
     """
-    for model in MODELS:
-        for htb_settings, challenge_name, description in HTB_CHALLENGES:
+    for htb_settings, challenge_name, description in HTB_CHALLENGES:
+        for model in MODELS:
             print(
                 f'[{total_runs:>4}|{max_tests:>4}]Running HTB Challenge: {challenge_name} with model {model}'
             )
