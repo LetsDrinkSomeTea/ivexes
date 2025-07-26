@@ -18,7 +18,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def create_report_tools(context: Optional[MultiAgentContext]) -> list[Tool]:
+def create_report_tools(context: Optional[MultiAgentContext] = None) -> list[Tool]:
     """Create a tool for generating vulnerability analysis reports.
 
     This tool allows agents to create and save markdown reports based on
@@ -46,7 +46,7 @@ def create_report_tools(context: Optional[MultiAgentContext]) -> list[Tool]:
         settings = get_settings()
 
         # Create reports directory if it doesn't exist
-        reports_dir = os.path.join(os.getcwd(), 'reports')
+        reports_dir = os.path.join(os.getcwd(), 'output', 'reports')
         os.makedirs(reports_dir, exist_ok=True)
 
         # Generate filename based on vulnerability or timestamp

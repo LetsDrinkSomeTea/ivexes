@@ -70,6 +70,13 @@ def cleanup(prefix: str = 'ivexes-') -> None:
             logger.info(f'Container {container.name} removed successfully.')
         except Exception as e:
             logger.error(f'Error removing container {container.name}: {e}')
+    while len(containers) > 0:
+        time.sleep(1)
+        containers = [
+            cast(Container, c)
+            for c in client.containers.list(all=True)
+            if c.name.startswith(prefix)
+        ]
 
 
 def remove_if_exists(container_name: str) -> bool:

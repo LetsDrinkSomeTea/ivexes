@@ -6,7 +6,9 @@ from agents import Agent, RunConfig, RunResultStreaming, SQLiteSession
 
 from ivexes.printer import print_and_write_to_file, print_usage_summary
 from ivexes import stream_result
+from ivexes.printer.printer import print_banner
 
+from ...colors import Colors
 
 from .shared_context import MultiAgentContext
 from .tools import agent_as_tool, create_shared_memory_tools
@@ -165,16 +167,21 @@ class MultiAgent(BaseAgent):
         Returns:
             A tuple containing the updated MultiAgentContext and the SQLiteSession.
         """
+        print_banner()
         await self.run_streamed_p()
         while (
             not self.context.report_generated
             and self.context.times_reprompted < self.settings.max_reprompts
         ):
             self.context.times_reprompted += 1
-            print_and_write_to_file(f'\n\n{"=" * 120}\nREPROMPTING{"=" * 120}\n')
+            print_and_write_to_file(
+                f'{Colors.WARNING}\n\n{"=" * 120}\nREPROMPTING{"=" * 120}\n{Colors.ENDC}'
+            )
             await self.run_streamed_p('continue with your plan or generate a report')
         if not self.context.report_generated:
-            print_and_write_to_file(f'\n\n{"=" * 120}\nREPROMPTING{"=" * 120}\n')
+            print_and_write_to_file(
+                f'{Colors.WARNING}\n\n{"=" * 120}\nREPROMPTING{"=" * 120}\n{Colors.ENDC}'
+            )
             await self.run_streamed_p('generate a report')
         return self.context, self.session
 
