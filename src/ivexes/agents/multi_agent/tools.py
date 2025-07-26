@@ -2,7 +2,7 @@
 
 import time
 
-from agents import Agent, Runner, SQLiteSession, Tool, function_tool
+from agents import Agent, RunConfig, Runner, SQLiteSession, Tool, function_tool
 
 from ...printer import Printer
 from .shared_context import MultiAgentContext
@@ -19,6 +19,7 @@ def agent_as_tool(
     tool_description: str,
     settings: Settings,
     context: MultiAgentContext,
+    run_config: RunConfig,
 ) -> Tool:
     """Convert an agent into a tool that can be used by other agents.
 
@@ -28,6 +29,7 @@ def agent_as_tool(
         tool_description: Description of the tool's functionality
         settings: Settings for the agent execution
         context: Optional shared context for multi-agent interactions
+        run_config: Run configuration for the agent execution
 
     Returns:
         A tool that executes the agent with the given configuration
@@ -54,7 +56,7 @@ def agent_as_tool(
         result = Runner.run_streamed(
             starting_agent=agent,
             input=input,
-            run_config=get_run_config(settings),
+            run_config=run_config,
             max_turns=settings.max_turns,
             session=session,
         )

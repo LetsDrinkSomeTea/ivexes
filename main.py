@@ -27,16 +27,6 @@ GENERAL_SETTINGS = PartialSettings(
 )
 
 
-# FIXME: During testing, we limit the number of challenges and vulnerabilities to speed up the process.
-# HTB_CHALLENGES = HTB_CHALLENGES[:1]  # Limit to one challenge for testing
-# VULNERABILITIES = VULNERABILITIES[:1]  # Limit to one vulnerability for testing
-# MODELS = [  # Limit to two models for testing
-#     'openai/gpt-4.1-mini',
-#     'openai/gpt-4o-mini',
-# ]
-# FIXME: Remove the above limits for full testing
-
-
 async def run_htb_tests(
     dry_run: bool = False, total_runs: int = 1, max_tests: int = 0
 ) -> int:
@@ -61,6 +51,7 @@ async def run_htb_tests(
             sets.update(
                 PartialSettings(
                     model=model,
+                    reasoning_model=model,
                     max_turns=25,
                     trace_name=htb_settings.get('trace_name', challenge_name),
                     setup_archive=htb_settings.get('setup_archive', None),
@@ -99,7 +90,7 @@ async def run_multi_agent_tests(
     Returns:
         Updated total_runs counter
     """
-    need_more_turns: list[PartialSettings] = []
+    didnt_finish: list[PartialSettings] = []
     for vulnerability in VULNERABILITIES:
         for model in MODELS:
             trace_name = vulnerability.get('trace_name', 'Unknown Trace')
@@ -113,9 +104,10 @@ async def run_multi_agent_tests(
             sets.update(**vulnerability)
             sets.update(
                 model=model,
-                max_turns=20,
+                reasoning_model=model,
+                max_turns=50,
             )
-            print(sets)
+
             agent = MultiAgent(settings=sets)
             try:
                 if not dry_run:
@@ -124,27 +116,14 @@ async def run_multi_agent_tests(
                 print(
                     f'Error: {e} - Max turns exceeded for {trace_name} with model {model}'
                 )
-                need_more_turns.append((sets))
+                didnt_finish.append((sets))
                 max_tests += 1
             except Exception as e:
                 print(f"Error during '{trace_name} with model {model}': {e}")
 
-    for sets in need_more_turns:
-        trace_name = sets.get('trace_name', 'Unknown Trace')
-        model = sets.get('model', 'Unknown Model')
-
-        print(
-            f'[{total_runs:>4}|{max_tests:>4}]Running Multi-Agent test: {trace_name} with model {model}'
-        )
-        total_runs += 1
-        sets.update(max_turns=50)
-        agent = MultiAgent(settings=sets)
-        try:
-            if not dry_run:
-                await agent.run_ensured_report()
-        except Exception as e:
-            print(f"Error during '{trace_name} with model {model}': {e}")
-
+    print("The following tests didn't finish (MaxTurnsExceeded):")
+    for a in didnt_finish:
+        print(a.get('trace_name', 'Unknown Trace'), a.get('model', 'Unknown Model'))
     return total_runs
 
 

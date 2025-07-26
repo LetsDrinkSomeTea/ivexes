@@ -77,6 +77,10 @@ def create_report_tools(
         if report_name:
             report_content += f'**Vulnerability:** {report_name}\n'
 
+        report_content += f'**Trace Name:** {settings.trace_name or "N/A"}\n'
+        report_content += f'**Model:** {settings.model or "N/A"}\n'
+        report_content += f'**Agent Name:** {settings.reasoning_model or "N/A"}\n'
+
         report_content += f"""
 **Codebase:** {settings.codebase_path or 'N/A'}
 
@@ -88,6 +92,10 @@ def create_report_tools(
 ---
 
 {str(context)}
+
+---
+
+{str(settings)}
 
 ---
 """

@@ -9,7 +9,6 @@
 
 data/
 .env
-reports/
 
 site/
 github_scan.sqlite

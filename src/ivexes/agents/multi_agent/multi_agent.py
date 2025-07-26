@@ -75,6 +75,7 @@ class MultiAgent(BaseAgent):
         codebase_structure = self.code_browser.get_codebase_structure()
 
         self.user_msg = user_msg
+        run_config = get_run_config(self.settings)
 
         security_specialist_tool = agent_as_tool(
             agent=Agent(
@@ -89,6 +90,7 @@ class MultiAgent(BaseAgent):
             tool_description='Expert in CVE, CWE, CAPEC, and ATT&CK frameworks. Provides security vulnerability analysis, attack pattern identification, and mitigation strategies based on industry standards.',
             context=self.context,
             settings=self.settings,
+            run_config=run_config,
         )
 
         code_analyst_tool = agent_as_tool(
@@ -102,6 +104,7 @@ class MultiAgent(BaseAgent):
             tool_description='Specialist for codebase analysis and vulnerability identification. Analyzes code structure, functions, classes, and diffs to identify potential security weaknesses.',
             context=self.context,
             settings=self.settings,
+            run_config=run_config,
         )
 
         red_team_operator_tool = agent_as_tool(
@@ -115,6 +118,7 @@ class MultiAgent(BaseAgent):
             tool_description='Specialist for creating and testing Proof-of-Concept exploits. Develops bash/Python scripts, tests exploits in sandbox, and validates exploitation techniques.',
             context=self.context,
             settings=self.settings,
+            run_config=run_config,
         )
 
         report_journalist_agent = agent_as_tool(
@@ -130,6 +134,7 @@ class MultiAgent(BaseAgent):
             tool_description='Specialist for generating comprehensive reports and summaries. Compiles findings from security analysis, code review, and exploitation into structured reports.',
             context=self.context,
             settings=self.settings,
+            run_config=run_config,
         )
 
         # Create planning agent
