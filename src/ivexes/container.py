@@ -41,12 +41,13 @@ def find_by_name(container_name: str) -> Container | None:
         container = cast(Container, c[0])
         # container already exists, ask for removal
         logger.info(f'Container {container.name} found exists.')
-        if container.status != 'running':
+        while container.status != 'running':
             logger.info(
                 f'Container {container.name} is not running, status: {container.status}. Starting it...'
             )
             container.start()
             time.sleep(10)  # Wait for the container to start
+            container.reload()
         return c[0]
     return None
 
