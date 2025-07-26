@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://pages.faigle.dev/ivexes/</loc>
+         <lastmod>2025-07-26</lastmod>
+    </url>
+    <url>
+         <loc>https://pages.faigle.dev/ivexes/agents/</loc>
+         <lastmod>2025-07-26</lastmod>
+    </url>
+    <url>
+         <loc>https://pages.faigle.dev/ivexes/code_browser/</loc>
+         <lastmod>2025-07-26</lastmod>
+    </url>
+    <url>
+         <loc>https://pages.faigle.dev/ivexes/config/</loc>
+         <lastmod>2025-07-26</lastmod>
+    </url>
+    <url>
+         <loc>https://pages.faigle.dev/ivexes/cve_search/</loc>
+         <lastmod>2025-07-26</lastmod>
+    </url>
+    <url>
+         <loc>https://pages.faigle.dev/ivexes/sandbox/</loc>
+         <lastmod>2025-07-26</lastmod>
+    </url>
+    <url>
+         <loc>https://pages.faigle.dev/ivexes/tools/</loc>
+         <lastmod>2025-07-26</lastmod>
+    </url>
+    <url>
+         <loc>https://pages.faigle.dev/ivexes/vector_db/</loc>
+         <lastmod>2025-07-26</lastmod>
+    </url>
+</urlset>
