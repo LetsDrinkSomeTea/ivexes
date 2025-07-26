@@ -54,8 +54,8 @@ class BaseAgent(ABC):
         self._setup_agent()
 
     def __del__(self):
-        """Clean up by resetting settings when object is destroyed."""
-        reset_settings()
+        """Clean up when object is destroyed."""
+        pass
 
     @abstractmethod
     def _setup_agent(self):

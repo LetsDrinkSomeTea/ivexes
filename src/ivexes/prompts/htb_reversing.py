@@ -13,6 +13,8 @@ Dont use less! Use head, tail or grep to analyze the output of a programm or fil
 
 First make a plan, then execute it step by step.
 Don't stop until you found the flag looking like HTB{...}
+Last step is to create a markdown report with the flag and your analysis.
+Use the create_report tool to create the report.
 """
 
 user_msg = """
