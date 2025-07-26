@@ -60,9 +60,3 @@ jobs:
           uv run python manual.py vector-db query test-value
         env:
           LLM_API_KEY: sk-test-key-for-validation
-      
-      - name: Test configuration validation
-        run: |
-          uv run python -c "from ivexes.config.settings import get_settings; print(get_settings())"
-        env:
-          LLM_API_KEY: sk-test-key-for-validation

@@ -17,7 +17,7 @@ lint:
 
 .PHONY: tests
 tests: 
-	uv run python -m unittest discover -s tests
+	uv run python -m unittest discover -s tests -v
 
 .PHONY: build-docs
 build-docs:

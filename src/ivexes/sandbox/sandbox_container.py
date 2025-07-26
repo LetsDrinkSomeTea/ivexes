@@ -8,6 +8,7 @@ and configuration.
 import time
 from typing import Optional
 
+import docker
 from docker.errors import ContainerError, ImageNotFound
 from docker.models.containers import Container
 
@@ -117,23 +118,26 @@ def setup_container(
         while container.status != 'running':
             time.sleep(1)  # Wait for the container to start
             time_waited += 1
-            container.reload()
-            if container.status == 'exited':
+            restarted = False
+            try:
+                container.reload()
+            except docker.errors.NotFound:
                 logger.info(
                     f'Container {container_name} exited immediately, trying to restart with CMD sleep infinity'
                 )
-                container.remove()
-                container: Container = client.containers.run(
-                    image=docker_image,
-                    name=container_name,
-                    detach=True,
-                    environment={
-                        'TERM': 'xterm-mono',
-                    },
-                    # remove=True,
-                    command=['sleep', 'infinity'],
-                )
-                time_waited = 0
+                if not restarted:
+                    container: Container = client.containers.run(
+                        image=docker_image,
+                        name=container_name,
+                        detach=True,
+                        environment={
+                            'TERM': 'xterm-mono',
+                        },
+                        # remove=True,
+                        command=['sleep', 'infinity'],
+                    )
+                    time_waited = 0
+                    restarted = True
 
             if time_waited > MAX_DELAY:
                 raise TimeoutError(
@@ -145,10 +149,10 @@ def setup_container(
         return container
     except ContainerError as e:
         logger.error(f'Container error: {e}')
-        exit(1)
+        raise RuntimeError(f'Container setup failed: {e}') from e
     except ImageNotFound as e:
         logger.error(f'Image not found: {e}')
-        exit(1)
+        raise RuntimeError(f'Docker image not found: {e}') from e
     except Exception as e:
         logger.error(f'An error occurred: {e}')
-        exit(1)
+        raise RuntimeError(f'Container setup failed: {e}') from e

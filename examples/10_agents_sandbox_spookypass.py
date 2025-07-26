@@ -7,7 +7,7 @@ from ivexes.agents import HTBChallengeAgent
 from ivexes.config import PartialSettings, setup_default_logging
 
 load_dotenv(verbose=True, override=True)
-setup_default_logging()
+setup_default_logging('DEBUG')
 
 settings = PartialSettings(
     trace_name='pass',
@@ -24,5 +24,4 @@ agent = HTBChallengeAgent(
 )
 
 
-if __name__ == '__main__':
-    asyncio.run(agent.run_interactive())
+agent.run()

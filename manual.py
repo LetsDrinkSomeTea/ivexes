@@ -10,6 +10,7 @@ from agents import Tool
 from dotenv import load_dotenv
 
 from ivexes.config import create_settings, setup_default_logging
+from ivexes.config.settings import PartialSettings
 from ivexes.cve_search.tools import _search_cve_by_id
 from ivexes.printer.formatter import sprint_tools_as_json
 from ivexes.vector_db import CweCapecAttackDatabase
@@ -23,11 +24,6 @@ load_dotenv(verbose=True, override=True)
 setup_default_logging()
 
 logger = logging.getLogger(__name__)
-
-
-def get_settings():
-    """Get settings instance for CLI commands."""
-    return create_settings()
 
 
 @click.group()
@@ -89,7 +85,7 @@ def cmd_clear() -> None:
 
     This command removes all entries from the vector database.
     """
-    settings = get_settings()
+    settings = create_settings()
     db = CweCapecAttackDatabase(settings)
     db.clear()
     click.echo('Database cleared successfully')
@@ -98,7 +94,7 @@ def cmd_clear() -> None:
 @vector_db.command('size')
 def cmd_size() -> None:
     """Get the size of the vector database."""
-    settings = get_settings()
+    settings = create_settings()
     db = CweCapecAttackDatabase(settings)
     click.echo(f' Size of DB: {db.collection.count()}')
 
@@ -107,7 +103,7 @@ def cmd_size() -> None:
 @click.argument('type_of_data', type=click.Choice(['cwe', 'capec', 'attack', 'all']))
 def init_verctor_db(type_of_data: str):
     """Initialize vector database with specified data type."""
-    settings = get_settings()
+    settings = create_settings()
     db = CweCapecAttackDatabase(settings)
     if type_of_data == 'cwe':
         db.initialize_cwe()
@@ -133,7 +129,7 @@ def cmd_query(query_text: str, type: str, count: int) -> None:
         type: Filter results by entry type (cwe or capec)
         count: Maximum number of results to return
     """
-    settings = get_settings()
+    settings = create_settings()
     db = CweCapecAttackDatabase(settings)
     types = [type] if type else None
     results = db.query(query_text, types, count)
@@ -151,7 +147,7 @@ def cmd_query_cwe(query_text: str, count: int) -> None:
         query_text: The text to search for in CWE entries
         count: Maximum number of results to return
     """
-    settings = get_settings()
+    settings = create_settings()
     db = CweCapecAttackDatabase(settings)
     results = db.query_cwe(query_text, count)
     for result in results:
@@ -168,7 +164,7 @@ def cmd_query_capec(query_text: str, count: int) -> None:
         query_text: The text to search for in CAPEC entries
         count: Maximum number of results to return
     """
-    settings = get_settings()
+    settings = create_settings()
     db = CweCapecAttackDatabase(settings)
     results = db.query_capec(query_text, count)
     for result in results:
@@ -195,7 +191,7 @@ def cmd_get_definition(symbol: str) -> None:
     """
     from ivexes.code_browser import CodeBrowser
 
-    settings = get_settings()
+    settings = create_settings()
     cb = CodeBrowser(settings)
 
     result = cb.get_definition(symbol)
@@ -219,7 +215,7 @@ def cmd_get_references(symbol: str) -> None:
     """
     from ivexes.code_browser import CodeBrowser
 
-    settings = get_settings()
+    settings = create_settings()
     cb = CodeBrowser(settings)
 
     results = cb.get_references(symbol)
@@ -244,7 +240,7 @@ def cmd_get_diff(file1: str, file2: str) -> None:
     """
     from ivexes.code_browser import CodeBrowser
 
-    settings = get_settings()
+    settings = create_settings()
     cb = CodeBrowser(settings)
 
     results = cb.get_diff(file1=file1, file2=file2)
@@ -267,7 +263,7 @@ def cmd_get_symbols(file: str) -> None:
     """
     from ivexes.code_browser import CodeBrowser
 
-    settings = get_settings()
+    settings = create_settings()
     cb = CodeBrowser(settings)
 
     symbols = cb.get_symbols(file)
@@ -286,7 +282,7 @@ def cmd_get_file(file: str) -> None:
     """
     from ivexes.code_browser import CodeBrowser
 
-    settings = get_settings()
+    settings = create_settings()
     cb = CodeBrowser(settings)
 
     content = cb.get_file_content(file)
@@ -304,7 +300,7 @@ def cmd_get_tree(count: int) -> None:
     """
     from ivexes.code_browser import CodeBrowser
 
-    settings = get_settings()
+    settings = create_settings()
     cb = CodeBrowser(settings)
 
     content = cb.get_codebase_structure(n=count)
@@ -336,7 +332,7 @@ def cmd_start() -> None:
     """Starts interactive shell in a sandbox environment."""
     from ivexes.sandbox.sandbox import Sandbox
 
-    settings = get_settings()
+    settings = create_settings()
 
     sb = Sandbox(settings)
     if not sb.connect():
@@ -344,7 +340,7 @@ def cmd_start() -> None:
         return
     command = 'pwd'
     while command not in ['exit']:
-        result = sb.write_to_shell(command.encode())
+        result = sb.run(command.encode())
         click.echo(result)
         command = input("\n Next command ('exit' to exit): ")
 
@@ -362,16 +358,16 @@ def cmd_run(command: str, image: Optional[str]) -> None:
     """
     from ivexes.sandbox.sandbox import Sandbox
 
-    settings = get_settings()
+    settings = create_settings()
     if image:
         # Override sandbox image in settings
-        settings = create_settings({'sandbox_image': image})
+        settings = create_settings(PartialSettings(sandbox_image=image))
 
     sb = Sandbox(settings)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return
-    result = sb.write_to_shell(command.encode())
+    result = sb.run(command.encode())
     click.echo(result)
 
 
@@ -388,7 +384,7 @@ def create_file(path: str, content: str) -> None:
     """
     from ivexes.sandbox.sandbox import Sandbox
 
-    settings = get_settings()
+    settings = create_settings()
     if not settings.setup_archive:
         click.echo(
             'No setup archive configured. Please set it in the settings or via the env vars'
@@ -446,7 +442,7 @@ def cmd_llm_tools(type: str) -> None:
     from ivexes.code_browser import CodeBrowser
     from ivexes.vector_db import CweCapecAttackDatabase
 
-    settings = get_settings()
+    settings = create_settings()
     tools: list[Tool] = []
     match type:
         case 'code_browser':

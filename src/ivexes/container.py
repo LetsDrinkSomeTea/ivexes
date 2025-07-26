@@ -29,11 +29,12 @@ def get_client() -> DockerClient:
     return _client
 
 
-def find_by_name(container_name: str) -> Container | None:
+def find_by_name(container_name: str, start: bool = True) -> Container | None:
     """Find a container by its name.
 
     Args:
         container_name (str): Name of the container to find.
+        start (bool): Whether to start the container if it exists but is not running.
     """
     client = get_client()
     c = [c for c in client.containers.list(all=True) if c.name == container_name]
@@ -41,7 +42,7 @@ def find_by_name(container_name: str) -> Container | None:
         container = cast(Container, c[0])
         # container already exists, ask for removal
         logger.info(f'Container {container.name} found exists.')
-        while container.status != 'running':
+        while start and container.status != 'running':
             logger.info(
                 f'Container {container.name} is not running, status: {container.status}. Starting it...'
             )
@@ -90,7 +91,7 @@ def remove_if_exists(container_name: str) -> bool:
     Returns:
         bool: True if the container was removed, False if it did not exist.
     """
-    container = find_by_name(container_name)
+    container = find_by_name(container_name, start=False)
     if not container:
         logger.info(f'Container {container_name} not existing.')
         return False
@@ -98,7 +99,7 @@ def remove_if_exists(container_name: str) -> bool:
     container.wait()
     container.remove(force=True)
     logger.info(f'Container {container.name} removed')
-    while find_by_name(container_name):
+    while find_by_name(container_name, start=False):
         time.sleep(1)
     return True
 

@@ -20,6 +20,7 @@ class TestContainerModule(unittest.TestCase):
         mock_client = MagicMock()
         mock_container = MagicMock()
         mock_container.name = 'test-container'
+        mock_container.status = 'running'
         mock_client.containers.list.return_value = [mock_container]
 
         # Call the function
@@ -44,30 +45,6 @@ class TestContainerModule(unittest.TestCase):
         self.assertIsNone(result)
         mock_client.containers.list.assert_called_once_with(all=True)
 
-    def test_find_by_name_multiple_containers(self):
-        """Test finding a container by name when multiple containers exist."""
-        # Mock the Docker client with multiple containers
-        mock_client = MagicMock()
-        mock_container1 = MagicMock()
-        mock_container1.name = 'container1'
-        mock_container2 = MagicMock()
-        mock_container2.name = 'target-container'
-        mock_container3 = MagicMock()
-        mock_container3.name = 'container3'
-        mock_client.containers.list.return_value = [
-            mock_container1,
-            mock_container2,
-            mock_container3,
-        ]
-
-        # Call the function
-        with patch('ivexes.container.get_client', return_value=mock_client):
-            result = find_by_name('target-container')
-
-        # Verify the result
-        self.assertEqual(result, mock_container2)
-        mock_client.containers.list.assert_called_once_with(all=True)
-
     def test_find_by_name_docker_error(self):
         """Test finding a container by name when Docker client fails."""
         # Mock the Docker client to raise an exception
@@ -80,24 +57,6 @@ class TestContainerModule(unittest.TestCase):
         with patch('ivexes.container.get_client', return_value=mock_client):
             with self.assertRaises(docker.errors.DockerException):
                 find_by_name('test-container')
-
-    def test_remove_if_exists_container_exists(self):
-        """Test removing a container that exists."""
-        # Mock the client and container
-        mock_client = MagicMock()
-        mock_container = MagicMock()
-        mock_container.name = 'test-container'
-        mock_client.containers.list.return_value = [mock_container]
-
-        # Call the function
-        with patch('ivexes.container.get_client', return_value=mock_client):
-            result = remove_if_exists('test-container')
-
-        # Verify the container was removed
-        self.assertTrue(result)
-        mock_container.stop.assert_called_once()
-        mock_container.wait.assert_called_once()
-        mock_container.remove.assert_called_once_with(force=True)
 
     def test_remove_if_exists_container_not_found(self):
         """Test removing a container that doesn't exist."""

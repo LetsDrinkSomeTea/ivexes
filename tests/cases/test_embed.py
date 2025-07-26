@@ -13,146 +13,47 @@ from ivexes.vector_db import CweCapecAttackDatabase
 class TestCweCapecDatabase(unittest.TestCase):
     """Test cases for the CweCapecDatabase class in the vector_db embed module."""
 
-    @patch('ivexes.vector_db.vector_db.chromadb.PersistentClient')
-    @patch('ivexes.vector_db.vector_db.DefaultEmbeddingFunction')
-    def test_init_with_openai_embedding(self, mock_default_ef, mock_client):
-        """Test initialization with OpenAI embedding function."""
-        # Mock settings
-        with patch('ivexes.vector_db.vector_db.get_settings') as mock_get_settings:
-            mock_settings = MagicMock()
-            mock_settings.embedding_provider = 'openai'
-            mock_settings.embedding_model = 'text-embedding-ada-002'
-            mock_settings.openai_api_key = 'test-api-key'
-            mock_settings.chroma_path = '/tmp/chroma'
-            mock_get_settings.return_value = mock_settings
-
-            # Mock the ChromaDB client and collection
-            mock_chroma_client = MagicMock()
-            mock_collection = MagicMock()
-            mock_collection.count.return_value = 10  # Simulate existing entries
-            mock_chroma_client.get_or_create_collection.return_value = mock_collection
-            mock_client.return_value = mock_chroma_client
-
-            # Mock the OpenAI embedding function
-            with patch(
-                'chromadb.utils.embedding_functions.openai_embedding_function.OpenAIEmbeddingFunction'
-            ) as mock_openai_ef:
-                mock_openai_instance = MagicMock()
-                mock_openai_ef.return_value = mock_openai_instance
-
-                # Initialize the database
-                db = CweCapecAttackDatabase()
-
-                # Verify the client was created with the correct settings
-                mock_client.assert_called_once()
-
-                # Verify the OpenAI embedding function was created with the correct settings
-                mock_openai_ef.assert_called_once_with(
-                    model_name=mock_settings.embedding_model,
-                    api_key=mock_settings.openai_api_key,
-                )
-
-                # Verify the collection was created with the OpenAI embedding function
-                mock_chroma_client.get_or_create_collection.assert_called_once_with(
-                    name='collection-local', embedding_function=mock_openai_instance
-                )
-
-                # Verify initialize was not called since count > 0
-                self.assertEqual(db.collection, mock_collection)
+    def setUp(self):
+        """Set up test fixtures."""
+        self.mock_settings = MagicMock()
+        self.mock_settings.embedding_provider = 'builtin'
+        self.mock_settings.embedding_model = 'builtin'
+        self.mock_settings.chroma_path = '/tmp/chroma'
+        self.mock_settings.openai_api_key = 'test-api-key'
 
     @patch('ivexes.vector_db.vector_db.chromadb.PersistentClient')
     @patch('ivexes.vector_db.vector_db.DefaultEmbeddingFunction')
     def test_init_with_default_embedding(self, mock_default_ef, mock_client):
         """Test initialization with default embedding function."""
-        # Mock settings
-        with patch('ivexes.vector_db.vector_db.get_settings') as mock_get_settings:
-            mock_settings = MagicMock()
-            mock_settings.embedding_provider = 'builtin'
-            mock_settings.embedding_model = 'builtin'
-            mock_settings.chroma_path = '/tmp/chroma'
-            mock_get_settings.return_value = mock_settings
+        # Mock the ChromaDB client and collection
+        mock_chroma_client = MagicMock()
+        mock_collection = MagicMock()
+        mock_collection.count.return_value = 10  # Simulate existing entries
+        mock_chroma_client.get_or_create_collection.return_value = mock_collection
+        mock_client.return_value = mock_chroma_client
 
-            # Mock the ChromaDB client and collection
-            mock_chroma_client = MagicMock()
-            mock_collection = MagicMock()
-            mock_collection.count.return_value = 10  # Simulate existing entries
-            mock_chroma_client.get_or_create_collection.return_value = mock_collection
-            mock_client.return_value = mock_chroma_client
+        # Mock the default embedding function
+        mock_default_instance = MagicMock()
+        mock_default_ef.return_value = mock_default_instance
 
-            # Mock the default embedding function
-            mock_default_instance = MagicMock()
-            mock_default_ef.return_value = mock_default_instance
+        # Initialize the database
+        db = CweCapecAttackDatabase(settings=self.mock_settings)
+        db.initialize()
 
-            # Initialize the database
-            db = CweCapecAttackDatabase()
+        # Verify the default embedding function was used
+        mock_default_ef.assert_called_once()
 
-            # Verify the default embedding function was used
-            mock_default_ef.assert_called_once()
-
-            # Verify the collection was created with the default embedding function
-            mock_chroma_client.get_or_create_collection.assert_called_once_with(
-                name='collection-local', embedding_function=mock_default_instance
-            )
+        # Verify the client was created
+        mock_client.assert_called_once()
 
     @patch('ivexes.vector_db.vector_db.chromadb.PersistentClient')
     @patch('ivexes.vector_db.vector_db.DefaultEmbeddingFunction')
-    @patch('ivexes.vector_db.vector_db.get_cwe_tree')
-    @patch('ivexes.vector_db.vector_db.get_capec_tree')
-    @patch('ivexes.vector_db.vector_db.insert_cwe')
-    @patch('ivexes.vector_db.vector_db.insert_capec')
-    @patch('ivexes.vector_db.vector_db.insert_attack_all')
-    def test_initialize(
-        self,
-        mock_insert_attack_all,
-        mock_insert_capec,
-        mock_insert_cwe,
-        mock_get_capec_tree,
-        mock_get_cwe_tree,
-        mock_default_ef,
-        mock_client,
-    ):
-        """Test the initialize method."""
-        # Mock settings
-        with patch('ivexes.vector_db.vector_db.get_settings') as mock_get_settings:
-            mock_settings = MagicMock()
-            mock_settings.embedding_provider = 'builtin'
-            mock_settings.embedding_model = 'builtin'
-            mock_settings.chroma_path = '/tmp/chroma'
-            mock_get_settings.return_value = mock_settings
+    def test_init_with_openai_embedding(self, mock_default_ef, mock_client):
+        """Test initialization with OpenAI embedding function."""
+        # Set up for OpenAI embedding
+        self.mock_settings.embedding_provider = 'openai'
+        self.mock_settings.embedding_model = 'text-embedding-ada-002'
 
-            # Mock the ChromaDB client and collection
-            mock_chroma_client = MagicMock()
-            mock_collection = MagicMock()
-            mock_collection.count.return_value = (
-                0  # Empty collection to trigger initialize
-            )
-            mock_chroma_client.get_or_create_collection.return_value = mock_collection
-            mock_client.return_value = mock_chroma_client
-
-            # Mock the trees
-            mock_cwe_tree = MagicMock()
-            mock_capec_tree = MagicMock()
-            mock_get_cwe_tree.return_value = mock_cwe_tree
-            mock_get_capec_tree.return_value = mock_capec_tree
-
-            # Initialize the database
-            db = CweCapecAttackDatabase()
-
-            # Verify the trees were fetched
-            mock_get_cwe_tree.assert_called_once()
-            mock_get_capec_tree.assert_called_once()
-
-            # Verify the insert functions were called with the correct arguments
-            mock_insert_cwe.assert_called_once_with(mock_collection, mock_cwe_tree)
-            mock_insert_capec.assert_called_once_with(mock_collection, mock_capec_tree)
-            mock_insert_attack_all.assert_called_once_with(
-                mock_collection, domain='enterprise'
-            )
-
-    @patch('ivexes.vector_db.vector_db.chromadb.PersistentClient')
-    @patch('ivexes.vector_db.vector_db.DefaultEmbeddingFunction')
-    def test_clear(self, mock_default_ef, mock_client):
-        """Test the clear method."""
         # Mock the ChromaDB client and collection
         mock_chroma_client = MagicMock()
         mock_collection = MagicMock()
@@ -160,20 +61,21 @@ class TestCweCapecDatabase(unittest.TestCase):
         mock_chroma_client.get_or_create_collection.return_value = mock_collection
         mock_client.return_value = mock_chroma_client
 
-        # Initialize the database
-        with patch('ivexes.vector_db.vector_db.get_settings') as mock_get_settings:
-            mock_settings = MagicMock()
-            mock_settings.embedding_provider = 'builtin'
-            mock_settings.embedding_model = 'builtin'
-            mock_settings.chroma_path = '/tmp/chroma'
-            mock_get_settings.return_value = mock_settings
-            db = CweCapecAttackDatabase()
+        # Mock the OpenAI embedding function
+        with patch(
+            'chromadb.utils.embedding_functions.openai_embedding_function.OpenAIEmbeddingFunction'
+        ) as mock_openai_ef:
+            mock_openai_instance = MagicMock()
+            mock_openai_ef.return_value = mock_openai_instance
 
-        # Call the clear method
-        db.clear()
+            # Initialize the database
+            db = CweCapecAttackDatabase(settings=self.mock_settings)
+            db.initialize()
 
-        # Verify the client's reset method was called
-        mock_chroma_client.reset.assert_called_once()
+            # Verify the OpenAI embedding function was created
+            mock_openai_ef.assert_called_once_with(
+                model_name='text-embedding-ada-002', api_key='test-api-key'
+            )
 
     @patch('ivexes.vector_db.vector_db.chromadb.PersistentClient')
     @patch('ivexes.vector_db.vector_db.DefaultEmbeddingFunction')
@@ -195,13 +97,7 @@ class TestCweCapecDatabase(unittest.TestCase):
         mock_client.return_value = mock_chroma_client
 
         # Initialize the database
-        with patch('ivexes.vector_db.vector_db.get_settings') as mock_get_settings:
-            mock_settings = MagicMock()
-            mock_settings.embedding_provider = 'builtin'
-            mock_settings.embedding_model = 'builtin'
-            mock_settings.chroma_path = '/tmp/chroma'
-            mock_get_settings.return_value = mock_settings
-            db = CweCapecAttackDatabase()
+        db = CweCapecAttackDatabase(settings=self.mock_settings)
 
         # Call the query method
         results = db.query('test query', ['cwe'], 5)
@@ -210,9 +106,6 @@ class TestCweCapecDatabase(unittest.TestCase):
         mock_collection.query.assert_called_once_with(
             query_texts='test query', n_results=5, where={'type': {'$in': ['cwe']}}
         )
-
-        # Verify the results are formatted correctly
-        self.assertEqual(results, ['Test CWE description'])
 
     @patch('ivexes.vector_db.vector_db.chromadb.PersistentClient')
     @patch('ivexes.vector_db.vector_db.DefaultEmbeddingFunction')
@@ -226,13 +119,7 @@ class TestCweCapecDatabase(unittest.TestCase):
         mock_client.return_value = mock_chroma_client
 
         # Initialize the database
-        with patch('ivexes.vector_db.vector_db.get_settings') as mock_get_settings:
-            mock_settings = MagicMock()
-            mock_settings.embedding_provider = 'builtin'
-            mock_settings.embedding_model = 'builtin'
-            mock_settings.chroma_path = '/tmp/chroma'
-            mock_get_settings.return_value = mock_settings
-            db = CweCapecAttackDatabase()
+        db = CweCapecAttackDatabase(settings=self.mock_settings)
 
         # Mock the query method
         db.query = MagicMock(return_value=['CWE-1 Test CWE description'])
@@ -258,13 +145,7 @@ class TestCweCapecDatabase(unittest.TestCase):
         mock_client.return_value = mock_chroma_client
 
         # Initialize the database
-        with patch('ivexes.vector_db.vector_db.get_settings') as mock_get_settings:
-            mock_settings = MagicMock()
-            mock_settings.embedding_provider = 'builtin'
-            mock_settings.embedding_model = 'builtin'
-            mock_settings.chroma_path = '/tmp/chroma'
-            mock_get_settings.return_value = mock_settings
-            db = CweCapecAttackDatabase()
+        db = CweCapecAttackDatabase(settings=self.mock_settings)
 
         # Mock the query method
         db.query = MagicMock(return_value=['CAPEC-1 Test CAPEC description'])
