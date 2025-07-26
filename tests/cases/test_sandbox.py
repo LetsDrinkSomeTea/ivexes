@@ -6,7 +6,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from ivexes.config import PartialSettings, set_settings
+from ivexes.config import PartialSettings, create_settings
 from ivexes.sandbox import Sandbox
 
 
@@ -25,7 +25,9 @@ class TestSandboxModule(unittest.TestCase):
             },
             clear=True,
         ):
-            set_settings(PartialSettings(llm_api_key='llm-key-for-verification'))
+            self.settings = create_settings(
+                PartialSettings(llm_api_key='llm-key-for-verification')
+            )
 
     def tearDown(self):
         """Clean up after each test method."""
@@ -44,7 +46,7 @@ class TestSandboxModule(unittest.TestCase):
 
     def test_basic_sandbox(self):
         """Test basic sandbox functionality."""
-        self.sandbox = Sandbox()
+        self.sandbox = Sandbox(settings=self.settings)
 
         # Test initial state
         self.assertFalse(self.sandbox.is_running())
@@ -74,7 +76,7 @@ class TestSandboxModule(unittest.TestCase):
 
     def test_interactive_mode(self):
         """Test interactive session functionality."""
-        self.sandbox = Sandbox()
+        self.sandbox = Sandbox(settings=self.settings)
         self.assertTrue(self.sandbox.connect())
 
         # Test basic interactive session
@@ -91,7 +93,7 @@ class TestSandboxModule(unittest.TestCase):
 
     def test_file_operations(self):
         """Test file read/write operations."""
-        self.sandbox = Sandbox()
+        self.sandbox = Sandbox(settings=self.settings)
         self.assertTrue(self.sandbox.connect())
 
         # Test writing and reading various file types
@@ -115,7 +117,7 @@ class TestSandboxModule(unittest.TestCase):
 
     def test_command_execution_edge_cases(self):
         """Test edge cases in command execution."""
-        self.sandbox = Sandbox()
+        self.sandbox = Sandbox(settings=self.settings)
         self.assertTrue(self.sandbox.connect())
 
         # Test command with exit code 0
@@ -141,7 +143,7 @@ class TestSandboxModule(unittest.TestCase):
     def test_context_manager(self):
         """Test context manager functionality."""
         # Test successful context manager
-        with Sandbox() as sandbox:
+        with Sandbox(settings=self.settings) as sandbox:
             self.assertTrue(sandbox.is_running())
             exit_code, output = sandbox.run('echo "test"')
             self.assertEqual(exit_code, 0)
@@ -152,7 +154,7 @@ class TestSandboxModule(unittest.TestCase):
 
         # Test context manager with exception
         try:
-            with Sandbox() as sandbox:
+            with Sandbox(settings=self.settings) as sandbox:
                 self.assertTrue(sandbox.is_running())
                 raise ValueError('Test exception')
         except ValueError:
@@ -163,7 +165,7 @@ class TestSandboxModule(unittest.TestCase):
 
     def test_interactive_session_patterns(self):
         """Test interactive session pattern matching."""
-        self.sandbox = Sandbox()
+        self.sandbox = Sandbox(settings=self.settings)
         self.assertTrue(self.sandbox.connect())
 
         with self.sandbox.interactive('python3') as session:
@@ -177,7 +179,7 @@ class TestSandboxModule(unittest.TestCase):
     def test_error_handling(self):
         """Test error handling in various scenarios."""
         # Test operations without connection
-        sandbox = Sandbox()
+        sandbox = Sandbox(settings=self.settings)
 
         with self.assertRaises(RuntimeError):
             sandbox.run('echo "test"')
@@ -222,7 +224,13 @@ echo "Setup script executed" > /tmp/setup_log.txt
                 tar.addfile(setup_info, io.BytesIO(setup_script.encode()))
 
         # Test sandbox with setup archive
-        self.sandbox = Sandbox(setup_archive=tmp_file.name)
+        # Create settings with setup archive
+        settings_with_archive = create_settings(
+            PartialSettings(
+                llm_api_key='llm-key-for-verification', setup_archive=tmp_file.name
+            )
+        )
+        self.sandbox = Sandbox(settings=settings_with_archive)
         self.assertTrue(self.sandbox.connect())
 
         # Check if setup script was executed
@@ -237,7 +245,7 @@ echo "Setup script executed" > /tmp/setup_log.txt
 
     def test_concurrent_operations(self):
         """Test concurrent operations and session management."""
-        self.sandbox = Sandbox()
+        self.sandbox = Sandbox(settings=self.settings)
         self.assertTrue(self.sandbox.connect())
 
         # Test multiple file operations
@@ -260,7 +268,9 @@ echo "Setup script executed" > /tmp/setup_log.txt
     def test_working_directory_and_user_settings(self):
         """Test working directory and user settings."""
         # Test custom working directory
-        self.sandbox = Sandbox(working_dir='/tmp', username='root')
+        self.sandbox = Sandbox(
+            settings=self.settings, working_dir='/tmp', username='root'
+        )
         self.assertTrue(self.sandbox.connect())
 
         # Test that working directory is respected
@@ -275,7 +285,7 @@ echo "Setup script executed" > /tmp/setup_log.txt
 
     def test_interactive_session_lifecycle(self):
         """Test interactive session lifecycle management."""
-        self.sandbox = Sandbox()
+        self.sandbox = Sandbox(settings=self.settings)
         self.assertTrue(self.sandbox.connect())
 
         # Test session creation and destruction
@@ -297,7 +307,7 @@ echo "Setup script executed" > /tmp/setup_log.txt
 
     def test_large_file_operations(self):
         """Test operations with larger files."""
-        self.sandbox = Sandbox()
+        self.sandbox = Sandbox(settings=self.settings)
         self.assertTrue(self.sandbox.connect())
 
         # Test with larger content
@@ -319,13 +329,13 @@ echo "Setup script executed" > /tmp/setup_log.txt
         # Mock setup_container to raise an exception
         mock_setup.side_effect = Exception('Connection failed')
 
-        sandbox = Sandbox()
+        sandbox = Sandbox(settings=self.settings)
         self.assertFalse(sandbox.connect())
         self.assertFalse(sandbox.is_running())
 
     def test_python_interactive_session(self):
         """Test Python interactive session specifically."""
-        self.sandbox = Sandbox()
+        self.sandbox = Sandbox(settings=self.settings)
         self.assertTrue(self.sandbox.connect())
 
         with self.sandbox.interactive('python3') as py_session:

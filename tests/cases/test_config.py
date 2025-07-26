@@ -11,10 +11,8 @@ from pydantic import ValidationError
 
 from ivexes.config.settings import (
     Settings,
-    get_settings,
+    create_settings,
     get_run_config,
-    set_settings,
-    reset_settings,
     PartialSettings,
 )
 
@@ -24,10 +22,8 @@ class TestSettingsModule(unittest.TestCase):
 
     def setUp(self):
         """Set up test environment."""
-        # Clear any cached settings before each test
-        import ivexes.config.settings
-
-        ivexes.config.settings._settings = None
+        # No global state to clear since we use create_settings() now
+        pass
 
     def test_settings_default_values(self):
         """Test that settings have appropriate default values."""
@@ -236,21 +232,11 @@ class TestSettingsModule(unittest.TestCase):
                 settings = Settings()
                 self.assertEqual(settings.llm_base_url, url)
 
-    def test_get_settings_singleton(self):
-        """Test that get_settings returns the same instance (singleton behavior)."""
-        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
-            settings1 = get_settings()
-            settings2 = get_settings()
-
-            # Should be the same instance
-            self.assertIs(settings1, settings2)
-            self.assertEqual(settings1.llm_api_key, 'sk-test-key')
-
-    def test_get_settings_validation_error_handling(self):
-        """Test that get_settings properly handles validation errors."""
+    def test_create_settings_validation_error_handling(self):
+        """Test that create_settings properly handles validation errors."""
         with patch.dict(os.environ, {'LLM_API_KEY': ''}, clear=True):
             with self.assertRaises(RuntimeError) as cm:
-                get_settings()
+                create_settings()
             self.assertIn('Configuration validation failed', str(cm.exception))
 
     def test_llm_api_key_fallback(self):
@@ -301,7 +287,8 @@ class TestSettingsModule(unittest.TestCase):
                 mock_client = Mock()
                 mock_openai.return_value = mock_client
 
-                run_config = get_run_config()
+                settings = create_settings()
+                run_config = get_run_config(settings)
 
                 # Verify AsyncOpenAI was called with correct parameters
                 mock_openai.assert_called_once_with(
@@ -403,63 +390,51 @@ class TestSettingsModule(unittest.TestCase):
             self.assertEqual(settings.embedding_model, 'text-embedding-3-large')
             self.assertEqual(settings.embedding_provider, 'openai')
 
-    def test_set_settings_partial_override(self):
-        """Test set_settings with partial settings override."""
+    def test_create_settings_partial_override(self):
+        """Test create_settings with partial settings override."""
         with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
-            # Get initial settings
-            settings = get_settings()
-            initial_model = settings.model
-            initial_temp = settings.model_temperature
-
             # Override some settings
             partial_settings: PartialSettings = {
                 'model': 'openai/gpt-4',
                 'model_temperature': 0.8,
                 'max_turns': 25,
             }
-            set_settings(partial_settings)
-
-            # Get updated settings
-            updated_settings = get_settings()
+            settings = create_settings(partial_settings)
 
             # Verify overridden fields
-            self.assertEqual(updated_settings.model, 'openai/gpt-4')
-            self.assertEqual(updated_settings.model_temperature, 0.8)
-            self.assertEqual(updated_settings.max_turns, 25)
+            self.assertEqual(settings.model, 'openai/gpt-4')
+            self.assertEqual(settings.model_temperature, 0.8)
+            self.assertEqual(settings.max_turns, 25)
 
-            # Verify non-overridden fields remain unchanged
-            self.assertEqual(updated_settings.log_level, 'INFO')  # Default value
-            self.assertEqual(updated_settings.llm_api_key, 'sk-test-key')
+            # Verify non-overridden fields use defaults
+            self.assertEqual(settings.log_level, 'INFO')  # Default value
+            self.assertEqual(settings.llm_api_key, 'sk-test-key')
 
-    def test_set_settings_validation(self):
-        """Test that set_settings validates the updated settings."""
+    def test_create_settings_validation(self):
+        """Test that create_settings validates the updated settings."""
         with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
             # Test invalid temperature
-            with self.assertRaises(ValidationError) as cm:
-                set_settings({'model_temperature': 3.0})
+            with self.assertRaises(RuntimeError) as cm:
+                create_settings({'model_temperature': 3.0})
             self.assertIn('Temperature must be between 0.0 and 2.0', str(cm.exception))
 
             # Test invalid max_turns
-            with self.assertRaises(ValidationError) as cm:
-                set_settings({'max_turns': -1})
+            with self.assertRaises(RuntimeError) as cm:
+                create_settings({'max_turns': -1})
             self.assertIn('Max turns must be a positive integer', str(cm.exception))
 
-    def test_set_settings_empty_dict(self):
-        """Test set_settings with empty dictionary."""
+    def test_create_settings_empty_dict(self):
+        """Test create_settings with empty dictionary."""
         with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
-            original_settings = get_settings()
-            original_model = original_settings.model
+            # Create settings with empty dictionary - should use defaults
+            settings = create_settings({})
 
-            # Set empty dictionary
-            set_settings({})
+            # Settings should use defaults
+            self.assertEqual(settings.model, 'openai/gpt-4o-mini')  # Default
+            self.assertEqual(settings.llm_api_key, 'sk-test-key')
 
-            # Settings should remain unchanged
-            updated_settings = get_settings()
-            self.assertEqual(updated_settings.model, original_model)
-            self.assertEqual(updated_settings.llm_api_key, 'sk-test-key')
-
-    def test_reset_settings_restores_environment(self):
-        """Test that reset_settings restores settings from environment variables."""
+    def test_create_settings_environment_vs_partial(self):
+        """Test create_settings with environment variables vs partial overrides."""
         with patch.dict(
             os.environ,
             {
@@ -469,61 +444,21 @@ class TestSettingsModule(unittest.TestCase):
             },
             clear=True,
         ):
-            # Get initial settings from environment
-            initial_settings = get_settings()
-            self.assertEqual(initial_settings.model, 'openai/gpt-3.5-turbo')
-            self.assertEqual(initial_settings.model_temperature, 0.5)
+            # Get settings from environment only
+            env_settings = create_settings()
+            self.assertEqual(env_settings.model, 'openai/gpt-3.5-turbo')
+            self.assertEqual(env_settings.model_temperature, 0.5)
 
-            # Override with set_settings
-            set_settings({'model': 'openai/gpt-4', 'model_temperature': 0.9})
+            # Override with partial settings
+            partial_settings = create_settings(
+                {'model': 'openai/gpt-4', 'model_temperature': 0.9}
+            )
+            self.assertEqual(partial_settings.model, 'openai/gpt-4')
+            self.assertEqual(partial_settings.model_temperature, 0.9)
 
-            # Verify settings were changed
-            changed_settings = get_settings()
-            self.assertEqual(changed_settings.model, 'openai/gpt-4')
-            self.assertEqual(changed_settings.model_temperature, 0.9)
-
-            # Reset settings
-            reset_settings()
-
-            # Verify settings are back to environment values
-            reset_settings_instance = get_settings()
-            self.assertEqual(reset_settings_instance.model, 'openai/gpt-3.5-turbo')
-            self.assertEqual(reset_settings_instance.model_temperature, 0.5)
-
-    def test_reset_settings_clears_global_instance(self):
-        """Test that reset_settings clears the global settings instance."""
-        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
-            # Get settings to create global instance
-            settings1 = get_settings()
-
-            # Reset settings
-            reset_settings()
-
-            # Get settings again - should be new instance
-            settings2 = get_settings()
-
-            # Should be different instances (new object created)
-            self.assertIsNot(settings1, settings2)
-            # But should have same values (from environment)
-            self.assertEqual(settings1.model, settings2.model)
-            self.assertEqual(settings1.llm_api_key, settings2.llm_api_key)
-
-    def test_set_settings_multiple_calls(self):
-        """Test multiple calls to set_settings."""
-        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
-            # First override
-            set_settings({'model': 'openai/gpt-4', 'max_turns': 15})
-            settings1 = get_settings()
-            self.assertEqual(settings1.model, 'openai/gpt-4')
-            self.assertEqual(settings1.max_turns, 15)
-
-            # Second override (should merge with current, not original)
-            set_settings({'model_temperature': 0.8, 'log_level': 'DEBUG'})
-            settings2 = get_settings()
-            self.assertEqual(settings2.model, 'openai/gpt-4')  # Still overridden
-            self.assertEqual(settings2.max_turns, 15)  # Still overridden
-            self.assertEqual(settings2.model_temperature, 0.8)  # New override
-            self.assertEqual(settings2.log_level, 'DEBUG')  # New override
+            # Original environment settings should be unchanged
+            self.assertEqual(env_settings.model, 'openai/gpt-3.5-turbo')
+            self.assertEqual(env_settings.model_temperature, 0.5)
 
     def test_partial_settings_type_hints(self):
         """Test that PartialSettings type hints work correctly."""
@@ -539,8 +474,8 @@ class TestSettingsModule(unittest.TestCase):
         self.assertEqual(partial_with_values['model'], 'openai/gpt-4')
         self.assertEqual(partial_with_values['model_temperature'], 0.7)
 
-    def test_set_settings_with_all_fields(self):
-        """Test set_settings with all possible fields."""
+    def test_create_settings_with_all_fields(self):
+        """Test create_settings with all possible fields."""
         with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
             full_partial: PartialSettings = {
                 'openai_api_key': 'sk-new-openai',
@@ -563,8 +498,7 @@ class TestSettingsModule(unittest.TestCase):
                 'embedding_provider': 'builtin',
             }
 
-            set_settings(full_partial)
-            settings = get_settings()
+            settings = create_settings(full_partial)
 
             # Verify all fields were set
             self.assertEqual(settings.openai_api_key, 'sk-new-openai')
