@@ -229,7 +229,9 @@ echo "Setup script executed" > /tmp/setup_log.txt
         # Create settings with setup archive
         settings_with_archive = create_settings(
             PartialSettings(
-                llm_api_key='llm-key-for-verification', setup_archive=tmp_file.name
+                llm_api_key='llm-key-for-verification',
+                setup_archive=tmp_file.name,
+                sandbox_image='python:3.13',
             )
         )
         self.sandbox = Sandbox(settings=settings_with_archive)
