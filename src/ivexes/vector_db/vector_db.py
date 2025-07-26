@@ -104,11 +104,9 @@ class CweCapecAttackDatabase:
 
         logger.info(f'currently {self.collection.count()} entries loaded')
         if self.collection.count() == 0:
-            logger.info('Initializing database...')
-            self.initialize()
-        self.initialize_attack()
-        self.initialize_cwe()
-        self.initialize_capec()
+            self.initialize_attack()
+            self.initialize_cwe()
+            self.initialize_capec()
 
     def initialize_cwe(self) -> None:
         """Initialize the database with CWE (Common Weakness Enumeration) data."""
