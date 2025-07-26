@@ -12,9 +12,17 @@ from docker.models.containers import Container
 
 import logging
 from ..config.settings import Settings
-from ..container import find_by_name, remove_if_exists, santize_name, get_client
+from ..container import (
+    cleanup,
+    find_by_name,
+    remove_if_exists,
+    santize_name,
+    get_client,
+)
 
 logger = logging.getLogger(__name__)
+
+NVIM_LSP_CONTAINER_PREFIX = 'ivexes-nvim-lsp-'
 
 
 def setup_container(
@@ -32,7 +40,7 @@ def setup_container(
         The Docker container object if successful, None otherwise
     """
     client = get_client()
-    container_name = santize_name(f'ivexes-nvim-lsp-{settings.trace_name}')
+    container_name = santize_name(f'{NVIM_LSP_CONTAINER_PREFIX}{settings.trace_name}')
 
     if renew:
         remove_if_exists(container_name)
@@ -41,6 +49,7 @@ def setup_container(
         if c:
             logger.info(f'Returning: container {c.name}.')
             return c
+    cleanup(NVIM_LSP_CONTAINER_PREFIX)
 
     try:
         logger.info(f'Starting container {container_name} with {code_base=}')

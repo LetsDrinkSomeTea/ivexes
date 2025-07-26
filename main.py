@@ -26,13 +26,14 @@ GENERAL_SETTINGS = PartialSettings(
     model_temperature=0,
 )
 
+
 # FIXME: During testing, we limit the number of challenges and vulnerabilities to speed up the process.
-HTB_CHALLENGES = HTB_CHALLENGES[:1]  # Limit to one challenge for testing
-VULNERABILITIES = VULNERABILITIES[:1]  # Limit to one vulnerability for testing
-MODELS = [  # Limit to two models for testing
-    'openai/gpt-4.1-mini',
-    'openai/gpt-4o-mini',
-]
+# HTB_CHALLENGES = HTB_CHALLENGES[:1]  # Limit to one challenge for testing
+# VULNERABILITIES = VULNERABILITIES[:1]  # Limit to one vulnerability for testing
+# MODELS = [  # Limit to two models for testing
+#     'openai/gpt-4.1-mini',
+#     'openai/gpt-4o-mini',
+# ]
 # FIXME: Remove the above limits for full testing
 
 
@@ -56,14 +57,14 @@ async def run_htb_tests(
             )
             total_runs += 1
 
-            sets = PartialSettings(
-                model=model,
-                max_turns=25,
-                embedding_provider='local',
-                embedding_model='intfloat/multilingual-e5-large-instruct',
-                model_temperature=0,
-                trace_name=htb_settings.get('trace_name', challenge_name),
-                setup_archive=htb_settings.get('setup_archive', None),
+            sets = GENERAL_SETTINGS.copy()
+            sets.update(
+                PartialSettings(
+                    model=model,
+                    max_turns=25,
+                    trace_name=htb_settings.get('trace_name', challenge_name),
+                    setup_archive=htb_settings.get('setup_archive', None),
+                )
             )
 
             agent = HTBChallengeAgent(
@@ -107,11 +108,14 @@ async def run_multi_agent_tests(
             )
             total_runs += 1
 
+            sets = GENERAL_SETTINGS.copy()
             sets = vulnerability.copy()
+            sets.update(**vulnerability)
             sets.update(
                 model=model,
                 max_turns=20,
             )
+            print(sets)
             agent = MultiAgent(settings=sets)
             try:
                 if not dry_run:

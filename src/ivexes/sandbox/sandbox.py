@@ -65,6 +65,10 @@ class Sandbox:
         self.container: Optional[Container] = None
         self.docker_client: Optional[docker.DockerClient] = None
 
+    def __del__(self):
+        """Ensure resources are cleaned up on deletion."""
+        self.close()
+
     def connect(self, reset: bool = True) -> bool:
         """Set up and connect to the container.
 
