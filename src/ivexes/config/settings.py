@@ -8,6 +8,8 @@ import os
 import pprint
 from typing import Literal, Optional
 
+from rich.console import Console
+
 LogLevels = Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 from agents import (
@@ -58,6 +60,8 @@ class Settings(BaseSettings):
     brave_search_api_key: str | None = Field(
         default_factory=lambda: os.environ.get('BRAVE_SEARCH_API_KEY', None)
     )
+
+    rich_console: Optional[Console] = None
 
     # gets used
     llm_api_key: str = Field(
@@ -210,6 +214,7 @@ class PartialSettings(TypedDict, total=False):
     chroma_path: str
     embedding_model: str
     embedding_provider: str
+    rich_console: Optional[Console]
 
 
 def create_settings(partial_settings: Optional[PartialSettings] = None) -> Settings:

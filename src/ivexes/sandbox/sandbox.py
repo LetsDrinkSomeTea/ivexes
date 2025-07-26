@@ -104,7 +104,7 @@ class Sandbox:
             - output: Full output or partial output with timeout indicator
         """
         if not self.container:
-            raise RuntimeError('Container not connected. Call connect() first.')
+            raise RuntimeError('Container not connected. Call setup_sandbox() first.')
 
         if user is None:
             user = self.username
@@ -216,7 +216,7 @@ class Sandbox:
             InteractiveSession object
         """
         if not self.container:
-            raise RuntimeError('Container not connected. Call connect() first.')
+            raise RuntimeError('Container not connected. Call setup_sandbox() first.')
 
         if session in self.sessions:
             logger.debug(f'Reusing existing session: {session}')
@@ -358,7 +358,7 @@ class Sandbox:
                 self.docker_client = None
             logger.info('Sandbox closed')
         except Exception as e:
-            logger.error(f'Error closing sandbox: {e}')
+            logger.info(f'Error closing sandbox: {e}')
 
     def __enter__(self):
         """Context manager entry."""

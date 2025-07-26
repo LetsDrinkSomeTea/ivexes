@@ -35,7 +35,6 @@ import shutil
 import sqlite3
 import argparse
 from datetime import datetime, timedelta
-from typing import TypedDict
 from github import Github
 from git import Repo
 from rich.console import Console
@@ -324,7 +323,7 @@ def scan_commit_messages(repo, since_date):
             if found:
                 matches.append({'location': f'commit:{commit.sha}', 'matches': found})
             commit_count += 1
-    except Exception as e:
+    except Exception:
         # If API fails, continue with empty results
         pass
 
@@ -643,7 +642,7 @@ def main():
         console.print(f'\n[green]Results saved to {args.output}[/green]')
     else:
         console.print(f'\n[dim]JSON output:[/dim]')
-        print(json.dumps(all_results, indent=2))
+        console.print(json.dumps(all_results, indent=2))
 
 
 if __name__ == '__main__':

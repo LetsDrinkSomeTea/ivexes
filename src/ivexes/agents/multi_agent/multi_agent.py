@@ -4,8 +4,6 @@ from typing import Callable, Optional, override
 
 from agents import Agent, RunConfig, RunResultStreaming, SQLiteSession
 
-from ivexes.config import settings
-
 # stream_result is now handled by agent printer service
 
 from ...colors import Colors

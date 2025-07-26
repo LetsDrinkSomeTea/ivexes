@@ -53,7 +53,11 @@ class Printer:
         lines: list[str] = text.splitlines()
         if truncate and len(lines) > 10:
             lines = lines[:10] + [f'... truncated {len(lines) - 10} lines']
-        print('\n'.join(lines), end=end)
+        out_str = '\n'.join(lines)
+        if self.settings.rich_console:
+            self.settings.rich_console.print(out_str, end=end)
+        else:
+            print(out_str, end=end)
         path = os.path.join(
             'output',
             f'{self.settings.trace_name}',
