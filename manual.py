@@ -21,7 +21,7 @@ from ivexes.agents.multi_agent.tools import (
 )
 
 load_dotenv(verbose=True, override=True)
-setup_default_logging()
+setup_default_logging('DEBUG')
 
 logger = logging.getLogger(__name__)
 

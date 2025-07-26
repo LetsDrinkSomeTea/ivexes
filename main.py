@@ -18,11 +18,13 @@ from testdata import HTB_CHALLENGES, VULNERABILITIES, MODELS
 
 from rich.console import Console
 from rich.progress import (
+    MofNCompleteColumn,
     Progress,
     SpinnerColumn,
     TextColumn,
     BarColumn,
     TaskProgressColumn,
+    TimeRemainingColumn,
 )
 
 load_dotenv(verbose=True)
@@ -133,15 +135,15 @@ async def run_multi_agent_tests(
     s: int = 0
     with Progress(
         SpinnerColumn(),
-        TextColumn(
-            '[progress.description]{task.description} {task.completed} of {task.total}'
-        ),
+        TextColumn('[progress.description]{task.description}'),
         BarColumn(),
         TaskProgressColumn(),
+        MofNCompleteColumn(),
+        TimeRemainingColumn(),
         console=console,
     ) as pb:
         task = pb.add_task(
-            'Running Multi-Agent tests', total=len(VULNERABILITIES) * len(MODELS)
+            'Running Multi-Agent tests', total=len(VULNERABILITIES) * len(MODELS) - skip
         )
         for vulnerability in VULNERABILITIES:
             for model in MODELS:
@@ -152,7 +154,10 @@ async def run_multi_agent_tests(
                 )
                 if s < skip:
                     s += 1
+                    continue
+                if model == 'anthropic/claude-opus-4-20250514':
                     pb.advance(task)
+                    console.print(f'Skipping Claude Opus in favor of my bank account')
                     continue
                 total_runs += 1
 

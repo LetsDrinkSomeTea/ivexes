@@ -143,23 +143,13 @@ class CodeBrowser:
         logger.debug(f'{self.patched_folder=}')
         self.container = setup_container(self.path, self.settings)
         try:
-            # Run the pynvim connection in a thread pool to avoid event loop conflicts
-            loop = None
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                pass
-
-            if loop is not None:
-                # We're in an async context, use thread pool
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(
-                        pynvim.attach, 'tcp', address='127.0.0.1', port=self.port
-                    )
-                    self.nvim = future.result(timeout=30)
-            else:
-                # We're not in an async context, use direct connection
-                self.nvim = pynvim.attach('tcp', address='127.0.0.1', port=self.port)
+            # Always run pynvim connection in a thread pool to avoid event loop conflicts
+            # This prevents "Cannot run the event loop while another loop is running" errors
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(
+                    pynvim.attach, 'tcp', address='127.0.0.1', port=self.port
+                )
+                self.nvim = future.result(timeout=30)
 
             logger.info(f'Connected to Neovim with {self.path}')
         except Exception as e:
@@ -291,12 +281,19 @@ class CodeBrowser:
 
         """
         self._check_init()
-        self.nvim.command(f'edit {file}')
-        sleep(NVIM_DELAY)
-        # Get the symbols from the buffer
-        self.nvim.command_output('lua vim.lsp.buf.document_symbol()')
-        sleep(NVIM_DELAY)
-        symbols = parse_symbols(self.nvim.current.buffer)
+
+        def _get_symbols_sync():
+            self.nvim.command(f'edit {file}')
+            sleep(NVIM_DELAY)
+            # Get the symbols from the buffer
+            self.nvim.command_output('lua vim.lsp.buf.document_symbol()')
+            sleep(NVIM_DELAY)
+            return parse_symbols(self.nvim.current.buffer)
+
+        # Run nvim operations in thread pool to avoid event loop conflicts
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(_get_symbols_sync)
+            symbols = future.result(timeout=30)
 
         logger.info(f'Found {len(symbols)} symbols in {file}')
 
@@ -319,21 +316,29 @@ class CodeBrowser:
         """
         self._check_init()
         file, line, col = self._search_symbol(symbol)
-        references = []
-        try:
-            self.nvim.command(f'edit {file}')
-            sleep(NVIM_DELAY)
-            self.nvim.current.window.cursor = (line, col - 1)
 
-            # Get the references from the buffer
-            self.nvim.command_output('lua vim.lsp.buf.references()')
-            sleep(NVIM_DELAY)
-            references = parse_references(self.nvim.current.buffer)
+        def _get_references_sync():
+            references = []
+            try:
+                self.nvim.command(f'edit {file}')
+                sleep(NVIM_DELAY)
+                self.nvim.current.window.cursor = (line, col - 1)
 
-            logger.info(f'Found {len(references)} references in {file}')
-            logger.debug(f'{references=}')
-        except Exception as e:
-            logger.error(f'{type(e)=}\n{e}')
+                # Get the references from the buffer
+                self.nvim.command_output('lua vim.lsp.buf.references()')
+                sleep(NVIM_DELAY)
+                references = parse_references(self.nvim.current.buffer)
+
+                logger.info(f'Found {len(references)} references in {file}')
+                logger.debug(f'{references=}')
+            except Exception as e:
+                logger.error(f'{type(e)=}\n{e}')
+            return references
+
+        # Run nvim operations in thread pool to avoid event loop conflicts
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(_get_references_sync)
+            references = future.result(timeout=30)
 
         return references
 
@@ -349,29 +354,37 @@ class CodeBrowser:
         self._check_init()
         file, line, col = self._search_symbol(symbol)
         logger.info(f'open {file=} at {line=} {col=}')
-        self.nvim.command(f'edit {file}')
-        sleep(NVIM_DELAY)
-        self.nvim.current.window.cursor = (line, col - 1)
 
-        self.nvim.command('lua vim.lsp.buf.definition()')
-        sleep(NVIM_DELAY)
-        (b_line, b_col) = self.nvim.current.window.cursor
-        logger.debug(f'Jumped to definition ({b_line=} {b_col=})')
+        def _get_definition_sync():
+            self.nvim.command(f'edit {file}')
+            sleep(NVIM_DELAY)
+            self.nvim.current.window.cursor = (line, col - 1)
 
-        self.nvim.input(b']M')
-        sleep(NVIM_DELAY)
-        (e_line, e_col) = self.nvim.current.window.cursor
-        logger.debug(f"']m' -> ({e_line=} {e_col=})")
-        if self.nvim.current.line[e_col] == '{':
-            self.nvim.input('%')
+            self.nvim.command('lua vim.lsp.buf.definition()')
+            sleep(NVIM_DELAY)
+            (b_line, b_col) = self.nvim.current.window.cursor
+            logger.debug(f'Jumped to definition ({b_line=} {b_col=})')
+
+            self.nvim.input(b']M')
             sleep(NVIM_DELAY)
             (e_line, e_col) = self.nvim.current.window.cursor
-            logger.debug(f"'%' -> ({e_line=} {e_col=})")
+            logger.debug(f"']m' -> ({e_line=} {e_col=})")
+            if self.nvim.current.line[e_col] == '{':
+                self.nvim.input('%')
+                sleep(NVIM_DELAY)
+                (e_line, e_col) = self.nvim.current.window.cursor
+                logger.debug(f"'%' -> ({e_line=} {e_col=})")
 
-        res = '\n'.join(self.nvim.current.buffer[b_line - 1 : e_line])
-        logger.debug(f'{res=}')
+            res = '\n'.join(self.nvim.current.buffer[b_line - 1 : e_line])
+            logger.debug(f'{res=}')
+            return res, file, b_line, e_line
 
-        return res, file, b_line, e_line
+        # Run nvim operations in thread pool to avoid event loop conflicts
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(_get_definition_sync)
+            result = future.result(timeout=30)
+
+        return result
 
     def get_diff(
         self,
@@ -397,7 +410,7 @@ class CodeBrowser:
         res = self.container.exec_run(cmd)
 
         if res.exit_code not in [0, 1]:
-            logger.error(f'Error running command: {res.output}')
+            logger.error(f'Error running command "{" ".join(cmd)}": {res.output}')
             return [f'Error running {" ".join(cmd)}:\n{res.output}']
 
         # Get the full diff output as string
