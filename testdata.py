@@ -10,6 +10,7 @@ MODELS = [
     'openai/o4-mini',
     'anthropic/claude-sonnet-4-20250514',
     'openai/gpt-4o',
+    # 'gemini/gemini-2.5-flash-lite',
     'openai/gpt-4o-mini',
     'gemini/gemini-2.5-pro',
     'anthropic/claude-3-5-sonnet-20240620',
