@@ -343,7 +343,7 @@ class Sandbox:
         except Exception:
             return False
 
-    def close(self):
+    def close(self) -> bool:
         """Close sandbox and cleanup resources."""
         for s in self.sessions.values():
             s.close()
@@ -359,6 +359,8 @@ class Sandbox:
             logger.info('Sandbox closed')
         except Exception as e:
             logger.info(f'Error closing sandbox: {e}')
+
+        return True
 
     def __enter__(self):
         """Context manager entry."""
