@@ -489,7 +489,7 @@ class SessionBrowser:
 
                 # Show additional scroll help if applicable
                 if self.message_scroller and self.message_scroller.is_scrollable():
-                    scroll_help = f'[dim]📄 Scrollable content - Use {HotkeyConfig.get_help_text("SCROLL_DOWN")} to scroll[/dim]'
+                    scroll_help = f'[dim]📄 Scrollable content - Use {HotkeyConfig.get_help_text("SCROLL_DOWN")} {HotkeyConfig.get_help_text("SCROLL_UP")} to scroll[/dim]'
                     self.console.print(scroll_help)
 
                 # Show navigation commands
