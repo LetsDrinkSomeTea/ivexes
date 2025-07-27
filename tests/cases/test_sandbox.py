@@ -88,6 +88,7 @@ class TestSandboxModule(unittest.TestCase):
             # Wait for shell prompt
             session.send('echo "Hello World"')
             output = session.read()
+            time.sleep(5)
             self.assertIn('Hello World', output[1])
 
         # Session should be closed after context manager
