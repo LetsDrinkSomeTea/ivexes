@@ -13,6 +13,8 @@ data/
 site/
 github_scan.sqlite
 .termdbms
+sessions.sqlite-wal
+sessions.sqlite-shm
 
 CLAUDE.md
 clean-api-key.py

@@ -54,6 +54,10 @@ class SessionDatabase:
         self.connection = sqlite3.connect(str(self.db_path))
         self.connection.row_factory = sqlite3.Row
 
+    def __del__(self):
+        """Destructor to ensure database connection is closed."""
+        self.close()
+
     def close(self):
         """Close database connection."""
         if self.connection:
