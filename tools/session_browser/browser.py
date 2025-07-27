@@ -13,7 +13,7 @@ from typing import List, Optional
 from rich.console import Console
 from rich.panel import Panel
 
-from ..database import SessionDatabase, Session, Message as DBMessage, WorkflowGroup
+from .database import SessionDatabase, Session, Message as DBMessage, WorkflowGroup
 from .config import HotkeyConfig, BrowserSettings
 from .formatter import MessageFormatter
 from .scroller import MessageScroller

@@ -26,6 +26,7 @@ from .config import HotkeyConfig, BrowserSettings
 from .formatter import MessageFormatter
 from .scroller import MessageScroller
 from .main import main, launch_browser
+from .database import SessionDatabase
 
 __all__ = [
     'SessionBrowser',
@@ -35,6 +36,7 @@ __all__ = [
     'MessageScroller',
     'main',
     'launch_browser',
+    'SessionDatabase',
 ]
 
 __version__ = '2.0.0'

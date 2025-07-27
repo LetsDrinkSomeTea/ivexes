@@ -4,7 +4,8 @@ This module centralizes all keyboard configuration to make the browser
 easily customizable and maintainable.
 """
 
-from typing import List
+from enum import Enum
+from typing import Dict, List, Literal, Union
 
 
 class HotkeyConfig:
@@ -156,6 +157,43 @@ class HotkeyConfig:
         ]
 
 
+# Type definitions for better type safety
+MessageType = Literal[
+    'function_call',
+    'create_file',
+    'function_call_output',
+    'output_text',
+    'regular',
+    'user',
+    'assistant',
+    'unknown',
+]
+
+RichStyle = Literal['blue', 'yellow', 'red', 'green']
+
+
+class MessageTypeIcon(Enum):
+    """Emoji indicators for different message types."""
+
+    FUNCTION_CALL = '🔧'
+    CREATE_FILE = '📜'
+    FUNCTION_CALL_OUTPUT = '📤'
+    OUTPUT_TEXT = '🤖'
+    REGULAR = '💬'
+    USER = '👤'
+    ASSISTANT = '🤖'
+    UNKNOWN = '❓'
+
+
+class RichStyleColor(Enum):
+    """Rich color styles used in the UI."""
+
+    PANEL_BORDER = 'blue'
+    SEARCH_HIGHLIGHT = 'yellow'
+    ERROR = 'red'
+    SUCCESS = 'green'
+
+
 class BrowserSettings:
     """Configuration settings for the session browser.
 
@@ -163,29 +201,29 @@ class BrowserSettings:
     """
 
     # Display settings
-    SESSIONS_PER_PAGE = 20
-    DEFAULT_TERMINAL_HEIGHT = 30
-    CONTENT_TRUNCATION_LENGTH = 2000
-    ARGUMENT_TRUNCATION_LENGTH = 50
+    SESSIONS_PER_PAGE: int = 20
+    DEFAULT_TERMINAL_HEIGHT: int = 30
+    CONTENT_TRUNCATION_LENGTH: int = 2000
+    ARGUMENT_TRUNCATION_LENGTH: int = 50
 
     # UI settings
-    PANEL_BORDER_STYLE = 'blue'
-    SEARCH_HIGHLIGHT_STYLE = 'yellow'
-    ERROR_STYLE = 'red'
-    SUCCESS_STYLE = 'green'
+    PANEL_BORDER_STYLE: RichStyle = RichStyleColor.PANEL_BORDER.value
+    SEARCH_HIGHLIGHT_STYLE: RichStyle = RichStyleColor.SEARCH_HIGHLIGHT.value
+    ERROR_STYLE: RichStyle = RichStyleColor.ERROR.value
+    SUCCESS_STYLE: RichStyle = RichStyleColor.SUCCESS.value
 
     # Message type indicators (emojis)
-    TYPE_INDICATORS = {
-        'function_call': '🔧',
-        'create_file': '📜',
-        'function_call_output': '📤',
-        'output_text': '🤖',
-        'regular': '💬',
-        'user': '👤',
-        'assistant': '🤖',
-        'unknown': '❓',
+    TYPE_INDICATORS: Dict[MessageType, str] = {
+        'function_call': MessageTypeIcon.FUNCTION_CALL.value,
+        'create_file': MessageTypeIcon.CREATE_FILE.value,
+        'function_call_output': MessageTypeIcon.FUNCTION_CALL_OUTPUT.value,
+        'output_text': MessageTypeIcon.OUTPUT_TEXT.value,
+        'regular': MessageTypeIcon.REGULAR.value,
+        'user': MessageTypeIcon.USER.value,
+        'assistant': MessageTypeIcon.ASSISTANT.value,
+        'unknown': MessageTypeIcon.UNKNOWN.value,
     }
 
     # Scrolling settings
-    MIN_PAGE_SIZE = 10
-    UI_RESERVED_LINES = 15  # Lines reserved for navigation, headers, etc.
+    MIN_PAGE_SIZE: int = 10
+    UI_RESERVED_LINES: int = 15  # Lines reserved for navigation, headers, etc.
