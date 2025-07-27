@@ -370,12 +370,15 @@ class SessionBrowser:
                 message = self.current_messages[self.current_message_index]
                 content, metadata = self.formatter.format_message(message)
 
-                # Initialize or update scroller if content changed
+                # Always recreate scroller when content changes (including format changes)
+                terminal_height = self.console.size.height
+                current_content_lines = content.split('\n')
+
+                # Check if we need to create/update scroller
                 if (
                     self.message_scroller is None
-                    or self.message_scroller.lines != content.split('\n')
+                    or self.message_scroller.lines != current_content_lines
                 ):
-                    terminal_height = self.console.size.height
                     self.message_scroller = MessageScroller(content, terminal_height)
 
                 # Get visible content
@@ -434,7 +437,7 @@ class SessionBrowser:
                         self.message_scroller.page_up()
                 elif HotkeyConfig.matches(key, 'TOGGLE_METADATA'):
                     self.formatter.toggle_metadata_view()
-                    self.message_scroller = None  # Reset scroller for new format
+                    # Scroller will be automatically updated on next render due to content change
 
         except Exception as e:
             self.console.print(f'[red]Error viewing session: {e}[/red]')

@@ -62,6 +62,13 @@ class MessageFormatter:
         else:
             return self._format_regular_message(message)
 
+    def _format_sandbox_write_file(self, args_dict: Dict[str, Any]) -> str:
+        path = f'[dim]Path: [italic]{args_dict.get("file_path", "None")}[/italic][/dim]'
+        content = args_dict.get('content', 'No content provided')
+
+        icon = BrowserSettings.TYPE_INDICATORS.get('create_file', '📜')
+        return f'[bold]{icon} Create File[/bold]\n{path}\n{content}'
+
     def _format_function_call(self, message: DBMessage) -> Tuple[str, Dict[str, Any]]:
         """Format function call message as: function_name(arg1=value1, arg2=value2).
 
@@ -99,6 +106,9 @@ class MessageFormatter:
             'parsed_arguments': args_dict,
             'full_data': data,
         }
+
+        if function_name == 'sandbox_write_file':
+            return self._format_sandbox_write_file(args_dict), metadata
 
         return content, metadata
 

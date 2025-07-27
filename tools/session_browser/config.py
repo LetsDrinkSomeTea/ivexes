@@ -178,6 +178,7 @@ class BrowserSettings:
     # Message type indicators (emojis)
     TYPE_INDICATORS = {
         'function_call': '🔧',
+        'create_file': '📜',
         'function_call_output': '📤',
         'output_text': '🤖',
         'regular': '💬',

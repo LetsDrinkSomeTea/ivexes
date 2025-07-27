@@ -187,7 +187,7 @@ class SessionDatabase:
         SELECT m.session_id, m.id, m.message_data, m.created_at, s.created_at as session_created
         FROM agent_messages m
         JOIN agent_sessions s ON m.session_id = s.session_id
-        WHERE m.message_data LIKE '%function_call%'
+        WHERE m.message_data LIKE '%tool_call%'
         """
 
         params = []
