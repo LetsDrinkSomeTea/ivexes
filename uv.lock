@@ -1052,6 +1052,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "pynvim" },
     { name = "python-dotenv" },
+    { name = "rich" },
     { name = "sentence-transformers" },
     { name = "tiktoken" },
 ]
@@ -1087,6 +1088,7 @@ requires-dist = [
     { name = "pydantic-settings" },
     { name = "pynvim" },
     { name = "python-dotenv" },
+    { name = "rich", specifier = ">=13.0.0" },
     { name = "sentence-transformers", specifier = ">=5.0.0" },
     { name = "tiktoken" },
 ]

@@ -5,7 +5,7 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union, Any
+from typing import Any, Dict, List, Optional, Union
 
 
 @dataclass
@@ -16,6 +16,62 @@ class Session:
     created_at: datetime
     updated_at: datetime
     message_count: int = 0
+
+    def __str__(self) -> str:
+        """String representation of the session."""
+        return f'Session({self.session_id}, {self.message_count} messages)'
+
+
+@dataclass
+class WorkflowGroup:
+    """Represents a grouped multi-agent workflow."""
+
+    workflow_name: str
+    workflow_time: str
+    sessions: List[Session]
+    total_messages: int = 0
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    def __post_init__(self) -> None:
+        """Calculate aggregate data after initialization."""
+        if self.sessions:
+            self.total_messages = sum(
+                session.message_count for session in self.sessions
+            )
+            # Use earliest created_at and latest updated_at
+            created_times = [
+                session.created_at for session in self.sessions if session.created_at
+            ]
+            updated_times = [
+                session.updated_at for session in self.sessions if session.updated_at
+            ]
+            if created_times:
+                self.created_at = min(created_times)
+            if updated_times:
+                self.updated_at = max(updated_times)
+
+    @property
+    def agent_names(self) -> List[str]:
+        """Get list of agent names in this workflow."""
+        agents = []
+        for session in self.sessions:
+            session_id = session.session_id
+            # Reconstruct the full workflow key
+            full_workflow_key = f'{self.workflow_name} {self.workflow_time}'
+
+            # Find where the workflow key appears in the session ID
+            if full_workflow_key in session_id:
+                # Extract agent name (everything before the workflow key)
+                workflow_start = session_id.find(full_workflow_key)
+                agent_part = session_id[:workflow_start].rstrip('-')
+                agents.append(agent_part)
+        return agents
+
+    @property
+    def display_name(self) -> str:
+        """Get display name for the workflow group."""
+        return f'{self.workflow_name}-{self.workflow_time}'
 
 
 @dataclass
@@ -30,12 +86,37 @@ class Message:
     content: Optional[str] = None
     tool_calls: Optional[List[Dict[str, Any]]] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Parse message data after initialization."""
         if isinstance(self.message_data, dict):
             self.role = self.message_data.get('role')
             self.content = self.message_data.get('content')
             self.tool_calls = self.message_data.get('tool_calls')
+
+    @property
+    def agent_name(self) -> Optional[str]:
+        """Extract agent name from session_id for workflow context."""
+        # Look for workflow pattern in session ID
+        session_id = self.session_id
+
+        # Check if it contains a space followed by a time pattern (indicating workflow)
+        import re
+
+        time_pattern = r'\s+\w+-\d{2}:\d{2}:\d{2}$'
+        match = re.search(time_pattern, session_id)
+
+        if match:
+            # This is a workflow session - extract agent name before the workflow key
+            workflow_start = match.start()
+            before_workflow = session_id[:workflow_start]
+
+            # Find the last '-' before the workflow to get the agent name
+            parts = before_workflow.split('-')
+            if len(parts) >= 2:
+                # Take everything except the workflow name part
+                return '-'.join(parts[:-1])
+
+        return None
 
 
 class SessionDatabase:
@@ -54,20 +135,27 @@ class SessionDatabase:
         self.connection = sqlite3.connect(str(self.db_path))
         self.connection.row_factory = sqlite3.Row
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Destructor to ensure database connection is closed."""
-        self.close()
+        if hasattr(self, 'connection'):
+            self.close()
 
-    def close(self):
+    def close(self) -> None:
         """Close database connection."""
-        if self.connection:
+        if hasattr(self, 'connection') and self.connection:
             self.connection.close()
+            self.connection = None
 
-    def __enter__(self):
+    def __enter__(self) -> 'SessionDatabase':
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[Exception],
+        exc_tb: Optional[Any],
+    ) -> None:
         """Context manager exit."""
         self.close()
 
@@ -102,6 +190,79 @@ class SessionDatabase:
             sessions.append(session)
 
         return sessions
+
+    def get_workflow_groups(self) -> List[WorkflowGroup]:
+        """Get sessions grouped by workflow.
+
+        Returns:
+            List of WorkflowGroup objects ordered by creation date (newest first)
+        """
+        sessions = self.get_sessions()
+
+        # First, find all MultiAgent sessions and extract their workflow keys
+        workflow_keys = set()
+        for session in sessions:
+            if 'MultiAgent-' in session.session_id:
+                # Extract everything after 'MultiAgent-' as the workflow key
+                key_start = session.session_id.find('MultiAgent-') + len('MultiAgent-')
+                workflow_key = session.session_id[key_start:]
+                workflow_keys.add(workflow_key)
+
+        # Now group all sessions by these workflow keys
+        workflows = {}
+        for workflow_key in workflow_keys:
+            workflows[workflow_key] = {'workflow_key': workflow_key, 'sessions': []}
+
+        # Match sessions to workflow groups
+        for session in sessions:
+            for workflow_key in workflow_keys:
+                # Check if this session belongs to this workflow
+                if workflow_key in session.session_id:
+                    workflows[workflow_key]['sessions'].append(session)
+                    break
+
+        # Create WorkflowGroup objects
+        workflow_groups = []
+        for workflow_key, workflow_data in workflows.items():
+            if workflow_data['sessions']:  # Only create group if it has sessions
+                # Split workflow key to get name and time parts
+                # Assume format is "workflow-name time" (e.g., "multi-agent sudo-18:49:01")
+                parts = workflow_key.split(' ', 1)
+                if len(parts) == 2:
+                    workflow_name, workflow_time = parts
+                else:
+                    workflow_name = workflow_key
+                    workflow_time = ''
+
+                group = WorkflowGroup(
+                    workflow_name=workflow_name,
+                    workflow_time=workflow_time,
+                    sessions=workflow_data['sessions'],
+                )
+                workflow_groups.append(group)
+
+        # Sort by creation date (newest first)
+        workflow_groups.sort(key=lambda x: x.created_at, reverse=True)
+        return workflow_groups
+
+    def get_workflow_messages(self, workflow_group: WorkflowGroup) -> List[Message]:
+        """Get all messages for a workflow group, merged and sorted by creation time.
+
+        Args:
+            workflow_group: The workflow group to get messages for
+
+        Returns:
+            List of Message objects sorted by creation time across all sessions
+        """
+        all_messages = []
+
+        for session in workflow_group.sessions:
+            session_messages = self.get_session_messages(session.session_id)
+            all_messages.extend(session_messages)
+
+        # Sort all messages by creation time
+        all_messages.sort(key=lambda x: x.created_at)
+        return all_messages
 
     def get_session_messages(self, session_id: str) -> List[Message]:
         """Get all messages for a specific session.

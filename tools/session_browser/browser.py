@@ -8,18 +8,18 @@ import sys
 import termios
 import tty
 from pathlib import Path
-from typing import Optional, List
+from typing import List, Optional
 
 from rich.console import Console
 from rich.panel import Panel
 
-from ..database import SessionDatabase, Session, Message as DBMessage
+from ..database import SessionDatabase, Session, Message as DBMessage, WorkflowGroup
 from .config import HotkeyConfig, BrowserSettings
 from .formatter import MessageFormatter
 from .scroller import MessageScroller
 
 
-def get_single_key():
+def get_single_key() -> str:
     """Get a single keypress from the user without requiring Enter.
 
     Returns:
@@ -60,7 +60,7 @@ class SessionBrowser:
         >>> browser.run()  # Start interactive browsing
     """
 
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str) -> None:
         """Initialize the browser with a database path.
 
         Args:
@@ -72,17 +72,23 @@ class SessionBrowser:
         self.db_path = db_path
         self.db = SessionDatabase(db_path)
         self.sessions: List[Session] = []
+        self.workflow_groups: List[WorkflowGroup] = []
         self.current_messages: List[DBMessage] = []
         self.console = Console()
         self.formatter = MessageFormatter()
 
+        # View mode state
+        self.workflow_mode: bool = (
+            True  # False = individual sessions, True = workflow groups
+        )
+
         # Navigation state
-        self.current_session_index = 0
-        self.current_message_index = 0
+        self.current_session_index: int = 0
+        self.current_message_index: int = 0
 
         # Paging configuration
-        self.sessions_per_page = BrowserSettings.SESSIONS_PER_PAGE
-        self.current_page = 0
+        self.sessions_per_page: int = BrowserSettings.SESSIONS_PER_PAGE
+        self.current_page: int = 0
 
         # Message viewing state
         self.message_scroller: Optional[MessageScroller] = None
@@ -97,13 +103,14 @@ class SessionBrowser:
         self.show_main_menu()
 
     def load_sessions(self) -> None:
-        """Load sessions from the database.
+        """Load sessions and workflow groups from the database.
 
-        Populates the sessions list with data from the database,
+        Populates both sessions and workflow groups lists with data from the database,
         handling any errors gracefully.
         """
         try:
             self.sessions = self.db.get_sessions()
+            self.workflow_groups = self.db.get_workflow_groups()
         except Exception as e:
             self.console.print(f'[red]Error loading sessions: {e}[/red]')
 
@@ -115,12 +122,17 @@ class SessionBrowser:
         """
         while True:
             self.console.clear()
+            mode_text = (
+                'Workflow Groups' if self.workflow_mode else 'Individual Sessions'
+            )
             self.console.print(
-                f'[bold]IVEXES Session Browser - {Path(self.db_path).name}[/bold]\n'
+                f'[bold]IVEXES Session Browser - {Path(self.db_path).name} ({mode_text})[/bold]\n'
             )
 
-            if not self.sessions:
-                self.console.print('[red]No sessions found in database[/red]')
+            current_list = self.workflow_groups if self.workflow_mode else self.sessions
+            if not current_list:
+                list_type = 'workflow groups' if self.workflow_mode else 'sessions'
+                self.console.print(f'[red]No {list_type} found in database[/red]')
                 break
 
             self.display_sessions_table()
@@ -133,6 +145,8 @@ class SessionBrowser:
 
             if HotkeyConfig.matches(key, 'QUIT'):
                 break
+            elif HotkeyConfig.matches(key, 'TOGGLE_WORKFLOW_MODE'):
+                self.toggle_workflow_mode()
             elif HotkeyConfig.matches(key, 'NEXT_SESSION'):
                 self.next_session()
             elif HotkeyConfig.matches(key, 'PREV_SESSION'):
@@ -144,47 +158,81 @@ class SessionBrowser:
             elif HotkeyConfig.matches(key, 'SEARCH'):
                 self.search_sessions()
             elif HotkeyConfig.matches(key, 'SELECT_SESSION'):
-                if self.sessions:
-                    self.view_session(self.sessions[self.current_session_index])
+                if current_list:
+                    if self.workflow_mode:
+                        self.view_workflow(
+                            self.workflow_groups[self.current_session_index]
+                        )
+                    else:
+                        self.view_session(self.sessions[self.current_session_index])
             elif key.isdigit():
                 self.select_session_by_number(key)
 
     def display_sessions_table(self) -> None:
-        """Display sessions in a table format with paging.
+        """Display sessions or workflow groups in a table format with paging.
 
-        Shows a paginated table of sessions with session IDs, creation dates,
-        message counts, and current selection indicator.
+        Shows a paginated table with appropriate columns based on current mode.
         """
         from rich.table import Table
 
+        current_list = self.workflow_groups if self.workflow_mode else self.sessions
+
         # Calculate page boundaries
         start_idx = self.current_page * self.sessions_per_page
-        end_idx = min(start_idx + self.sessions_per_page, len(self.sessions))
-        page_sessions = self.sessions[start_idx:end_idx]
+        end_idx = min(start_idx + self.sessions_per_page, len(current_list))
+        page_items = current_list[start_idx:end_idx]
 
-        table = Table(title=f'Sessions (Page {self.current_page + 1})')
-        table.add_column('Status', style='yellow', width=2, justify='right')
-        table.add_column('#', style='cyan', width=6)
-        table.add_column('Session ID', style='blue', max_width=50)
-        table.add_column('Created', style='green')
-        table.add_column('Messages', style='magenta', justify='right')
+        if self.workflow_mode:
+            table = Table(title=f'Workflow Groups (Page {self.current_page + 1})')
+            table.add_column('Status', style='yellow', width=2, justify='right')
+            table.add_column('#', style='cyan', width=6)
+            table.add_column('Workflow Name', style='blue', max_width=30)
+            table.add_column('Created', style='green')
+            table.add_column('Agents', style='magenta', justify='right')
+            table.add_column('Messages', style='magenta', justify='right')
 
-        for i, session in enumerate(page_sessions):
-            global_idx = start_idx + i
-            created = session.created_at.strftime('%Y-%m-%d %H:%M')
-            session_id = session.session_id
-            if len(session_id) > 47:
-                session_id = session_id[:44] + '...'
+            for i, workflow_group in enumerate(page_items):
+                global_idx = start_idx + i
+                created = workflow_group.created_at.strftime('%Y-%m-%d %H:%M')
+                workflow_name = workflow_group.display_name
+                if len(workflow_name) > 27:
+                    workflow_name = workflow_name[:24] + '...'
 
-            status = '→' if global_idx == self.current_session_index else ''
+                status = '→' if global_idx == self.current_session_index else ''
+                agent_count = len(workflow_group.agent_names)
 
-            table.add_row(
-                status,
-                str(global_idx + 1),
-                session_id,
-                created,
-                str(session.message_count),
-            )
+                table.add_row(
+                    status,
+                    str(global_idx + 1),
+                    workflow_name,
+                    created,
+                    str(agent_count),
+                    str(workflow_group.total_messages),
+                )
+        else:
+            table = Table(title=f'Sessions (Page {self.current_page + 1})')
+            table.add_column('Status', style='yellow', width=2, justify='right')
+            table.add_column('#', style='cyan', width=6)
+            table.add_column('Session ID', style='blue', max_width=50)
+            table.add_column('Created', style='green')
+            table.add_column('Messages', style='magenta', justify='right')
+
+            for i, session in enumerate(page_items):
+                global_idx = start_idx + i
+                created = session.created_at.strftime('%Y-%m-%d %H:%M')
+                session_id = session.session_id
+                if len(session_id) > 47:
+                    session_id = session_id[:44] + '...'
+
+                status = '→' if global_idx == self.current_session_index else ''
+
+                table.add_row(
+                    status,
+                    str(global_idx + 1),
+                    session_id,
+                    created,
+                    str(session.message_count),
+                )
 
         self.console.print(table)
 
@@ -193,27 +241,30 @@ class SessionBrowser:
 
         Displays current page/session information and available navigation commands.
         """
+        current_list = self.workflow_groups if self.workflow_mode else self.sessions
         total_pages = (
-            len(self.sessions) + self.sessions_per_page - 1
+            len(current_list) + self.sessions_per_page - 1
         ) // self.sessions_per_page
 
+        item_type = 'workflow' if self.workflow_mode else 'session'
         self.console.print(
-            f'\n[dim]Page {self.current_page + 1}/{total_pages} | Session {self.current_session_index + 1}/{len(self.sessions)}[/dim]'
+            f'\n[dim]Page {self.current_page + 1}/{total_pages} | {item_type.title()} {self.current_session_index + 1}/{len(current_list)}[/dim]'
         )
         self.console.print('\n[bold]Navigation:[/bold]')
         self.console.print(
-            f'• [cyan]{HotkeyConfig.get_help_text("NEXT_SESSION")} {HotkeyConfig.get_help_text("PREV_SESSION")}[/cyan] - Next/Previous session'
+            f'• [cyan]{HotkeyConfig.get_help_text("NEXT_SESSION")} {HotkeyConfig.get_help_text("PREV_SESSION")}[/cyan] - Next/Previous {item_type}'
         )
         self.console.print(
             f'• [cyan]{HotkeyConfig.get_help_text("NEXT_PAGE")} {HotkeyConfig.get_help_text("PREV_PAGE")}[/cyan] - Previous/Next page'
         )
         self.console.print(
-            f'• [cyan]Enter[/cyan] - View session | [cyan]{HotkeyConfig.get_help_text("SEARCH")}[/cyan] - Search | [cyan]{HotkeyConfig.get_help_text("QUIT")}[/cyan] - Quit'
+            f'• [cyan]Enter[/cyan] - View {item_type} | [cyan]{HotkeyConfig.get_help_text("SEARCH")}[/cyan] - Search | [cyan]{HotkeyConfig.get_help_text("TOGGLE_WORKFLOW_MODE")}[/cyan] - Toggle mode | [cyan]{HotkeyConfig.get_help_text("QUIT")}[/cyan] - Quit'
         )
 
     def next_session(self) -> None:
-        """Move to next session."""
-        if self.current_session_index < len(self.sessions) - 1:
+        """Move to next session/workflow."""
+        current_list = self.workflow_groups if self.workflow_mode else self.sessions
+        if self.current_session_index < len(current_list) - 1:
             self.current_session_index += 1
             # Update page if necessary
             new_page = self.current_session_index // self.sessions_per_page
@@ -221,7 +272,7 @@ class SessionBrowser:
                 self.current_page = new_page
 
     def previous_session(self) -> None:
-        """Move to previous session."""
+        """Move to previous session/workflow."""
         if self.current_session_index > 0:
             self.current_session_index -= 1
             # Update page if necessary
@@ -231,8 +282,9 @@ class SessionBrowser:
 
     def next_page(self) -> None:
         """Move to next page."""
+        current_list = self.workflow_groups if self.workflow_mode else self.sessions
         total_pages = (
-            len(self.sessions) + self.sessions_per_page - 1
+            len(current_list) + self.sessions_per_page - 1
         ) // self.sessions_per_page
         if self.current_page < total_pages - 1:
             self.current_page += 1
@@ -245,6 +297,13 @@ class SessionBrowser:
             self.current_page -= 1
             # Update session index to first session of new page
             self.current_session_index = self.current_page * self.sessions_per_page
+
+    def toggle_workflow_mode(self) -> None:
+        """Toggle between individual sessions and workflow groups view."""
+        self.workflow_mode = not self.workflow_mode
+        # Reset navigation state when switching modes
+        self.current_session_index = 0
+        self.current_page = 0
 
     def search_sessions(self) -> None:
         """Search sessions interactively.
@@ -329,11 +388,15 @@ class SessionBrowser:
 
         try:
             session_num = int(number_str) - 1
-            if 0 <= session_num < len(self.sessions):
+            current_list = self.workflow_groups if self.workflow_mode else self.sessions
+            if 0 <= session_num < len(current_list):
                 self.current_session_index = session_num
                 # Update page to show selected session
                 self.current_page = session_num // self.sessions_per_page
-                self.view_session(self.sessions[session_num])
+                if self.workflow_mode:
+                    self.view_workflow(self.workflow_groups[session_num])
+                else:
+                    self.view_session(self.sessions[session_num])
         except ValueError:
             pass
 
@@ -344,18 +407,36 @@ class SessionBrowser:
             session: The session to view
         """
         try:
-            self.current_messages = self.db.get_session_messages(session.session_id)
+            # Only load messages if not already set (for workflow groups)
+            if not hasattr(session, 'workflow_group'):
+                self.current_messages = self.db.get_session_messages(session.session_id)
             self.current_message_index = 0
 
             while True:
                 self.console.clear()
-                self.console.print(f'[bold]Session: {session.session_id}[/bold]')
-                self.console.print(
-                    f'[dim]Created: {session.created_at.strftime("%Y-%m-%d %H:%M:%S")}[/dim]'
-                )
-                self.console.print(
-                    f'[dim]Messages: {len(self.current_messages)}[/dim]\n'
-                )
+
+                # Check if this is a workflow session
+                is_workflow = hasattr(session, 'workflow_group')
+                if is_workflow:
+                    workflow_group = session.workflow_group
+                    self.console.print(f'[bold]Workflow: {session.session_id}[/bold]')
+                    self.console.print(
+                        f'[dim]Created: {session.created_at.strftime("%Y-%m-%d %H:%M:%S")}[/dim]'
+                    )
+                    self.console.print(
+                        f'[dim]Agents: {", ".join(workflow_group.agent_names)}[/dim]'
+                    )
+                    self.console.print(
+                        f'[dim]Total Messages: {len(self.current_messages)}[/dim]\n'
+                    )
+                else:
+                    self.console.print(f'[bold]Session: {session.session_id}[/bold]')
+                    self.console.print(
+                        f'[dim]Created: {session.created_at.strftime("%Y-%m-%d %H:%M:%S")}[/dim]'
+                    )
+                    self.console.print(
+                        f'[dim]Messages: {len(self.current_messages)}[/dim]\n'
+                    )
 
                 if not self.current_messages:
                     self.console.print('[yellow]No messages in this session[/yellow]')
@@ -369,6 +450,15 @@ class SessionBrowser:
                 # Display current message
                 message = self.current_messages[self.current_message_index]
                 content, metadata = self.formatter.format_message(message)
+
+                # Add agent context for workflow sessions
+                is_workflow = hasattr(session, 'workflow_group')
+                if is_workflow:
+                    agent_name = message.agent_name
+                    if agent_name:
+                        content = (
+                            f'[bold cyan]Agent: {agent_name}[/bold cyan]\n{content}'
+                        )
 
                 # Always recreate scroller when content changes (including format changes)
                 terminal_height = self.console.size.height
@@ -498,7 +588,25 @@ class SessionBrowser:
         for help_line in nav_help:
             self.console.print(help_line)
 
+    def view_workflow(self, workflow_group: WorkflowGroup) -> None:
+        """View messages in a workflow group by reusing session viewing logic."""
+
+        # Create a temporary session-like object for compatibility
+        class WorkflowSession:
+            def __init__(self, workflow_group: WorkflowGroup) -> None:
+                self.session_id = workflow_group.display_name
+                self.created_at = workflow_group.created_at
+                self.workflow_group = workflow_group
+
+        temp_session = WorkflowSession(workflow_group)
+
+        # Override current_messages with workflow messages
+        self.current_messages = self.db.get_workflow_messages(workflow_group)
+
+        # Call existing view_session method with our temp session
+        self.view_session(temp_session)
+
     def close(self) -> None:
         """Clean up resources."""
-        if self.db:
+        if hasattr(self, 'db') and self.db:
             self.db.close()

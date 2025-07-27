@@ -4,7 +4,7 @@ This module centralizes all keyboard configuration to make the browser
 easily customizable and maintainable.
 """
 
-from typing import List, Union
+from typing import List
 
 
 class HotkeyConfig:
@@ -56,6 +56,7 @@ class HotkeyConfig:
 
     # Action hotkeys
     TOGGLE_METADATA = ['m']
+    TOGGLE_WORKFLOW_MODE = ['w']
     SEARCH = ['s']
     QUIT = ['q']
     BACK = ['b']
@@ -86,8 +87,7 @@ class HotkeyConfig:
         action_keys = getattr(cls, action)
         if isinstance(action_keys, list):
             return key in action_keys
-        else:
-            return key == action_keys
+        return key == action_keys
 
     @classmethod
     def get_help_text(cls, action: str) -> str:
@@ -136,10 +136,8 @@ class HotkeyConfig:
 
             if alternatives:
                 return f'{primary}/{"/".join(alternatives)}'
-            else:
-                return primary
-        else:
-            return str(action_keys)
+            return primary
+        return str(action_keys)
 
     @classmethod
     def get_all_actions(cls) -> List[str]:
@@ -148,11 +146,12 @@ class HotkeyConfig:
         Returns:
             List of action names that can be used with matches() and get_help_text()
         """
+        excluded_attrs = {'matches', 'get_help_text', 'get_all_actions'}
         return [
             attr
             for attr in dir(cls)
             if not attr.startswith('_')
-            and attr not in ['matches', 'get_help_text', 'get_all_actions']
+            and attr not in excluded_attrs
             and not callable(getattr(cls, attr))
         ]
 
