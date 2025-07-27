@@ -115,13 +115,24 @@ class MessageScroller:
         return self.current_line != old_line
 
     def get_visible_content(self) -> str:
-        """Get the currently visible portion of content.
+        """Get the currently visible portion of content with Rich markup preservation.
 
         Returns:
-            String containing the lines currently visible on screen
+            String containing the lines currently visible on screen with
+            Rich markup state preserved across scroll boundaries
         """
         end_line = min(self.total_lines, self.current_line + self.page_size)
-        return '\n'.join(self.lines[self.current_line : end_line])
+        visible_lines = self.lines[self.current_line : end_line]
+
+        # If we're not at the top, check if we need to preserve Rich markup state
+        if self.current_line > 0:
+            opening_tags = self._get_active_markup_state(self.current_line)
+            if opening_tags:
+                # Prepend the opening tags to maintain formatting
+                if visible_lines:
+                    visible_lines[0] = opening_tags + visible_lines[0]
+
+        return '\n'.join(visible_lines)
 
     def get_scroll_indicator(self) -> str:
         """Get scroll position indicator text.
@@ -209,6 +220,91 @@ class MessageScroller:
         if self.page_size != old_page_size:
             max_start = max(0, self.total_lines - self.page_size)
             self.current_line = min(self.current_line, max_start)
+
+    def _get_active_markup_state(self, line_index: int) -> str:
+        """Get the Rich markup state that should be active at the given line.
+
+        Analyzes content before the given line to determine which Rich
+        markup tags are currently open and should be preserved. Only preserves
+        content-level formatting, not header formatting.
+
+        Args:
+            line_index: The line index to check markup state for
+
+        Returns:
+            String containing opening tags that should be active
+        """
+        import re
+
+        # Only preserve markup that starts after the first line (skip headers)
+        # Headers are typically on the first line with patterns like "[bold]📤 Output[/bold]"
+        if line_index <= 1:
+            return ''
+
+        # Look at content starting from line 1 (after the header)
+        content_lines = self.lines[1:line_index]
+        content_before = '\n'.join(content_lines)
+
+        # Track opening and closing tags
+        tag_stack = []
+
+        # Find all Rich markup tags in the content before current position
+        # Rich tags have the format [tag] or [/tag] or [tag param]
+        tag_pattern = r'\[([^]]+)\]'
+
+        for match in re.finditer(tag_pattern, content_before):
+            tag_content = match.group(1)
+
+            if tag_content.startswith('/'):
+                # Closing tag - remove the corresponding opening tag from stack
+                closing_tag = tag_content[1:]  # Remove the '/'
+                # Remove the last occurrence of this tag from the stack
+                for i in range(len(tag_stack) - 1, -1, -1):
+                    if tag_stack[i].split(' ')[0] == closing_tag:
+                        tag_stack.pop(i)
+                        break
+            else:
+                # Opening tag - add to stack, but only preserve content-level tags
+                if self._is_content_formatting_tag(tag_content):
+                    tag_stack.append(tag_content)
+
+        # Return the opening tags that are still active
+        if tag_stack:
+            return ''.join(f'[{tag}]' for tag in tag_stack)
+        return ''
+
+    def _is_content_formatting_tag(self, tag: str) -> bool:
+        """Check if a Rich markup tag is meant for content formatting.
+
+        Args:
+            tag: The tag content (without brackets)
+
+        Returns:
+            True if this tag should be preserved across scroll boundaries
+        """
+        # Only preserve tags that are typically used for content formatting
+        # Skip header/title formatting tags
+        tag_name = tag.split(' ')[0].lower()
+
+        content_tags = {
+            'dim',  # Dimmed text (commonly used for tool output)
+            'italic',  # Italic text
+            'underline',  # Underlined text
+            'strike',  # Strikethrough text
+        }
+
+        # Don't preserve header/title formatting
+        header_tags = {
+            'bold',  # Bold text (used in headers)
+            'cyan',  # Color formatting (used in headers)
+            'blue',  # Color formatting
+            'red',  # Color formatting
+            'green',  # Color formatting
+            'yellow',  # Color formatting
+            'magenta',  # Color formatting
+        }
+
+        return tag_name in content_tags
 
     def __repr__(self) -> str:
         """String representation for debugging."""

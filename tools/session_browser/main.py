@@ -75,7 +75,6 @@ Navigation:
         # Ensure terminal is restored to normal state
         try:
             import termios
-            import sys
 
             termios.tcsetattr(
                 sys.stdin.fileno(),

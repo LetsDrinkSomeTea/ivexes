@@ -6,7 +6,7 @@ converting raw database message data into user-friendly display formats.
 
 import json
 from typing import Dict, Any, Tuple, List
-from ..database import Message as DBMessage
+from .database import Message as DBMessage
 from .config import BrowserSettings
 
 

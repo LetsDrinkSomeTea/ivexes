@@ -4,7 +4,8 @@ This module centralizes all keyboard configuration to make the browser
 easily customizable and maintainable.
 """
 
-from typing import List, Union
+from enum import Enum
+from typing import Dict, List, Literal, Union
 
 
 class HotkeyConfig:
@@ -56,6 +57,7 @@ class HotkeyConfig:
 
     # Action hotkeys
     TOGGLE_METADATA = ['m']
+    TOGGLE_WORKFLOW_MODE = ['w']
     SEARCH = ['s']
     QUIT = ['q']
     BACK = ['b']
@@ -86,8 +88,7 @@ class HotkeyConfig:
         action_keys = getattr(cls, action)
         if isinstance(action_keys, list):
             return key in action_keys
-        else:
-            return key == action_keys
+        return key == action_keys
 
     @classmethod
     def get_help_text(cls, action: str) -> str:
@@ -136,10 +137,8 @@ class HotkeyConfig:
 
             if alternatives:
                 return f'{primary}/{"/".join(alternatives)}'
-            else:
-                return primary
-        else:
-            return str(action_keys)
+            return primary
+        return str(action_keys)
 
     @classmethod
     def get_all_actions(cls) -> List[str]:
@@ -148,13 +147,51 @@ class HotkeyConfig:
         Returns:
             List of action names that can be used with matches() and get_help_text()
         """
+        excluded_attrs = {'matches', 'get_help_text', 'get_all_actions'}
         return [
             attr
             for attr in dir(cls)
             if not attr.startswith('_')
-            and attr not in ['matches', 'get_help_text', 'get_all_actions']
+            and attr not in excluded_attrs
             and not callable(getattr(cls, attr))
         ]
+
+
+# Type definitions for better type safety
+MessageType = Literal[
+    'function_call',
+    'create_file',
+    'function_call_output',
+    'output_text',
+    'regular',
+    'user',
+    'assistant',
+    'unknown',
+]
+
+RichStyle = Literal['blue', 'yellow', 'red', 'green']
+
+
+class MessageTypeIcon(Enum):
+    """Emoji indicators for different message types."""
+
+    FUNCTION_CALL = '🔧'
+    CREATE_FILE = '📜'
+    FUNCTION_CALL_OUTPUT = '📤'
+    OUTPUT_TEXT = '🤖'
+    REGULAR = '💬'
+    USER = '👤'
+    ASSISTANT = '🤖'
+    UNKNOWN = '❓'
+
+
+class RichStyleColor(Enum):
+    """Rich color styles used in the UI."""
+
+    PANEL_BORDER = 'blue'
+    SEARCH_HIGHLIGHT = 'yellow'
+    ERROR = 'red'
+    SUCCESS = 'green'
 
 
 class BrowserSettings:
@@ -164,29 +201,29 @@ class BrowserSettings:
     """
 
     # Display settings
-    SESSIONS_PER_PAGE = 20
-    DEFAULT_TERMINAL_HEIGHT = 30
-    CONTENT_TRUNCATION_LENGTH = 2000
-    ARGUMENT_TRUNCATION_LENGTH = 50
+    SESSIONS_PER_PAGE: int = 20
+    DEFAULT_TERMINAL_HEIGHT: int = 30
+    CONTENT_TRUNCATION_LENGTH: int = 2000
+    ARGUMENT_TRUNCATION_LENGTH: int = 50
 
     # UI settings
-    PANEL_BORDER_STYLE = 'blue'
-    SEARCH_HIGHLIGHT_STYLE = 'yellow'
-    ERROR_STYLE = 'red'
-    SUCCESS_STYLE = 'green'
+    PANEL_BORDER_STYLE: RichStyle = RichStyleColor.PANEL_BORDER.value
+    SEARCH_HIGHLIGHT_STYLE: RichStyle = RichStyleColor.SEARCH_HIGHLIGHT.value
+    ERROR_STYLE: RichStyle = RichStyleColor.ERROR.value
+    SUCCESS_STYLE: RichStyle = RichStyleColor.SUCCESS.value
 
     # Message type indicators (emojis)
-    TYPE_INDICATORS = {
-        'function_call': '🔧',
-        'create_file': '📜',
-        'function_call_output': '📤',
-        'output_text': '🤖',
-        'regular': '💬',
-        'user': '👤',
-        'assistant': '🤖',
-        'unknown': '❓',
+    TYPE_INDICATORS: Dict[MessageType, str] = {
+        'function_call': MessageTypeIcon.FUNCTION_CALL.value,
+        'create_file': MessageTypeIcon.CREATE_FILE.value,
+        'function_call_output': MessageTypeIcon.FUNCTION_CALL_OUTPUT.value,
+        'output_text': MessageTypeIcon.OUTPUT_TEXT.value,
+        'regular': MessageTypeIcon.REGULAR.value,
+        'user': MessageTypeIcon.USER.value,
+        'assistant': MessageTypeIcon.ASSISTANT.value,
+        'unknown': MessageTypeIcon.UNKNOWN.value,
     }
 
     # Scrolling settings
-    MIN_PAGE_SIZE = 10
-    UI_RESERVED_LINES = 15  # Lines reserved for navigation, headers, etc.
+    MIN_PAGE_SIZE: int = 10
+    UI_RESERVED_LINES: int = 15  # Lines reserved for navigation, headers, etc.
