@@ -95,7 +95,15 @@ class Message:
 
     @property
     def agent_name(self) -> Optional[str]:
-        """Extract agent name from session_id for workflow context."""
+        """Extract and format agent name from session_id for display."""
+        raw_name = self.raw_agent_name
+        if raw_name:
+            return self._format_agent_name_for_display(raw_name)
+        return None
+
+    @property
+    def raw_agent_name(self) -> Optional[str]:
+        """Extract raw agent name from session_id for internal mapping."""
         # Look for workflow pattern in session ID
         session_id = self.session_id
 
@@ -117,6 +125,30 @@ class Message:
                 return '-'.join(parts[:-1])
 
         return None
+
+    def _format_agent_name_for_display(self, raw_name: str) -> str:
+        """Format raw agent name for user-friendly display.
+
+        Args:
+            raw_name: Raw agent name like "MultiAgent-multi" or "code-analyst-multi"
+
+        Returns:
+            Formatted display name like "MultiAgent" or "Code Analyst"
+        """
+        # Remove common suffixes
+        if raw_name.endswith('-multi'):
+            raw_name = raw_name[:-6]
+
+        # Handle special cases
+        if raw_name == 'MultiAgent':
+            return 'MultiAgent'
+
+        # Convert hyphenated names to title case
+        # e.g., "code-analyst" -> "Code Analyst"
+        # e.g., "security-specialist" -> "Security Specialist"
+        # e.g., "red-team-operator" -> "Red Team Operator"
+        words = raw_name.split('-')
+        return ' '.join(word.capitalize() for word in words)
 
 
 class SessionDatabase:
@@ -246,13 +278,13 @@ class SessionDatabase:
         return workflow_groups
 
     def get_workflow_messages(self, workflow_group: WorkflowGroup) -> List[Message]:
-        """Get all messages for a workflow group, merged and sorted by creation time.
+        """Get all messages for a workflow group, reordered by conversation flow.
 
         Args:
             workflow_group: The workflow group to get messages for
 
         Returns:
-            List of Message objects sorted by creation time across all sessions
+            List of Message objects ordered by conversation flow rather than timestamp
         """
         all_messages = []
 
@@ -260,9 +292,103 @@ class SessionDatabase:
             session_messages = self.get_session_messages(session.session_id)
             all_messages.extend(session_messages)
 
-        # Sort all messages by creation time
-        all_messages.sort(key=lambda x: x.created_at)
-        return all_messages
+        # Reorder messages by conversation flow instead of timestamp
+        return self._reorder_workflow_messages(all_messages)
+
+    def _reorder_workflow_messages(self, messages: List[Message]) -> List[Message]:
+        """Reorder workflow messages by conversation flow rather than timestamp.
+
+        This method reconstructs the logical conversation flow:
+        MultiAgent message → Function call → Subagent messages → Function output → repeat
+
+        Args:
+            messages: List of messages from all sessions in the workflow
+
+        Returns:
+            List of messages reordered by conversation flow
+        """
+        if not messages:
+            return messages
+
+        # Separate MultiAgent and subagent messages by session
+        multiagent_messages = []
+        subagent_sessions = {}
+
+        for msg in messages:
+            if self._is_multiagent_message(msg):
+                multiagent_messages.append(msg)
+            else:
+                # Group subagent messages by their session ID
+                session_id = msg.session_id
+                if session_id not in subagent_sessions:
+                    subagent_sessions[session_id] = []
+                subagent_sessions[session_id].append(msg)
+
+        # Sort MultiAgent messages by timestamp
+        multiagent_messages.sort(key=lambda x: x.created_at)
+
+        # Sort messages within each subagent session by timestamp
+        for session_messages in subagent_sessions.values():
+            session_messages.sort(key=lambda x: x.created_at)
+
+        # Map tool names to subagent sessions
+        tool_to_session = {}
+        for session_id, session_messages in subagent_sessions.items():
+            if session_messages:
+                raw_agent_name = session_messages[0].raw_agent_name
+                if raw_agent_name:
+                    # Extract base tool name from agent name
+                    base_name = raw_agent_name
+                    if base_name.endswith('-multi'):
+                        base_name = base_name[:-6]
+                    tool_to_session[base_name] = session_messages
+
+        # Reconstruct the conversation flow
+        reordered_messages = []
+        used_sessions = set()
+
+        for msg in multiagent_messages:
+            reordered_messages.append(msg)
+
+            # Check if this is a function call
+            if msg.message_data.get('type') == 'function_call':
+                tool_name = msg.message_data.get('name')
+
+                # Add the corresponding subagent session if we haven't used it yet
+                if tool_name in tool_to_session and tool_name not in used_sessions:
+                    subagent_messages = tool_to_session[tool_name]
+                    reordered_messages.extend(subagent_messages)
+                    used_sessions.add(tool_name)
+
+        # Add any remaining subagent sessions that weren't matched
+        for tool_name, session_messages in tool_to_session.items():
+            if tool_name not in used_sessions:
+                reordered_messages.extend(session_messages)
+
+        return reordered_messages
+
+    def _is_multiagent_message(self, message: Message) -> bool:
+        """Determine if a message is from MultiAgent (vs a subagent).
+
+        Args:
+            message: The message to check
+
+        Returns:
+            True if the message is from MultiAgent, False if from a subagent
+        """
+        session_id = message.session_id
+
+        # MultiAgent sessions contain 'MultiAgent-' in their session ID
+        # Subagent sessions have agent names before the MultiAgent workflow key
+        if 'MultiAgent-' in session_id:
+            # Check if there's an agent name before 'MultiAgent-'
+            multiagent_index = session_id.find('MultiAgent-')
+            before_multiagent = session_id[:multiagent_index].rstrip('-')
+
+            # If there's content before 'MultiAgent-', it's a subagent
+            return not bool(before_multiagent)
+
+        return False
 
     def get_session_messages(self, session_id: str) -> List[Message]:
         """Get all messages for a specific session.
