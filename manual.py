@@ -3,6 +3,7 @@
 
 import logging
 import os
+import sys
 from typing import Optional
 
 import click
@@ -466,6 +467,109 @@ def cmd_llm_tools(type: str) -> None:
             return
 
     click.echo(sprint_tools_as_json(tools))
+
+
+@cli.group
+def utils() -> None:
+    """Commands for browsing sessions.
+
+    This group contains commands for browsing and managing sessions.
+    """
+    pass
+
+
+@utils.command('browse')
+@click.argument(
+    'session_db', type=click.Path(exists=True, dir_okay=False), required=True
+)
+def cmd_browse_sessions(session_db: str) -> None:
+    """Browse existing sessions.
+
+    This command allows you to view and manage existing sessions.
+    """
+    from tools import browse_sessions
+
+    browse_sessions(session_db)
+
+
+@utils.command('stats')
+@click.argument(
+    'session_db', type=click.Path(exists=True, dir_okay=False), required=True
+)
+def cmd_session_stats(session_db: str) -> None:
+    """Get statistics about the session database.
+
+    This command retrieves and displays statistics about the session database.
+    """
+    from tools import get_database_stats
+
+    stats = get_database_stats(session_db)
+    click.echo(f'Session Database Statistics:\n{stats}')
+
+
+@utils.command('scrape')
+@click.option(
+    '-n',
+    '--num-repos',
+    type=int,
+    default=50,
+    help='Number of repositories to scan (default: 50)',
+)
+@click.option('-o', '--output', type=str, help='Output file path for JSON results')
+@click.option(
+    '-d',
+    '--database',
+    type=str,
+    default='github_scan.sqlite',
+    help='SQLite database file path (default: github_scan.sqlite)',
+)
+@click.option(
+    '--force-rescan',
+    is_flag=True,
+    help='Force rescan all repositories even if no new commits',
+)
+@click.option(
+    '--query-cve-commits',
+    is_flag=True,
+    help='Query database for CVE matches in commit messages and exit',
+)
+def cmd_scrape_github(
+    num_repos: int,
+    output: Optional[str],
+    database: str,
+    force_rescan: bool,
+    query_cve_commits: bool,
+) -> None:
+    """Scrape GitHub for IVEXES-related data."""
+    from tools import scrape_github
+
+    # Build argv to match argparse expectations
+    original_argv = sys.argv.copy()
+    sys.argv = ['github_scraper.py']
+
+    # Add arguments based on provided options
+    sys.argv.extend(['-n', str(num_repos)])
+    if output:
+        sys.argv.extend(['-o', output])
+    sys.argv.extend(['-d', database])
+    if force_rescan:
+        sys.argv.append('--force-rescan')
+    if query_cve_commits:
+        sys.argv.append('--query-cve-commits')
+
+    scrape_github()
+    sys.argv = original_argv
+
+
+@utils.command('validate-htb')
+def cmd_validate_htb_challenges() -> None:
+    """Validate Hack The Box challenges.
+
+    This command checks the validity of Hack The Box challenges.
+    """
+    from tools import validate_htb_challenges
+
+    validate_htb_challenges()
 
 
 if __name__ == '__main__':

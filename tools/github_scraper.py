@@ -36,7 +36,7 @@ import sqlite3
 import argparse
 from datetime import datetime, timedelta
 from github import Github
-from git import Repo
+from git import Optional, Repo
 from rich.console import Console
 from rich.progress import (
     Progress,
@@ -414,8 +414,13 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def main():
-    """Main function that orchestrates the GitHub scraping process."""
+def main(github_token: Optional[str] = None):
+    """Main function that orchestrates the GitHub scraping process.
+
+    Args:
+        github_token (Optional[str]): GitHub API token. If not provided, it will
+            attempt to read from the GITHUB_TOKEN environment variable.
+    """
     args = parse_arguments()
 
     # Initialize database
@@ -458,10 +463,13 @@ def main():
 
         return
 
-    token = os.getenv('GITHUB_TOKEN')
+    if github_token:
+        token = github_token
+    else:
+        token = os.getenv('GITHUB_TOKEN')
     if not token:
         console.print(
-            '[bold red]ERROR:[/bold red] Please set GITHUB_TOKEN environment variable.'
+            '[bold red]ERROR:[/bold red] Please set GITHUB_TOKEN environment variable or pass one to the main function.'
         )
         return
 

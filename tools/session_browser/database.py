@@ -548,3 +548,19 @@ class SessionDatabase:
         stats['tool_call_counts'] = tool_counts
 
         return stats
+
+
+def get_database_stats(db_path: Union[str, Path]) -> str:
+    """Get statistics about the session database.
+
+    Args:
+        db_path: Path to the SQLite database file.
+
+    Returns:
+        Dictionary containing database statistics.
+    """
+    with SessionDatabase(db_path) as db:
+        stats = db.get_database_stats()
+    return '\n'.join(
+        f'{str(key).replace("_", " ").title()}: {value}' for key, value in stats.items()
+    )
