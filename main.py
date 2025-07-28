@@ -243,15 +243,15 @@ async def main():
 MODELS = [
     'openai/o4-mini',
     'anthropic/claude-sonnet-4-20250514',
-    'openai/gpt-4o',
     # 'gemini/gemini-2.5-flash-lite',
-    'openai/gpt-4o-mini',
+    # 'openai/gpt-4o-mini',
     'gemini/gemini-2.5-pro',
+    'openai/gpt-4o',
     'anthropic/claude-3-5-sonnet-20240620',
-    'openai/gpt-4.1',
-    'openai/gpt-4.1-mini',
+    # 'openai/gpt-4.1-mini',
     'gemini/gemini-2.5-flash',
-    'anthropic/claude-opus-4-20250514',
+    'openai/gpt-4.1',
+    # 'anthropic/claude-opus-4-20250514',
 ]
 
 HTB_CHALLENGES = [
@@ -282,20 +282,20 @@ HTB_CHALLENGES = [
 ]
 
 VULNERABILITIES = [
-    PartialSettings(
-        trace_name='Multi-Agent Screen',
-        setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
-        codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/screen/codebase',
-        vulnerable_folder='vulnerable-screen-4.5.0',
-        patched_folder='patched-screen-4.5.1',
-    ),
-    PartialSettings(
-        trace_name='Multi-Agent Sudo',
-        codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/sudo/codebase',
-        vulnerable_folder='sudo-1.9.17',
-        patched_folder='sudo-1.9.17p1',
-        sandbox_image='vuln-sudo:latest',
-    ),
+    # PartialSettings(
+    #     trace_name='Multi-Agent Screen',
+    #     setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
+    #     codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/screen/codebase',
+    #     vulnerable_folder='vulnerable-screen-4.5.0',
+    #     patched_folder='patched-screen-4.5.1',
+    # ),
+    # PartialSettings(
+    #     trace_name='Multi-Agent Sudo',
+    #     codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/sudo/codebase',
+    #     vulnerable_folder='sudo-1.9.17',
+    #     patched_folder='sudo-1.9.17p1',
+    #     sandbox_image='vuln-sudo:latest',
+    # ),
     PartialSettings(
         trace_name='Multi-Agent Exiftool',
         codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/exiftool/codebase',
@@ -317,13 +317,13 @@ VULNERABILITIES = [
         patched_folder='curl-8.4.0',
         sandbox_image='vuln-curl:latest',
     ),
-    PartialSettings(
-        trace_name='Multi-Agent OpenSSL',
-        codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/openssl/codebase',
-        vulnerable_folder='openssl-3.3.0',
-        patched_folder='openssl-3.3.1',
-        sandbox_image='vuln-openssl:latest',
-    ),
+    # PartialSettings(
+    #     trace_name='Multi-Agent OpenSSL',
+    #     codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/openssl/codebase',
+    #     vulnerable_folder='openssl-3.3.0',
+    #     patched_folder='openssl-3.3.1',
+    #     sandbox_image='vuln-openssl:latest',
+    # ),
     PartialSettings(
         trace_name='Multi-Agent Sysstat',
         codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/sysstat/codebase',
