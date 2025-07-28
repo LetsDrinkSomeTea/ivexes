@@ -572,5 +572,23 @@ def cmd_validate_htb_challenges() -> None:
     validate_htb_challenges()
 
 
+@utils.command('analyze-tokens')
+@click.argument('output_dir', type=click.Path(exists=True, file_okay=False))
+def cmd_analyze_token_usage(output_dir: str) -> None:
+    """Analyze token usage from the output directory.
+
+    Args:
+        output_dir: Directory containing token usage data
+    """
+    from tools import analyze_token_usage
+
+    if not os.path.isdir(output_dir):
+        click.echo(f'Output directory {output_dir} does not exist.')
+        return
+
+    analyze_token_usage(output_dir)
+    click.echo(f'Token usage analysis completed. Results saved in {output_dir}.')
+
+
 if __name__ == '__main__':
     cli()
