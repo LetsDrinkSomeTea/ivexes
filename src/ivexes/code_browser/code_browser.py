@@ -28,7 +28,6 @@ from typing import Literal, Optional
 import chardet
 import sys
 from time import sleep
-import asyncio
 import concurrent.futures
 
 from docker.models.containers import Container

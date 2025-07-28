@@ -8,8 +8,6 @@ All tools perform semantic search using vector embeddings to find relevant
 cybersecurity information based on natural language queries.
 """
 
-from typing import cast
-
 from agents import function_tool, Tool
 import logging
 from .vector_db import CweCapecAttackDatabase, QueryTypes

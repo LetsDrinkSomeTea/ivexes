@@ -6,7 +6,7 @@ from agents import Agent, RunConfig, Runner, SQLiteSession, Tool, function_tool
 
 from ...printer import Printer
 from .shared_context import MultiAgentContext
-from ...config.settings import Settings, get_run_config
+from ...config.settings import Settings
 
 import logging
 
