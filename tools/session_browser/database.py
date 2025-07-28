@@ -85,6 +85,7 @@ class Message:
     role: Optional[str] = None
     content: Optional[str] = None
     tool_calls: Optional[List[Dict[str, Any]]] = None
+    msg_type: Optional[str] = None
 
     def __post_init__(self) -> None:
         """Parse message data after initialization."""
@@ -92,6 +93,7 @@ class Message:
             self.role = self.message_data.get('role')
             self.content = self.message_data.get('content')
             self.tool_calls = self.message_data.get('tool_calls')
+            self.msg_type = self.message_data.get('type')
 
     @property
     def agent_name(self) -> Optional[str]:

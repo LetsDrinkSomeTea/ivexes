@@ -74,6 +74,7 @@ class SessionBrowser:
         self.sessions: List[Session] = []
         self.workflow_groups: List[WorkflowGroup] = []
         self.current_messages: List[DBMessage] = []
+        self.current_messages_only_files: List[DBMessage] = []
         self.console = Console()
         self.formatter = MessageFormatter()
 
@@ -92,6 +93,8 @@ class SessionBrowser:
 
         # Message viewing state
         self.message_scroller: Optional[MessageScroller] = None
+
+        self.show_only_files: bool = False  # Show only file creation messages
 
     def run(self) -> None:
         """Run the interactive browser.
@@ -411,9 +414,21 @@ class SessionBrowser:
             if not hasattr(session, 'workflow_group'):
                 self.current_messages = self.db.get_session_messages(session.session_id)
             self.current_message_index = 0
+            self.show_only_files = False
+
+            self.current_messages_only_files = [
+                x
+                for x in self.current_messages
+                if x.message_data.get('name', None) == 'sandbox_write_file'
+            ]
 
             while True:
                 self.console.clear()
+
+                if self.show_only_files:
+                    messages = self.current_messages_only_files
+                else:
+                    messages = self.current_messages
 
                 # Check if this is a workflow session
                 is_workflow = hasattr(session, 'workflow_group')
@@ -426,29 +441,37 @@ class SessionBrowser:
                     self.console.print(
                         f'[dim]Agents: {", ".join(workflow_group.agent_names)}[/dim]'
                     )
-                    self.console.print(
-                        f'[dim]Total Messages: {len(self.current_messages)}[/dim]\n'
-                    )
+                    self.console.print(f'[dim]Total Messages: {len(messages)}[/dim]\n')
                 else:
                     self.console.print(f'[bold]Session: {session.session_id}[/bold]')
                     self.console.print(
                         f'[dim]Created: {session.created_at.strftime("%Y-%m-%d %H:%M:%S")}[/dim]'
                     )
-                    self.console.print(
-                        f'[dim]Messages: {len(self.current_messages)}[/dim]\n'
-                    )
+                    self.console.print(f'[dim]Messages: {len(messages)}[/dim]\n')
 
-                if not self.current_messages:
-                    self.console.print('[yellow]No messages in this session[/yellow]')
-                    self.console.print('\n[dim]Press any key to go back...[/dim]')
+                if not messages:
+                    if self.show_only_files:
+                        self.console.print(
+                            '[yellow]No file creation messages in this session[/yellow]'
+                        )
+                        self.console.print('\n[dim]Press any key to go back...[/dim]')
+                    else:
+                        self.console.print(
+                            '[yellow]No messages in this session[/yellow]'
+                        )
+                        self.console.print('\n[dim]Press any key to go back...[/dim]')
                     try:
                         get_single_key()
                     except KeyboardInterrupt:
                         pass
-                    break
+                    if self.show_only_files:
+                        self.show_only_files = False
+                        continue
+                    else:
+                        break
 
                 # Display current message
-                message = self.current_messages[self.current_message_index]
+                message = messages[self.current_message_index]
                 content, metadata = self.formatter.format_message(message)
 
                 # Add agent context for workflow sessions
@@ -506,7 +529,7 @@ class SessionBrowser:
                 ):
                     break
                 elif HotkeyConfig.matches(key, 'NEXT_MESSAGE'):
-                    if self.current_message_index < len(self.current_messages) - 1:
+                    if self.current_message_index < len(messages) - 1:
                         self.current_message_index += 1
                         self.message_scroller = None  # Reset scroller for new message
                 elif HotkeyConfig.matches(key, 'PREV_MESSAGE'):
@@ -517,7 +540,7 @@ class SessionBrowser:
                     self.current_message_index = 0
                     self.message_scroller = None  # Reset scroller for new message
                 elif HotkeyConfig.matches(key, 'LAST_MESSAGE'):
-                    self.current_message_index = len(self.current_messages) - 1
+                    self.current_message_index = len(messages) - 1
                     self.message_scroller = None  # Reset scroller for new message
                 elif HotkeyConfig.matches(key, 'SCROLL_DOWN'):
                     if self.message_scroller:
@@ -527,7 +550,13 @@ class SessionBrowser:
                         self.message_scroller.page_up()
                 elif HotkeyConfig.matches(key, 'TOGGLE_METADATA'):
                     self.formatter.toggle_metadata_view()
-                    # Scroller will be automatically updated on next render due to content change
+                elif HotkeyConfig.matches(key, 'TOGGLE_ONLY_FILE_CREATION'):
+                    self.show_only_files = not self.show_only_files
+                    self.current_message_index = 0
+                elif HotkeyConfig.matches(key, 'SAVE_TO_FILE'):
+                    self._save_content_to_file(content)
+                elif HotkeyConfig.matches(key, 'COPY_TO_CLIPBOARD'):
+                    self._copy_to_clipboard(content)
 
         except Exception as e:
             self.console.print(f'[red]Error viewing session: {e}[/red]')
@@ -536,6 +565,46 @@ class SessionBrowser:
                 get_single_key()
             except KeyboardInterrupt:
                 pass
+
+    def _copy_to_clipboard(self, content: str) -> None:
+        """Copy the current message content to the clipboard.
+
+        Uses the rich console's clipboard functionality to copy content.
+
+        Args:
+            content: The message content to copy
+        """
+        try:
+            import pyperclip
+
+            pyperclip.copy(content)
+            self.console.print('[green]Content copied to clipboard![/green]')
+        except ModuleNotFoundError:
+            self.console.print(
+                f'[red]pyperclip module not found. Please install it to use clipboard functionality.[/red]'
+            )
+        except Exception as e:
+            self.console.print(f'[red]Error copying content: {e}[/red]')
+
+    def _save_content_to_file(self, content: str) -> None:
+        """Save the current message content to a file.
+
+        Prompts the user for a filename and saves the content to that file.
+
+        Args:
+            content: The message content to save
+        """
+        filename = self.console.input('\n[bold]Enter filename to save content: [/bold]')
+        if not filename:
+            self.console.print('[red]No filename provided. Aborting.[/red]')
+            return
+
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(content)
+            self.console.print(f'[green]Content saved to {filename}[/green]')
+        except Exception as e:
+            self.console.print(f'[red]Error saving content: {e}[/red]')
 
     def _create_message_title(
         self, message: DBMessage, scroller: Optional[MessageScroller]
@@ -553,7 +622,10 @@ class SessionBrowser:
         msg_type = message.message_data.get('type', 'message')
         type_indicator = BrowserSettings.TYPE_INDICATORS.get(msg_type, '💬')
 
-        title = f'{type_indicator} Message {self.current_message_index + 1}/{len(self.current_messages)}'
+        if self.show_only_files:
+            title = f'{type_indicator} File Creation Message {self.current_message_index + 1}/{len(self.current_messages_only_files)}'
+        else:
+            title = f'{type_indicator} Message {self.current_message_index + 1}/{len(self.current_messages)}'
 
         if self.formatter.show_metadata:
             title += ' (Metadata View)'
@@ -583,6 +655,9 @@ class SessionBrowser:
         )
         nav_help.append(
             f'• [cyan]{HotkeyConfig.get_help_text("TOGGLE_METADATA")}[/cyan] - Toggle metadata | [cyan]{HotkeyConfig.get_help_text("BACK")}[/cyan] - Back'
+        )
+        nav_help.append(
+            f'• [cyan]{HotkeyConfig.get_help_text("TOGGLE_ONLY_FILE_CREATION")}[/cyan] - Toggle file creation only'
         )
 
         for help_line in nav_help:

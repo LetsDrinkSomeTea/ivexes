@@ -58,6 +58,10 @@ class HotkeyConfig:
     # Action hotkeys
     TOGGLE_METADATA = ['m']
     TOGGLE_WORKFLOW_MODE = ['w']
+    TOGGLE_ONLY_FILE_CREATION = ['f']
+    SAVE_TO_FILE = ['s']
+    COPY_TO_CLIPBOARD = ['c']
+
     SEARCH = ['s']
     QUIT = ['q']
     BACK = ['b']

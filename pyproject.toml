@@ -23,6 +23,7 @@ dependencies = [
   "nvdlib",
   "sentence-transformers>=5.0.0",
   "rich>=13.0.0",
+  "pyperclip>=1.9.0",
 ]
 
 [dependency-groups]
