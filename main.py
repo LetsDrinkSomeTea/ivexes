@@ -160,7 +160,6 @@ async def run_multi_agent_tests(
                 total_runs += 1
 
                 sets = GENERAL_SETTINGS.copy()
-                sets = vulnerability.copy()
                 sets.update(**vulnerability)
                 sets.update(
                     model=model,
@@ -334,4 +333,8 @@ VULNERABILITIES = [
 ]
 
 if __name__ == '__main__':
+    # MODELS = [
+    #     'openai/gpt-4.1-nano',
+    #     'gemini/gemini-2.5-flash',
+    # ]
     asyncio.run(main())
