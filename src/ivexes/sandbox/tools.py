@@ -12,24 +12,26 @@ from typing import Literal, Optional, cast
 
 from agents import function_tool, Tool
 from .sandbox import Sandbox
-from ..config.settings import Settings
+from ..config.settings import Settings, create_settings
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 def create_sandbox_tools(
-    settings: Settings, sandbox: Optional[Sandbox] = None
+    settings: Optional[Settings] = None, sandbox: Optional[Sandbox] = None
 ) -> list[Tool]:
     """Create sandbox tools with dependency injection.
 
     Args:
-        settings: Settings instance from the creating agent.
+        settings: Settings instance from the creating agent. If not provided, loads from environment.
         sandbox: Optional sandbox instance. If not provided, creates new one from settings.
 
     Returns:
         List of sandbox tools configured with the provided sandbox instance.
     """
+    if not settings:
+        settings = create_settings()
     if sandbox is None:
         sandbox = Sandbox(settings)
 

@@ -89,4 +89,6 @@ user_msg = """
 {diff}
 
 The vulnerable version is installed in the sandbox at: `{bin_path}`
+
+The current date and time is: `{datetime}`
 """

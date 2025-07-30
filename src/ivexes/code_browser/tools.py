@@ -9,21 +9,29 @@ from typing import Literal, cast, Optional
 
 from agents import function_tool, Tool
 from .code_browser import CodeBrowser
+from ..config import Settings, create_settings
 
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def create_code_browser_tools(code_browser: CodeBrowser) -> list[Tool]:
+def create_code_browser_tools(
+    code_browser: Optional[CodeBrowser] = None, settings: Optional[Settings] = None
+) -> list[Tool]:
     """Create code browser tools with dependency injection.
 
     Args:
         code_browser: CodeBrowser instance from the creating agent.
+        settings: Settings instance for creating a new CodeBrowser instance, if needed. Gets ignored if `code_browser` is provided and created from environment variables if not present.
 
     Returns:
         List of code browser tools configured with the provided browser instance.
     """
+    if not settings:
+        settings = create_settings()
+    if not code_browser:
+        code_browser = CodeBrowser(settings)
 
     @function_tool(strict_mode=True)
     def codebrowser_get_definition(symbol: str) -> str:

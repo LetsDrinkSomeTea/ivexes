@@ -53,15 +53,12 @@ class Settings(BaseSettings):
         'openai/gpt-4'
     """
 
+    rich_console: Optional[Console] = None
+
     # OpenAI API settings
     openai_api_key: str | None = Field(
         default_factory=lambda: os.environ.get('OPENAI_API_KEY', None)
     )
-    brave_search_api_key: str | None = Field(
-        default_factory=lambda: os.environ.get('BRAVE_SEARCH_API_KEY', None)
-    )
-
-    rich_console: Optional[Console] = None
 
     # gets used
     llm_api_key: str = Field(
@@ -77,6 +74,7 @@ class Settings(BaseSettings):
     max_reprompts: int = Field(
         default_factory=lambda: int(os.environ.get('MAX_REPROMPTS', '5'))
     )
+
     # Agent settings
     model: str = Field(
         default_factory=lambda: os.environ.get('MODEL', 'openai/gpt-4o-mini')
@@ -213,7 +211,7 @@ class PartialSettings(TypedDict, total=False):
     patched_folder: Optional[str]
     chroma_path: str
     embedding_model: str
-    embedding_provider: str
+    embedding_provider: Literal['builtin', 'local', 'openai']
     rich_console: Optional[Console]
 
 
@@ -277,13 +275,16 @@ def create_settings(partial_settings: Optional[PartialSettings] = None) -> Setti
         raise RuntimeError(error_msg) from e
 
 
-def get_run_config(settings: Settings) -> RunConfig:
+def get_run_config(settings: Optional[Settings] = None) -> RunConfig:
     """Get the RunConfig for the application, configured with the current settings.
 
     This function creates a RunConfig instance that contains all necessary
     configuration for running AI agents, including model settings, provider
     configuration, and temperature settings. It uses the current application
     settings to configure the underlying OpenAI client.
+
+    Args:
+        settings: The Settings instance containing application configuration. If not provided, loads from environment variables.
 
     Returns:
         RunConfig: Configured run configuration for agent execution.
@@ -296,6 +297,9 @@ def get_run_config(settings: Settings) -> RunConfig:
     import logging
 
     logger = logging.getLogger(__name__)
+
+    if not settings:
+        settings = create_settings()
 
     client = AsyncOpenAI(base_url=settings.llm_base_url, api_key=settings.llm_api_key)
 

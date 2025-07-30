@@ -71,8 +71,8 @@ def insert_attack_techniques(collection: chromadb.Collection, attack_data):
             doc = f"""
 <ATT&CK-TECHNIQUE>
 {technique_id} {name}:
-<Description>: {description} </Description>
-<Tactics>: {tactics_text} </Tactics>
+<Description> {description} </Description>
+<Tactics> {tactics_text} </Tactics>
 </ATT&CK-TECHNIQUE>
 """
             meta = {
@@ -126,8 +126,8 @@ def insert_attack_tactics(collection: chromadb.Collection, attack_data):
             doc = f"""
 <ATT&CK-TACTIC>
 {tactic_id} {name}:
-<Description>: {description} </Description>
-<Short_Name>: {shortname} </Short_Name>
+<Description> {description} </Description>
+<Short_Name> {shortname} </Short_Name>
 </ATT&CK-TACTIC>
 """
             meta = {
@@ -176,7 +176,7 @@ def insert_attack_mitigations(collection: chromadb.Collection, attack_data):
             doc = f"""
 <ATT&CK-MITIGATION>
 {mitigation_id} {name}:
-<Description>: {description} </Description>
+<Description> {description} </Description>
 </ATT&CK-MITIGATION>
 """
             meta = {'id': mitigation_id, 'name': name, 'type': 'attack-mitigation'}
@@ -224,8 +224,8 @@ def insert_attack_groups(collection: chromadb.Collection, attack_data):
             doc = f"""
 <ATT&CK-GROUP>
 {group_id} {name}:
-<Description>: {description} </Description>
-<Aliases>: {aliases_text} </Aliases>
+<Description> {description} </Description>
+<Aliases> {aliases_text} </Aliases>
 </ATT&CK-GROUP>
 """
             meta = {
@@ -276,8 +276,8 @@ def insert_attack_software(collection: chromadb.Collection, attack_data):
             doc = f"""
 <ATT&CK-SOFTWARE>
 {software_id} {name} ({software_type}):
-<Description>: {description} </Description>
-<Type>: {software_type} </Type>
+<Description> {description} </Description>
+<Type> {software_type} </Type>
 </ATT&CK-SOFTWARE>
 """
             meta = {

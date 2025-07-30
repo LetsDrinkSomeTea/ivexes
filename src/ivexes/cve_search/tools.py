@@ -5,19 +5,22 @@ import nvdlib
 
 from agents import Tool, function_tool
 
+INDEX_FOR_ENGLISH = 0
+
 
 def _search_cve_by_id(cve_id: str) -> str:
     results = nvdlib.searchCVE(cveId=cve_id)
-    ret = ''
-    for cve in results:
-        cve_text = '<cve>\n'
-        cve_text += f'ID: {cve.id}\n'
-        cve_text += f'Description: {cve.descriptions[0].value}\n'
-        cve_text += f'Published: {cve.published}\n'
-        cve_text += '</cve>'
-
-        ret += cve_text + '\n'
-    return ret if ret else 'No CVE found with that ID.'
+    if len(results) > 0:  # Can only return one or none CVE,
+        cve = results[0]  # when querying by ID
+        return f"""
+<cve>
+ID: {cve.id}
+<Description> {cve.descriptions[INDEX_FOR_ENGLISH].value} </Description>
+<Published> {cve.published} </Published>
+</cve>
+"""
+    else:
+        return f'No CVE found with ID {cve_id}.'
 
 
 @function_tool

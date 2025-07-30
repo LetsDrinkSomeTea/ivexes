@@ -28,9 +28,9 @@ from .report.tools import create_report_tools as create_report_tools
 
 __all__ = [
     'date_tools',
+    'cve_tools',
     'create_sandbox_tools',
     'create_code_browser_tools',
     'create_vectordb_tools',
-    'cve_tools',
     'create_report_tools',
 ]

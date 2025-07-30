@@ -8,22 +8,32 @@ All tools perform semantic search using vector embeddings to find relevant
 cybersecurity information based on natural language queries.
 """
 
+from typing import Optional
 from agents import function_tool, Tool
 import logging
+
+from ivexes.config import Settings, create_settings
 from .vector_db import CweCapecAttackDatabase, QueryTypes
 
 logger = logging.getLogger(__name__)
 
 
-def create_vectordb_tools(db: CweCapecAttackDatabase) -> list[Tool]:
+def create_vectordb_tools(
+    db: Optional[CweCapecAttackDatabase] = None, settings: Optional[Settings] = None
+) -> list[Tool]:
     """Create vector database tools with injected database instance.
 
     Args:
-        db: CweCapecAttackDatabase instance
+        db: CweCapecAttackDatabase instance, if not provided, a new instance will be created using the settings.
+        settings: Settings instance for creating a new database instance, if needed. Gets ignored if `db` is provided and created from environment variables if not present.
 
     Returns:
         List of tools for vector database operations
     """
+    if not settings:
+        settings = create_settings()
+    if not db:
+        db = CweCapecAttackDatabase(settings)
 
     @function_tool
     def semantic_search_cwe(query: str, n: int = 5):

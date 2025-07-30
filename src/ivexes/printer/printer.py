@@ -11,6 +11,7 @@ from agents import RunItem, TResponseInputItem, Tool
 from agents.result import RunResult, RunResultStreaming
 import time
 
+import logging
 
 from .components import banner, format_usage_display
 from .formatter import (
@@ -20,6 +21,8 @@ from .formatter import (
     sprint_tools_as_json,
 )
 from ..config.settings import Settings
+
+logger = logging.getLogger(__name__)
 
 TIME_STRING: str = time.strftime('%H:%M:%S', time.localtime())
 
@@ -31,7 +34,7 @@ class Printer:
     encapsulating settings-dependent behavior like trace names and model info.
     """
 
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: Optional[Settings] = None):
         """Initialize printer with settings.
 
         Args:
@@ -54,21 +57,26 @@ class Printer:
         if truncate and len(lines) > 10:
             lines = lines[:10] + [f'... truncated {len(lines) - 10} lines']
         out_str = '\n'.join(lines)
-        if self.settings.rich_console:
+        if self.settings and self.settings.rich_console:
             self.settings.rich_console.print(out_str, end=end)
         else:
             print(out_str, end=end)
-        path = os.path.join(
-            'output',
-            f'{self.settings.trace_name}',
-            f'{self.settings.model}-{self.time_string}.txt',
-        )
-        os.makedirs(name=os.path.dirname(path), exist_ok=True)
-        with open(path, 'a') as f:
-            f.write(text + end)
+        if self.settings:
+            path = os.path.join(
+                'output',
+                f'{self.settings.trace_name}',
+                f'{self.settings.model}-{self.time_string}.txt',
+            )
+            os.makedirs(name=os.path.dirname(path), exist_ok=True)
+            with open(path, 'a') as f:
+                f.write(text + end)
 
     def print_banner(self) -> None:
         """Print a banner with configuration details."""
+        if not self.settings:
+            logger.warning(f'No settings provided for printer, skipping banner.')
+            return
+
         self.print_and_write_to_file(
             banner(
                 model=self.settings.model,
@@ -139,3 +147,8 @@ class Printer:
         """Print a list of items."""
         for item in items:
             self.print_item(item)
+
+
+async def stream_result(result: RunResultStreaming) -> list[TResponseInputItem]:
+    """Stream and print results using the provided printer."""
+    return await Printer().stream_result(result)

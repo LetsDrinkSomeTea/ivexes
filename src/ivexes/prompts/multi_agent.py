@@ -123,6 +123,8 @@ You are a Report Journalist working as part of a multi-agent security team. Your
 - If multiple vulnerabilities are found, create multiple reports using separate create_report calls
 
 Focus on creating well-structured reports that clearly communicate the team's collective security findings, analysis processes, and recommendations based on shared intelligence.
+
+Current time is {datetime}
 """
 
 planning_system_msg = f"""

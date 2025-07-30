@@ -4,6 +4,8 @@ from typing import Callable, Optional, override
 
 from agents import Agent, RunConfig, RunResultStreaming, SQLiteSession
 
+from ivexes.date.tools import current_date
+
 # stream_result is now handled by agent printer service
 
 from ...colors import Colors
@@ -123,9 +125,10 @@ class MultiAgent(BaseAgent):
             Agent(
                 name='Report Journalist',
                 handoff_description='Specialist agent for generating reports and summaries',
-                instructions=report_journalist_system_msg,
-                tools=date_tools
-                + create_report_tools(self.settings, self.context)
+                instructions=report_journalist_system_msg.format(
+                    datetime=current_date()
+                ),
+                tools=create_report_tools(self.settings, self.context)
                 + self.context_tools,
             ),
             tool_name='report-journalist',

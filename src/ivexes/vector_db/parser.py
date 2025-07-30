@@ -68,8 +68,8 @@ def insert_cwe(collection: chromadb.Collection, xml_data):
             doc = f"""
 <CWE>
 CWE-{wid} {name}:
-<Description>: {desc_text} </Description>
-<Extended>: {ext_text} </Extended>
+<Description> {desc_text} </Description>
+<Extended> {ext_text} </Extended>
 </CWE>
 """
             meta = {'id': wid, 'name': name, 'type': 'cwe'}
@@ -135,8 +135,8 @@ def insert_capec(collection: chromadb.Collection, xml_data):
             doc = f"""
 <CAPEC>
 CAPEC-{aid} {name}:
-<Description>: {desc_text} </Description>
-<Prerequisites>: {prereq_text} </Prerequisites>
+<Description> {desc_text} </Description>
+<Prerequisites> {prereq_text} </Prerequisites>
 </CAPEC>
 """
             meta = {'id': aid, 'name': name, 'type': 'capec'}
