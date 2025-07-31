@@ -1,78 +1,23 @@
-# IVEXES - Intelligent Vulnerability Exploration and Exploitation System
+# IVExES - Intelligent Vulnerability Extraction & Exploit Synthesis
 
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Docker](https://img.shields.io/badge/docker-required-blue.svg)](https://www.docker.com/)
 
-**IVEXES** is a comprehensive Python framework for cybersecurity vulnerability
-analysis and exploitation using multi-agent AI systems. Developed as part of a
-bachelor thesis, it combines knowledge bases (CWE, CAPEC, MITRE ATT&CK) with
-dynamic analysis capabilities for automated security assessment.
+IVExES is an advanced Python framework for cybersecurity vulnerability analysis
+and exploitation using multi-agent AI systems. It combines knowledge bases (CWE,
+CAPEC, MITRE ATT&CK) with dynamic analysis capabilities for automated security
+assessment.
 
-## ⚠️ Important Notice
+## 🚀 Quick Start
 
-This project is developed as part of a **bachelor thesis** for academic research
-purposes. It is designed to advance the understanding of automated vulnerability
-analysis and contribute to defensive cybersecurity research.
+### Prerequisites
 
-### Ethical Considerations and Responsible Use
+- Python 3.12+
+- Docker and Docker Compose
+- uv package manager (recommended)
 
-**IVEXES is intended EXCLUSIVELY for:**
-
-- Academic research and education
-- Defensive cybersecurity purposes
-- Vulnerability assessment of systems you own or have explicit permission to
-  test
-- Security research within controlled environments
-- Contributing to the development of better security practices
-
-**STRICTLY PROHIBITED uses include:**
-
-- Unauthorized access to systems or networks
-- Malicious exploitation of vulnerabilities
-- Any illegal cybersecurity activities
-- Attacking systems without explicit written permission
-- Commercial exploitation without proper licensing
-
-Users are responsible for ensuring compliance with all applicable laws,
-regulations, and ethical guidelines in their jurisdiction. The developers assume
-no responsibility for misuse of this software.
-
-## 🎓 Academic Context
-
-This project represents a bachelor thesis research contribution focusing on:
-
-- Automated vulnerability analysis using AI agents
-- Integration of cybersecurity knowledge bases
-- Multi-agent systems for security assessment
-- Academic advancement in defensive cybersecurity
-
-The research aims to improve defensive capabilities and contribute to the
-academic understanding of automated security analysis.
-
-## 🚀 Features
-
-- **Multi-Agent AI System**: Orchestrated AI agents for complex vulnerability
-  analysis
-- **Knowledge Base Integration**: Built-in support for CWE, CAPEC, and MITRE
-  ATT&CK frameworks
-- **Code Analysis**: Advanced code browsing with LSP integration and tree-sitter
-  parsing
-- **Sandbox Environment**: Docker-based isolated execution for safe analysis
-- **Vector Database**: ChromaDB integration for similarity search and knowledge
-  retrieval
-- **CVE Search**: Automated vulnerability lookup and analysis
-- **Interactive CLI**: Comprehensive command-line interface for all modules
-
-## 📋 Requirements
-
-- Python 3.8+
-- Docker (for sandbox environments)
-- Git
-- LLM API access (OpenAI or compatible)
-
-## 🛠️ Installation
-
-### Quick Setup
+### Installation
 
 1. **Clone the repository:**
 
@@ -81,85 +26,184 @@ academic understanding of automated security analysis.
    cd ivexes
    ```
 
-2. **Install in development mode:**
+2. **Full setup (recommended):**
 
    ```bash
-   pip install -e .
+   make setup
    ```
 
-3. **For development with additional tools:**
+   This will build Docker images, sync dependencies, and start the LiteLLM
+   proxy.
 
+3. **Configure environment variables:** Create a `.secrets.env` file with your
+   API keys:
    ```bash
-   pip install -e ".[dev]"
+   LLM_API_KEY=your_openai_api_key_here
+   # or
+   OPENAI_API_KEY=your_openai_api_key_here
    ```
 
-4. **Build container images:**
-
-   ```bash
-   docker compose --profile images build
-   ```
-
-5. Start LiteLLM Proxy
-
-   ```bash
-   docker compose up
-   ```
-
-### Environment Configuration
-
-Create a `.env` file for API keys and sensitive configuration:
-
-```bash
-# Required API Configuration, this is preferred
-LLM_API_KEY=your_openai_api_key_here
-# OR this is used only for tracing if LLM_API_KEY is set
-OPENAI_API_KEY=your_openai_api_key_here
-
-# LLM Configuration
-LLM_BASE_URL=https://api.openai.com/v1
-MODEL=openai/gpt-4o-mini
-REASONING_MODEL=openai/o4-mini
-MODEL_TEMPERATURE=0.3
-```
-
-It is also possible to define the general configuration in the `.env` file:
-
-```bash
-# Logging
-LOG_LEVEL=INFO
-TRACE_NAME=ivexes
-
-# Agent Configuration
-MAX_TURNS=10
-
-# Vector Database
-EMBEDDING_PROVIDER=builtin
-CHROMA_PATH=/tmp/ivexes/chromadb
-
-# Codebase Analysis (for vulnerability assessment)
-CODEBASE_PATH=/path/to/your/test/codebase
-VULNERABLE_CODEBASE_FOLDER=vulnerable-version
-PATCHED_CODEBASE_FOLDER=patched-version
-
-# Sandbox
-SANDBOX_IMAGE=kali-ssh:latest
-SETUP_ARCHIVE=/path/to/setup.tar.gz
-```
-
-## 📖 Usage
-
-### Basic Agent Usage
-
-#### Single Agent Analysis
+### Quick Example
 
 ```python
 from ivexes.agents import SingleAgent
 from ivexes.config import PartialSettings
 
-# Configure for vulnerability analysis
 settings = PartialSettings(
     model='openai/gpt-4o-mini',
-    codebase_path='/path/to/test/codebase',
+    codebase_path='/path/to/vulnerable/code',
+    vulnerable_folder='vulnerable-version',
+    patched_folder='patched-version'
+)
+
+agent = SingleAgent(settings=settings)
+await agent.run_interactive()
+```
+
+## 📖 Overview
+
+IVExES provides a comprehensive framework for automated vulnerability analysis
+through:
+
+- **Multi-Agent Architecture**: Specialized AI agents for different aspects of
+  security analysis
+- **Knowledge Base Integration**: MITRE ATT&CK, CWE, CAPEC, and CVE databases
+- **Dynamic Code Analysis**: Container-based sandbox environment with Neovim LSP
+  integration
+- **Automated Reporting**: Structured vulnerability reports with exploitation
+  details
+- **Extensible Design**: Modular architecture supporting custom agents and tools
+
+## 🏗️ Architecture
+
+### Core Components
+
+#### Agents (`src/ivexes/agents/`)
+
+- **BaseAgent**: Abstract foundation with settings management and execution
+  modes
+- **SingleAgent**: Individual agent for focused vulnerability assessment
+- **MultiAgent**: Orchestrates multiple specialized agents for complex analysis
+- **MVPAgent**: Minimal viable product implementation for quick analysis
+- **HTBChallengeAgent**: Specialized for Hack The Box challenge analysis
+
+#### Code Browser (`src/ivexes/code_browser/`)
+
+- Neovim LSP integration for intelligent code analysis
+- Tree-sitter parsing for code structure understanding
+- Container-based isolation for safe code examination
+
+#### Sandbox System (`src/ivexes/sandbox/`)
+
+- Docker-based execution environments
+- Kali Linux container for security testing
+- Automatic setup from archives with secure isolation
+
+#### Vector Database (`src/ivexes/vector_db/`)
+
+- ChromaDB for knowledge storage and retrieval
+- MITRE ATT&CK framework integration
+- CVE and vulnerability pattern matching
+- Embedding-based similarity search
+
+## 🛠️ Development
+
+### Development Commands
+
+```bash
+# Setup and dependency management
+make setup              # Complete setup (images, deps, services)
+make sync               # Install/update dependencies
+make build-images       # Build Docker images
+make run-litellm        # Start LiteLLM proxy
+
+# Code quality
+make format             # Format and fix code
+make format-check       # Check formatting
+make lint               # Run linter
+make check              # Run all quality checks
+
+# Testing
+make tests              # Run test suite
+
+# Documentation
+make build-docs         # Build documentation
+make serve-docs         # Serve docs locally
+make deploy-docs        # Deploy to GitHub Pages
+```
+
+### Project Structure
+
+```
+ivexes/
+├── src/ivexes/           # Main package source
+│   ├── agents/           # AI agent implementations
+│   ├── code_browser/     # Code analysis tools
+│   ├── config/           # Configuration management
+│   ├── sandbox/          # Execution environments
+│   ├── vector_db/        # Knowledge base integration
+│   └── tools.py          # Shared utilities
+├── container/            # Docker configurations
+│   ├── kali_sandbox/     # Security testing environment
+│   ├── nvim_lsp/         # Code analysis container
+│   └── litellm/          # LLM proxy service
+├── examples/             # Usage examples
+├── tests/                # Test suite
+└── docs/                 # Documentation
+```
+
+## ⚙️ Configuration
+
+IVExES uses environment variables for configuration with sensible defaults.
+Create `.env` and `.secrets.env` files as needed:
+
+### Essential Settings
+
+```bash
+# API Configuration
+LLM_API_KEY=your_api_key                    # Required: LLM provider API key
+LLM_BASE_URL=https://api.openai.com/v1     # LLM endpoint
+
+# Model Configuration
+MODEL=openai/gpt-4o-mini                    # Primary model
+REASONING_MODEL=openai/o4-mini              # Reasoning model
+TEMPERATURE=0.3                             # Model temperature (0.0-2.0)
+
+# Analysis Configuration
+CODEBASE_PATH=/path/to/code                 # Analysis target
+VULNERABLE_CODEBASE_FOLDER=vulnerable       # Vulnerable version folder
+PATCHED_CODEBASE_FOLDER=patched            # Patched version folder
+
+# System Configuration
+LOG_LEVEL=INFO                              # Logging level
+MAX_TURNS=10                               # Agent conversation limit
+```
+
+### Advanced Configuration
+
+```bash
+# Embedding Configuration
+EMBEDDING_PROVIDER=builtin                  # builtin, local, or openai
+EMBEDDING_MODEL=builtin                     # Embedding model
+CHROMA_PATH=/tmp/ivexes/chromadb           # Vector database path
+
+# Sandbox Configuration
+SANDBOX_IMAGE=kali-ssh:latest              # Container image
+SETUP_ARCHIVE=/path/to/setup.tgz          # Analysis setup archive
+```
+
+## 🎯 Usage Examples
+
+### Single Agent Analysis
+
+```python
+import asyncio
+from ivexes.agents import SingleAgent
+from ivexes.config import PartialSettings
+
+settings = PartialSettings(
+    model='openai/gpt-4o-mini',
+    codebase_path='/path/to/vulnerable/code',
     vulnerable_folder='vulnerable-v1.0',
     patched_folder='patched-v1.1'
 )
@@ -169,151 +213,152 @@ agent = SingleAgent(settings=settings)
 # Interactive mode
 await agent.run_interactive()
 
-# Or streaming mode
-await agent.run_streamed():
+# Streaming mode
+async for chunk in agent.run_streamed():
+    print(chunk, end='')
+
+# Synchronous mode
+result = agent.run()
+print(result)
 ```
 
-#### Multi-Agent Analysis
+### Multi-Agent Orchestration
 
 ```python
 from ivexes.agents import MultiAgent
 
 agent = MultiAgent(settings=settings)
-agent.run()
+await agent.run_interactive()
 ```
 
-### Command Line Interface
+### HTB Challenge Analysis
 
-IVEXES provides a comprehensive CLI through `examples/manual.py`:
+```python
+from ivexes.agents import HTBChallengeAgent
+
+agent = HTBChallengeAgent(
+    challenge_name="buffer_overflow_example",
+    settings=settings
+)
+await agent.run_interactive()
+```
+
+## 🐳 Container Services
+
+IVExES uses Docker containers for isolation and specialized environments:
+
+### LiteLLM Proxy
+
+- Unified API for multiple LLM providers
+- Request routing and load balancing
+- Usage tracking and rate limiting
+
+### Kali Sandbox
+
+- Security testing environment
+- Pre-installed penetration testing tools
+- Isolated execution for exploit development
+
+### Neovim LSP
+
+- Intelligent code analysis
+- Language server protocol integration
+- Syntax highlighting and error detection
+
+## 📊 Features
+
+### Vulnerability Analysis
+
+- **Static Analysis**: Code structure and pattern recognition
+- **Dynamic Analysis**: Runtime behavior in controlled environments
+- **Differential Analysis**: Comparison between vulnerable and patched versions
+- **Knowledge Integration**: CVE, CWE, CAPEC, and MITRE ATT&CK correlation
+
+### AI Agent Capabilities
+
+- **Specialized Roles**: Different agents for reconnaissance, analysis, and
+  exploitation
+- **Collaborative Analysis**: Multi-agent coordination for complex
+  vulnerabilities
+- **Adaptive Learning**: Continuous improvement through feedback loops
+- **Context Awareness**: Maintains conversation history and analysis state
+
+### Reporting and Documentation
+
+- **Structured Reports**: Markdown-formatted vulnerability assessments
+- **Exploitation Details**: Step-by-step exploitation procedures
+- **Risk Assessment**: CVSS scoring and impact analysis
+- **Remediation Guidance**: Specific mitigation recommendations
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**Dependencies not installing:**
 
 ```bash
-# Get help about the CLI-tool
-python examples/manual.py --help
+# Use UV for dependency management
+uv sync --all-extras --all-packages --group dev
+
+# Or fallback to pip
+pip install -e ".[dev]"
 ```
 
-### Configuration Options
-
-It is possible to define global standards as environment variables or to pass
-them into the Agent. Passed settings gets preferred over the environment
-variables.
-
-#### Core Settings
-
-- `MODEL`: Primary LLM model (default: `openai/gpt-4o-mini`)
-- `REASONING_MODEL`: Model for planning component (default: `openai/o4-mini`)
-- `MODEL_TEMPERATURE`: Model temperature 0.0-2.0 (default: 0.3)
-- `MAX_TURNS`: Maximum agent conversation turns (default: 10)
-
-#### Embedding & Vector Database
-
-- `EMBEDDING_PROVIDER`: `builtin`, `local` (fetched from SentenceTransformers),
-  or `openai` (default: builtin)
-- `CHROMA_PATH`: ChromaDB storage location
-
-#### Analysis Configuration
-
-- `CODEBASE_PATH`: Root directory containing vulnerable/patched code
-- `VULNERABLE_CODEBASE_FOLDER`: Subdirectory with vulnerable version
-- `PATCHED_CODEBASE_FOLDER`: Subdirectory with patched version
-
-#### Sandbox Configuration
-
-- `SETUP_ARCHIVE`: tgz-archive with necessary data to setup sandbox, gets
-  unpacked at /tmp, afterwards /tmp/setup.sh is run.
-- `SANDBOX_IMAGE`: Which docker image to use as the sandbox base.
-
-## 🏗️ Architecture
-
-### Core Components
-
-#### Agents (`src/ivexes/agents/`)
-
-- **BaseAgent**: Foundation class with settings management
-- **SingleAgent**: Focused vulnerability analysis
-- **MultiAgent**: Orchestrated multi-agent analysis
-- **MVPAgent**: Minimal viable implementation
-- **HTBChallengeAgent**: Specialized for CTF challenges
-
-#### Code Browser (`src/ivexes/code_browser/`)
-
-- LSP integration for advanced code analysis
-- Tree-sitter parsing for code structure
-- Container-based isolated analysis environment
-
-#### Sandbox System (`src/ivexes/sandbox/`)
-
-- Docker-based execution environments
-- Kali Linux container for security testing
-- Secure isolation with automatic setup
-
-#### Vector Database (`src/ivexes/vector_db/`)
-
-- ChromaDB for knowledge storage
-- MITRE ATT&CK framework integration
-- CWE and vulnerability pattern matching
-
-## 🧪 Development
-
-### Testing
+**Docker issues:**
 
 ```bash
-# Run all tests
-python -m unittest discover tests/
+# Rebuild images
+make build-images
 
-# Individual test modules available in tests/cases/
+# Check service status
+docker compose ps
+
+# View logs
+docker compose logs
 ```
 
-### Code Quality
+**LiteLLM proxy not starting:**
 
 ```bash
-# Format code
-ruff format
+# Check configuration
+cat container/litellm/config/config.yaml
 
-# Run linter
-ruff check
-
-# Pre-commit hooks are configured in pyproject.toml
+# Restart service
+docker compose restart
 ```
 
-### Examples
+### Getting Help
 
-The `examples/` directory contains various usage patterns:
+- Check the [documentation](https://pages.faigle.dev/ivexes)
+- Review [example scripts](examples/)
+- Open an issue on GitHub for bugs or feature requests
 
-- `10_agents_sandbox_*`: Sandbox-based analysis examples
-- `20_mvp_screen`: MVP agent demonstration
-- `30_chroma_db_example`: Vector database usage
-- `60_single_agent_*`: Single agent examples
-- `70_multi_agent_*`: Multi-agent orchestration
+## 📝 License
 
-## 📄 License
-
-This project is licensed under the GPL-3.0-or-later License - see the LICENSE
-file for details.
-
-## 🔗 Repository
-
-- **Source Code**:
-  [https://github.com/LetsDrinkSomeTea/ivexes](https://github.com/LetsDrinkSomeTea/ivexes)
-- **Issues**: Report bugs and request features via GitHub Issues
-
-## ⚖️ Legal Disclaimer
-
-This software is provided for educational and research purposes only. Users must
-ensure compliance with all applicable laws and regulations. Unauthorized use for
-malicious purposes is strictly prohibited. The developers are not responsible
-for any misuse of this software.
+This project is licensed under the GNU General Public License v3.0 - see the
+[LICENSE](LICENSE) file for details.
 
 ## 🤝 Contributing
 
-As this is a bachelor thesis project, contributions should align with academic
-research goals. Please ensure any contributions:
+Contributions are welcome! Please read the contributing guidelines and submit
+pull requests to the main repository.
 
-- Follow ethical guidelines
-- Support defensive cybersecurity research
-- Include appropriate documentation
-- Pass all tests and quality checks
+## 📚 Citation
+
+If you use IVExES in your research, please cite:
+
+```bibtex
+@software{ivexes2024,
+  title={IVExES: Intelligent Vulnerability Extraction \& Exploit Synthesis},
+  author={Julian Faigle},
+  year={2025},
+  url={https://github.com/LetsDrinkSomeTea/ivexes}
+}
+```
 
 ---
 
-**IVEXES** - Advancing cybersecurity through responsible AI-driven vulnerability
-analysis.
+**Note**: IVExES is designed for educational and authorized security testing
+purposes only. Users are responsible for ensuring compliance with applicable
+laws and regulations.
+
