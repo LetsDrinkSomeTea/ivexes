@@ -48,7 +48,6 @@ class TestSettingsModule(unittest.TestCase):
         """Test that settings are loaded from environment variables."""
         test_env = {
             'OPENAI_API_KEY': 'sk-test-key-123',
-            'BRAVE_SEARCH_API_KEY': 'brave-test-key',
             'LLM_API_KEY': 'llm-test-key',
             'LLM_BASE_URL': 'https://custom.api.com/v1',
             'MODEL': 'openai/gpt-4',
@@ -72,7 +71,6 @@ class TestSettingsModule(unittest.TestCase):
 
             # Test that environment variables are loaded
             self.assertEqual(settings.openai_api_key, 'sk-test-key-123')
-            self.assertEqual(settings.brave_search_api_key, 'brave-test-key')
             self.assertEqual(settings.llm_api_key, 'llm-test-key')
             self.assertEqual(settings.llm_base_url, 'https://custom.api.com/v1')
             self.assertEqual(settings.model, 'openai/gpt-4')
@@ -372,7 +370,6 @@ class TestSettingsModule(unittest.TestCase):
 
             # Verify all fields are set correctly
             self.assertEqual(settings.openai_api_key, 'sk-openai-key')
-            self.assertEqual(settings.brave_search_api_key, 'brave-key')
             self.assertEqual(settings.llm_api_key, 'llm-key')
             self.assertEqual(settings.llm_base_url, 'https://custom.api.com/v1')
             self.assertEqual(settings.model, 'openai/gpt-4-turbo')
@@ -479,7 +476,6 @@ class TestSettingsModule(unittest.TestCase):
         with patch.dict(os.environ, {'LLM_API_KEY': 'sk-test-key'}, clear=True):
             full_partial: PartialSettings = {
                 'openai_api_key': 'sk-new-openai',
-                'brave_search_api_key': 'brave-new',
                 'llm_api_key': 'sk-new-llm',
                 'llm_base_url': 'https://new.api.com/v1',
                 'model': 'openai/gpt-4-turbo',
@@ -502,7 +498,6 @@ class TestSettingsModule(unittest.TestCase):
 
             # Verify all fields were set
             self.assertEqual(settings.openai_api_key, 'sk-new-openai')
-            self.assertEqual(settings.brave_search_api_key, 'brave-new')
             self.assertEqual(settings.llm_api_key, 'sk-new-llm')
             self.assertEqual(settings.llm_base_url, 'https://new.api.com/v1')
             self.assertEqual(settings.model, 'openai/gpt-4-turbo')

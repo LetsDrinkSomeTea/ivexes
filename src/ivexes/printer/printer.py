@@ -152,3 +152,8 @@ class Printer:
 async def stream_result(result: RunResultStreaming) -> list[TResponseInputItem]:
     """Stream and print results using the provided printer."""
     return await Printer().stream_result(result)
+
+
+def print_result(result: RunResult) -> list[TResponseInputItem]:
+    """Print the result of a run and return the input list for the next run."""
+    return Printer().print_result(result)

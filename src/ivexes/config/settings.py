@@ -196,7 +196,6 @@ class PartialSettings(TypedDict, total=False):
     """
 
     openai_api_key: Optional[str]
-    brave_search_api_key: Optional[str]
     llm_api_key: str
     llm_base_url: str
     model: str
@@ -209,6 +208,7 @@ class PartialSettings(TypedDict, total=False):
     codebase_path: Optional[str]
     vulnerable_folder: Optional[str]
     patched_folder: Optional[str]
+    log_level: LogLevels
     chroma_path: str
     embedding_model: str
     embedding_provider: Literal['builtin', 'local', 'openai']
