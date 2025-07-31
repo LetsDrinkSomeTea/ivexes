@@ -75,14 +75,22 @@ validation:
 
 nav:
   - Home: index.md
+  - Quick Start: quickstart.md
+  - Documentation:
+    - Architecture: documentation/architecture.md
+    - Installation: documentation/installation.md
+    - Configuration: documentation/configuration.md
+    - Usage Guide: documentation/usage.md
+    - Examples: documentation/examples.md
+    - Development: documentation/development.md
   - API Reference:
-    - Agents: agents.md
-    - Code Browser: code_browser.md
-    - Configuration: config.md
-    - CVE Search: cve_search.md
-    - Sandbox: sandbox.md
-    - Tools: tools.md
-    - Vector Database: vector_db.md
+    - Agents: api/agents.md
+    - Code Browser: api/code_browser.md
+    - Configuration: api/config.md
+    - CVE Search: api/cve_search.md
+    - Sandbox: api/sandbox.md
+    - Tools: api/tools.md
+    - Vector Database: api/vector_db.md
 
 watch:
   - "src/ivexes"
