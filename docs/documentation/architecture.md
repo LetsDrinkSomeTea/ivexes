@@ -375,14 +375,14 @@ class CustomFormatter(Formatter):
 
 ## Related Topics
 
-- [Installation Guide](../installation.md) - Setup and configuration
-- [Configuration Guide](../configuration.md) - Settings and customization
-- [Usage Guide](../usage.md) - Operational workflows
-- [API Reference](../../api/) - Detailed class documentation
+- [Installation Guide](installation.md) - Setup and configuration
+- [Configuration Guide](configuration.md) - Settings and customization
+- [Usage Guide](usage.md) - Operational workflows
+- [API Reference](../api/agents.md) - Detailed class documentation
 
 ## Next Steps
 
-1. **Installation**: Follow the [Installation Guide](../installation.md) to set up IVEXES
-2. **Configuration**: Review [Configuration Guide](../configuration.md) for customization options
-3. **Development**: See [Development Guide](../development.md) for extending the system
-4. **Examples**: Explore [Examples Guide](../examples.md) for practical use cases
+1. **Installation**: Follow the [Installation Guide](installation.md) to set up IVEXES
+2. **Configuration**: Review [Configuration Guide](configuration.md) for customization options
+3. **Development**: See [Development Guide](development.md) for extending the system
+4. **Examples**: Explore [Examples Guide](examples.md) for practical use cases
