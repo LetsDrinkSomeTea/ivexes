@@ -6,6 +6,7 @@ It handles exceptions, cleans up resources, and prints the results of each test 
 
 import asyncio
 import argparse
+import sys
 
 from dotenv import load_dotenv
 
@@ -38,7 +39,12 @@ GENERAL_SETTINGS = PartialSettings(
 
 
 async def run_htb_tests(
-    dry_run: bool = False, total_runs: int = 1, max_tests: int = 0, skip: int = 0
+    dry_run: bool = False,
+    total_runs: int = 1,
+    max_tests: int = 0,
+    skip: int = 0,
+    htb_challenges: list = None,
+    models: list = None,
 ) -> int:
     """Run all HTB Challenge tests.
 
@@ -47,10 +53,17 @@ async def run_htb_tests(
         total_runs: Current test run counter
         max_tests: Maximum number of tests
         skip: Number of tests to skip
+        htb_challenges: List of HTB challenge configurations
+        models: List of models to test
 
     Returns:
         Updated total_runs counter
     """
+    if htb_challenges is None:
+        htb_challenges = HTB_CHALLENGES
+    if models is None:
+        models = MODELS
+
     didnt_finish: list[PartialSettings] = []
     s: int = 0
     with Progress(
@@ -63,10 +76,10 @@ async def run_htb_tests(
         console=console,
     ) as pb:
         task = pb.add_task(
-            'Solving HTB Challenges', total=len(HTB_CHALLENGES) * len(MODELS)
+            'Solving HTB Challenges', total=len(htb_challenges) * len(models)
         )
-        for htb_settings, challenge_name, description in HTB_CHALLENGES:
-            for model in MODELS:
+        for htb_settings, challenge_name, description in htb_challenges:
+            for model in models:
                 pb.update(task, description=f'Running {challenge_name} with {model}')
                 console.print(
                     f'[{total_runs:>4}|{max_tests:>4}]Running HTB Challenge: {challenge_name} with model {model}'
@@ -116,7 +129,12 @@ async def run_htb_tests(
 
 
 async def run_multi_agent_tests(
-    dry_run: bool = False, total_runs: int = 1, max_tests: int = 0, skip: int = 0
+    dry_run: bool = False,
+    total_runs: int = 1,
+    max_tests: int = 0,
+    skip: int = 0,
+    vulnerabilities: list = None,
+    models: list = None,
 ) -> int:
     """Run all Multi-Agent tests.
 
@@ -125,10 +143,17 @@ async def run_multi_agent_tests(
         total_runs: Current test run counter
         max_tests: Maximum number of tests
         skip: Number of tests to skip
+        vulnerabilities: List of vulnerability configurations
+        models: List of models to test
 
     Returns:
         Updated total_runs counter
     """
+    if vulnerabilities is None:
+        vulnerabilities = VULNERABILITIES
+    if models is None:
+        models = MODELS
+
     didnt_finish: list[PartialSettings] = []
     s: int = 0
     with Progress(
@@ -141,10 +166,10 @@ async def run_multi_agent_tests(
         console=console,
     ) as pb:
         task = pb.add_task(
-            'Running Multi-Agent tests', total=len(VULNERABILITIES) * len(MODELS) - skip
+            'Running Multi-Agent tests', total=len(vulnerabilities) * len(models) - skip
         )
-        for vulnerability in VULNERABILITIES:
-            for model in MODELS:
+        for vulnerability in vulnerabilities:
+            for model in models:
                 trace_name = vulnerability.get('trace_name', 'Unknown Trace')
                 pb.update(task, description=f'Running {trace_name} with {model}')
                 console.print(
@@ -215,7 +240,50 @@ async def main():
         '-s', '--skip', default=0, type=int, help='Skip the first N tests'
     )
 
+    parser.add_argument(
+        '-i',
+        '--interactive',
+        action='store_true',
+        help='prompt the agent and challenges',
+    )
+
     args = parser.parse_args()
+
+    if args.interactive:
+        model = input('Which model do you want to use? (default: openai/o4-mini) ')
+        htb_or_cve = input(
+            'Do you want to run HTB Challenges [htb] or Multi-Agent [ma] tests? (default: htb) '
+        )
+        if htb_or_cve == 'ma':
+            print('Available Multi-Agent vulnerabilities:')
+            for v in VULNERABILITIES:
+                print(f'- {v.get("trace_name", "Unknown Trace")}')
+            program = input(
+                'which Multi-Agent program do you want to run? (default: screen) '
+            )
+            filtered_models = [model]
+            filtered_vulnerabilities = [
+                v
+                for v in VULNERABILITIES
+                if program.lower() in v.get('trace_name', '').lower()
+            ]
+            await run_multi_agent_tests(
+                vulnerabilities=filtered_vulnerabilities, models=filtered_models
+            )
+            sys.exit(0)
+        elif htb_or_cve == 'htb':
+            print(f'Available HTB Challenges:')
+            for _, n, _ in HTB_CHALLENGES:
+                print(f'- {n}')
+            program = input('which HTB Challenge do you want to run? (default: pass) ')
+            filtered_models = [model]
+            filtered_htb_challenges = [
+                c for c in HTB_CHALLENGES if c[1].lower() == program.lower()
+            ]
+            await run_htb_tests(
+                htb_challenges=filtered_htb_challenges, models=filtered_models
+            )
+            sys.exit(0)
 
     dry_run = args.dry_run
     if dry_run:
@@ -281,20 +349,20 @@ HTB_CHALLENGES = [
 ]
 
 VULNERABILITIES = [
-    # PartialSettings(
-    #     trace_name='Multi-Agent Screen',
-    #     setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
-    #     codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/screen/codebase',
-    #     vulnerable_folder='vulnerable-screen-4.5.0',
-    #     patched_folder='patched-screen-4.5.1',
-    # ),
-    # PartialSettings(
-    #     trace_name='Multi-Agent Sudo',
-    #     codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/sudo/codebase',
-    #     vulnerable_folder='sudo-1.9.17',
-    #     patched_folder='sudo-1.9.17p1',
-    #     sandbox_image='vuln-sudo:latest',
-    # ),
+    PartialSettings(
+        trace_name='Multi-Agent Screen',
+        setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
+        codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/screen/codebase',
+        vulnerable_folder='vulnerable-screen-4.5.0',
+        patched_folder='patched-screen-4.5.1',
+    ),
+    PartialSettings(
+        trace_name='Multi-Agent Sudo',
+        codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/sudo/codebase',
+        vulnerable_folder='sudo-1.9.17',
+        patched_folder='sudo-1.9.17p1',
+        sandbox_image='vuln-sudo:latest',
+    ),
     PartialSettings(
         trace_name='Multi-Agent Exiftool',
         codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/exiftool/codebase',
@@ -333,8 +401,4 @@ VULNERABILITIES = [
 ]
 
 if __name__ == '__main__':
-    # MODELS = [
-    #     'openai/gpt-4.1-nano',
-    #     'gemini/gemini-2.5-flash',
-    # ]
     asyncio.run(main())

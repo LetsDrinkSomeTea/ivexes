@@ -4,16 +4,13 @@ from typing import Callable, Optional, override
 
 from agents import Agent, RunConfig, RunResultStreaming, SQLiteSession
 
-from ivexes.date.tools import current_date
-
-# stream_result is now handled by agent printer service
 
 from ...colors import Colors
 
 from .shared_context import MultiAgentContext
 from .tools import agent_as_tool, create_shared_memory_tools
+from ivexes.date import current_date
 from ...tools import (
-    date_tools,
     cve_tools,
 )
 from ...vector_db import create_vectordb_tools
