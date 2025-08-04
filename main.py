@@ -7,6 +7,7 @@ It handles exceptions, cleans up resources, and prints the results of each test 
 import asyncio
 import argparse
 import sys
+from typing import Optional
 
 from dotenv import load_dotenv
 
@@ -133,8 +134,8 @@ async def run_multi_agent_tests(
     total_runs: int = 1,
     max_tests: int = 0,
     skip: int = 0,
-    vulnerabilities: list = None,
-    models: list = None,
+    vulnerabilities: Optional[list] = None,
+    models: Optional[list] = None,
 ) -> int:
     """Run all Multi-Agent tests.
 

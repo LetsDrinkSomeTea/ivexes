@@ -15,6 +15,7 @@ github_scan.sqlite
 .termdbms
 sessions.sqlite-wal
 sessions.sqlite-shm
+traces.sqlite*
 
 CLAUDE.md
 clean-api-key.py
