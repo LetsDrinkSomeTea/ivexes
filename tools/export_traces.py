@@ -10,12 +10,18 @@ import json
 import csv
 
 
-def export_traces_to_csv(db_path, csv_path):
+def export_traces_to_csv(db_path, csv_path, trace_id=None):
     """Extract and aggregate trace data from SQLite database and export to CSV."""
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    cursor.execute('SELECT id, workflow_name, duration_ms, created_at FROM traces')
+    if trace_id:
+        cursor.execute(
+            'SELECT id, workflow_name, duration_ms, created_at FROM traces where id = ?',
+            (trace_id,),
+        )
+    else:
+        cursor.execute('SELECT id, workflow_name, duration_ms, created_at FROM traces')
     traces = cursor.fetchall()
 
     with open(csv_path, 'w', newline='') as csvfile:
@@ -112,6 +118,10 @@ def export_traces_to_csv(db_path, csv_path):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print('Usage: python export_traces.py <database_path> <csv_output_path>')
+        print(
+            'Usage: python export_traces.py <database_path> <csv_output_path> [<trace_id>]'
+        )
         sys.exit(1)
-    export_traces_to_csv(sys.argv[1], sys.argv[2])
+    export_traces_to_csv(
+        sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None
+    )

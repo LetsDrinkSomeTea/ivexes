@@ -4,6 +4,7 @@
 Fetches all traces and their spans from OpenAI API and stores them in SQLite.
 """
 
+import sys
 import requests
 import sqlite3
 import json
@@ -11,6 +12,7 @@ import time
 from typing import Any, Dict, List, Optional
 from datetime import datetime
 import logging
+import argparse
 
 # Set up logging
 logging.basicConfig(
@@ -128,11 +130,14 @@ class OpenAITracesFetcher:
         conn.close()
         logger.info(f'Database initialized at {self.db_path}')
 
-    def fetch_traces(self, after: Optional[str] = None) -> Dict:
+    def fetch_traces(
+        self, after: Optional[str] = None, limit: Optional[int] = None
+    ) -> tuple:
         """Fetch traces from OpenAI API.
 
         Args:
             after: Trace ID to start after (for pagination)
+            limit: Maximum number of traces to fetch
 
         Returns:
             API response as dictionary
@@ -180,7 +185,15 @@ class OpenAITracesFetcher:
 
         # Try to parse JSON
         try:
-            return response.json()
+            response_json = response.json()
+            data = response_json.get('data', [])
+            if limit:
+                data = data[:limit]
+            return (
+                data,
+                response_json.get('has_more', False),
+                response_json.get('last_id', None),
+            )
         except json.JSONDecodeError as e:
             logger.error(f'Failed to parse JSON response: {e}')
             logger.error(f'Response content (first 500 chars): {response.text[:500]}')
@@ -276,7 +289,7 @@ class OpenAITracesFetcher:
                 trace.get('tool_count'),
                 trace.get('workflow_name'),
                 json.dumps(trace.get('metadata', {})),
-                datetime.utcnow().isoformat(),
+                datetime.now().isoformat(),
             ),
         )
 
@@ -310,20 +323,25 @@ class OpenAITracesFetcher:
                     if span.get('speech_group_output')
                     else None,
                     span.get('started_at'),
-                    datetime.utcnow().isoformat(),
+                    datetime.now().isoformat(),
                 ),
             )
 
         conn.commit()
         conn.close()
 
-    def fetch_all_data(self, rate_limit_delay: float = 0.5):
+    def fetch_all_data(
+        self, limit: Optional[int] = None, rate_limit_delay: float = 0.5
+    ):
         """Fetch all traces and their spans, handling pagination.
 
         Args:
             rate_limit_delay: Delay between API calls to avoid rate limiting
+            limit: Maximum number of traces to fetch (for testing)
         """
-        logger.info('Starting to fetch all traces and spans...')
+        logger.info(
+            f'Starting to fetch {limit if limit else "all"} traces and spans...'
+        )
 
         after = None
         total_traces = 0
@@ -333,8 +351,7 @@ class OpenAITracesFetcher:
             try:
                 # Fetch traces
                 logger.info(f'Fetching traces (after={after})...')
-                traces_response = self.fetch_traces(after)
-                traces = traces_response.get('data', [])
+                traces, has_more, last_id = self.fetch_traces(after, limit)
 
                 if not traces:
                     logger.info('No more traces to fetch')
@@ -367,8 +384,8 @@ class OpenAITracesFetcher:
                         continue
 
                 # Check if there are more traces
-                if traces_response.get('has_more', False):
-                    after = traces_response.get('last_id')
+                if has_more and not limit:
+                    after = last_id
                     logger.info(f'More traces available, continuing with after={after}')
                     time.sleep(rate_limit_delay)  # Rate limiting
                 else:
@@ -423,7 +440,16 @@ def main():
     BEARER_TOKEN = 'sess-KORTNYvXwjghDxPCmcIqWIdo9J48yuPNBeZboI2G'
     ORGANIZATION = 'org-cfz7E1qZcHSPDa23eB3PDtr0'
     PROJECT = 'proj_WNfnNLTU3QzQnHmafPBkH05N'
-    # Enable debug logging to see more details
+
+    parser = argparse.ArgumentParser(description='OpenAI Traces Fetcher')
+    parser.add_argument(
+        '-l',
+        '--limit',
+        type=int,
+        help='only the n newest traces to fetch',
+        default=None,
+    )
+    args = parser.parse_args()
 
     # Check if credentials are set
     if 'YOUR_SESSION_TOKEN_HERE' in BEARER_TOKEN:
@@ -447,7 +473,7 @@ def main():
     try:
         # Fetch all data
         try:
-            fetcher.fetch_all_data(rate_limit_delay=0.5)
+            fetcher.fetch_all_data(rate_limit_delay=0.5, limit=args.limit)
         except KeyboardInterrupt:
             print('Aborted')
 
