@@ -114,7 +114,7 @@ def create_sandbox_tools(
         """
         logger.info(f'running run({input=}, {session=})')
         if session:
-            s = sandbox.interactive(session=session, timeout=timeout)
+            s = sandbox.interactive(user=user, session=session, timeout=timeout)
             s.send(input)
             return s.read()[1]
         return sandbox.run(input.encode(), user=user, timeout=timeout)[1]

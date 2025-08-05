@@ -79,7 +79,7 @@ def create_report_tools(
 
         report_content += f'**Trace Name:** {settings.trace_name or "N/A"}\n'
         report_content += f'**Model:** {settings.model or "N/A"}\n'
-        report_content += f'**Agent Name:** {settings.reasoning_model or "N/A"}\n'
+        report_content += f'**Reasoning Model:** {settings.reasoning_model or "N/A"}\n'
 
         report_content += f"""
 **Codebase:** {settings.codebase_path or 'N/A'}

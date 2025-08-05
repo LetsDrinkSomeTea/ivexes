@@ -329,11 +329,19 @@ def sandbox() -> None:
 
 
 @sandbox.command('start')
-def cmd_start() -> None:
+@click.option('-i', '--image')
+def cmd_start(image: Optional[str]) -> None:
     """Starts interactive shell in a sandbox environment."""
     from ivexes.sandbox.sandbox import Sandbox
 
-    settings = create_settings()
+    if image:
+        settings = create_settings({'sandbox_image': image})
+    else:
+        settings = create_settings(
+            PartialSettings(
+                setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
+            )
+        )
 
     sb = Sandbox(settings)
     if not sb.connect():
@@ -341,8 +349,8 @@ def cmd_start() -> None:
         return
     command = 'pwd'
     while command not in ['exit']:
-        result = sb.run(command.encode())
-        click.echo(result)
+        result = sb.run(command)
+        click.echo(result[1])
         command = input("\n Next command ('exit' to exit): ")
 
 
@@ -361,15 +369,14 @@ def cmd_run(command: str, image: Optional[str]) -> None:
 
     settings = create_settings()
     if image:
-        # Override sandbox image in settings
         settings = create_settings(PartialSettings(sandbox_image=image))
 
     sb = Sandbox(settings)
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return
-    result = sb.run(command.encode())
-    click.echo(result)
+    result = sb.run(command)
+    click.echo(result[1])
 
 
 @sandbox.command('create-file')
@@ -396,8 +403,7 @@ def create_file(path: str, content: str) -> None:
     if not sb.connect():
         click.echo('Failed to connect to sandbox')
         return
-    click.echo(sb.create_file('test', 'multi\nlinie\ntext ```’’’\\\\´´'))
-    click.echo(sb.create_file(path, content=content))
+    click.echo(sb.write_file(path, content=content))
 
 
 @cli.group

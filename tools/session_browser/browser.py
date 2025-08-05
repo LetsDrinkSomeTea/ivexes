@@ -187,9 +187,9 @@ class SessionBrowser:
 
         if self.workflow_mode:
             table = Table(title=f'Workflow Groups (Page {self.current_page + 1})')
-            table.add_column('Status', style='yellow', width=2, justify='right')
+            table.add_column('', style='yellow', width=2, justify='right')
             table.add_column('#', style='cyan', width=6)
-            table.add_column('Workflow Name', style='blue', max_width=30)
+            table.add_column('Workflow Name', style='blue')
             table.add_column('Created', style='green')
             table.add_column('Agents', style='magenta', justify='right')
             table.add_column('Messages', style='magenta', justify='right')
@@ -198,8 +198,6 @@ class SessionBrowser:
                 global_idx = start_idx + i
                 created = workflow_group.created_at.strftime('%Y-%m-%d %H:%M')
                 workflow_name = workflow_group.display_name
-                if len(workflow_name) > 27:
-                    workflow_name = workflow_name[:24] + '...'
 
                 status = '→' if global_idx == self.current_session_index else ''
                 agent_count = len(workflow_group.agent_names)
@@ -577,14 +575,16 @@ class SessionBrowser:
         try:
             import pyperclip
 
+            lines = content.splitlines(True)
+            content = ''.join(lines[3:])
+
             pyperclip.copy(content)
             self.console.print('[green]Content copied to clipboard![/green]')
+            get_single_key()
         except ModuleNotFoundError:
-            self.console.print(
+            raise ModuleNotFoundError(
                 f'[red]pyperclip module not found. Please install it to use clipboard functionality.[/red]'
             )
-        except Exception as e:
-            self.console.print(f'[red]Error copying content: {e}[/red]')
 
     def _save_content_to_file(self, content: str) -> None:
         """Save the current message content to a file.
