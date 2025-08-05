@@ -18,11 +18,11 @@ from ivexes.vector_db import CweCapecAttackDatabase
 from ivexes.agents.multi_agent.tools import (
     create_shared_memory_tools,
     MultiAgentContext,
-    agent_as_tool,
 )
+from ivexes.vector_db.vector_db import QueryTypes
 
-load_dotenv(verbose=True, override=True)
-setup_default_logging('DEBUG')
+load_dotenv(verbose=True)
+setup_default_logging('INFO')
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ def init_verctor_db(type_of_data: str):
     '--type', '-t', type=click.Choice(['cwe', 'capec']), help='Type of entries to query'
 )
 @click.option('--count', '-n', default=3, help='Number of results to return')
-def cmd_query(query_text: str, type: str, count: int) -> None:
+def cmd_query(query_text: str, type: QueryTypes, count: int) -> None:
     """Query the vector database for matching entries.
 
     Args:
@@ -286,7 +286,8 @@ def cmd_get_file(file: str) -> None:
     settings = create_settings()
     cb = CodeBrowser(settings)
 
-    content = cb.get_file_content(file)
+    content = cb.get_file_content(file, limit=100)
+    click.echo(f'First {100} characters of {file}:\n')
     click.echo(content)
 
 
@@ -337,11 +338,7 @@ def cmd_start(image: Optional[str]) -> None:
     if image:
         settings = create_settings({'sandbox_image': image})
     else:
-        settings = create_settings(
-            PartialSettings(
-                setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
-            )
-        )
+        settings = create_settings()
 
     sb = Sandbox(settings)
     if not sb.connect():
@@ -382,25 +379,30 @@ def cmd_run(command: str, image: Optional[str]) -> None:
 @sandbox.command('create-file')
 @click.argument('path')
 @click.argument('content')
-def create_file(path: str, content: str) -> None:
+@click.option('-i', '--image')
+def create_file(path: str, content: str, image: Optional[str]) -> None:
     """Create a file in the sandbox environment.
 
     Args:
         path: Path where the file should be created
         content: Content to write to the file
+        image: Optional Docker image to use for the sandbox
 
     """
     from ivexes.sandbox.sandbox import Sandbox
 
-    settings = create_settings()
-    if not settings.setup_archive:
+    if image:
+        settings = create_settings({'sandbox_image': image})
+    else:
+        settings = create_settings()
+    if not settings.setup_archive and not settings.sandbox_image:
         click.echo(
             'No setup archive configured. Please set it in the settings or via the env vars'
         )
         return
 
     sb = Sandbox(settings)
-    if not sb.connect():
+    if not sb.connect(False):
         click.echo('Failed to connect to sandbox')
         return
     click.echo(sb.write_file(path, content=content))
@@ -417,15 +419,22 @@ def llm() -> None:
 
 @llm.command('ask')
 @click.argument('input')
-def cmd_llm_ask(input: str) -> None:
+@click.option('-m', '--model', default='openai/gpt-4.1-mini')
+def cmd_llm_ask(input: str, model: Optional[str]) -> None:
     """Query a LLM using default config.
 
     Args:
         input: The input text to query the LLM with
+        model: Optional model name to use for the query
     """
     from ivexes.agents import DefaultAgent
 
-    agent = DefaultAgent()
+    if model:
+        agent = DefaultAgent(settings={'model': model})
+    else:
+        agent = DefaultAgent()
+
+    click.echo(f'Prompting {agent.settings.model} with input: {input}')
     click.echo(agent.run(user_msg=input).final_output)
 
 

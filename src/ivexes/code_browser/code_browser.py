@@ -283,9 +283,11 @@ class CodeBrowser:
 
         def _get_symbols_sync():
             self.nvim.command(f'edit {file}')
+            logger.debug(''.join(self.nvim.current.buffer))
             sleep(NVIM_DELAY)
             # Get the symbols from the buffer
             self.nvim.command_output('lua vim.lsp.buf.document_symbol()')
+            logger.debug(''.join(self.nvim.current.buffer))
             sleep(NVIM_DELAY)
             return parse_symbols(self.nvim.current.buffer)
 
