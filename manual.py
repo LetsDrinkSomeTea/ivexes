@@ -605,5 +605,41 @@ def cmd_analyze_token_usage(output_dir: str) -> None:
     click.echo(f'Token usage analysis completed. Results saved in {output_dir}.')
 
 
+@utils.command('estimate-tokens')
+@click.argument(
+    'output_dir', type=click.Path(exists=True, file_okay=False), required=False
+)
+@click.option(
+    '--csv',
+    'csv_output',
+    type=click.Path(),
+    help='Export results to CSV file (provider_model, challenge, tokens)',
+)
+def cmd_estimate_tokens(output_dir: Optional[str], csv_output: Optional[str]) -> None:
+    """Estimate token consumption using progressive formula per agent.
+
+    This command estimates tokens using: Σ(part1*n + part2*(n-1) + ... + partN*1)
+    Where parts are agent sections and n=total_sections_per_agent.
+    Reflects cumulative context buildup in multi-agent conversations.
+    Excludes reports/ and */openai/ directories.
+
+    Args:
+        output_dir: Directory containing output files (defaults to project output/)
+        csv_output: Optional CSV file path to export results
+    """
+    from tools import estimate_output_tokens, print_estimation_results, export_to_csv
+
+    if output_dir and not os.path.isdir(output_dir):
+        click.echo(f'Output directory {output_dir} does not exist.')
+        return
+
+    results = estimate_output_tokens(output_dir)
+
+    if csv_output:
+        export_to_csv(results, csv_output)
+    else:
+        print_estimation_results(results)
+
+
 if __name__ == '__main__':
     cli()
