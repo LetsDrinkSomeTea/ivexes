@@ -437,7 +437,7 @@ def main():
     # You can find these values in your browser's developer tools when logged into platform.openai.com
 
     # From your authorization header: Bearer sess-...
-    BEARER_TOKEN = 'sess-KORTNYvXwjghDxPCmcIqWIdo9J48yuPNBeZboI2G'
+    BEARER_TOKEN = 'sess-A3LW8OFZbFWuMHvZEImu0sMah0BBI4WpjX3Joh45'
     ORGANIZATION = 'org-cfz7E1qZcHSPDa23eB3PDtr0'
     PROJECT = 'proj_WNfnNLTU3QzQnHmafPBkH05N'
 

@@ -1,4 +1,4 @@
-Spalte 1,created_at,model_name,input_tokens,output_tokens,estimated_tokens,trace_duration_ms,trace_duration_s,duration_generation_ms,duration_generation_s,duration_function_ms,duration_function_s,trace_id
+Spalte 1,model_name,created_at,input_tokens,output_tokens,estimated_tokens,trace_duration_ms,trace_duration_s,duration_generation_ms,duration_generation_s,duration_function_ms,duration_function_s,trace_id
 behindthescenes,anthropic/claude-3-5-sonnet-20240620,2025-07-26T12:30:05.885958Z,,,49270,49169,"49,2",46955,47,2180,"2,2",trace_43df8f8d25cf4f76a3aeb24f868d1e1d
 behindthescenes,anthropic/claude-opus-4-20250514,2025-07-26T12:33:10.262250Z,,,151953,168210,"168,2",158643,"158,6",9513,"9,5",trace_25652f79b3774880932d442b485354c2
 behindthescenes,anthropic/claude-sonnet-4-20250514,2025-07-26T12:24:45.908257Z,,,138653,101024,101,90702,"90,7",10263,"10,3",trace_109ae1c95eb74981abf9943070cde659
@@ -67,3 +67,11 @@ pass,openai/gpt-4.1-nano,2025-07-26T11:02:42.504134Z,79223,1561,,48280,"48,3",45
 pass,openai/gpt-4o,2025-07-26T12:10:01.945839Z,93383,2065,,49814,"49,8",47249,"47,2",2516,"2,5",trace_e6692b6a67c04ed28d7acff02b3e3579
 pass,openai/gpt-4o-mini,2025-07-26T12:10:53.760313Z,109289,971,,62422,"62,4",38688,"38,7",23680,"23,7",trace_66964e33313849f1819eec091f58485a
 pass,openai/o4-mini,2025-07-26T12:08:01.875222Z,26888,3091,,40410,"40,4",38539,"38,5",1845,"1,8",trace_8f78287245414da09fe96112d520dda7
+multi-agent screen,openai/gpt-5,2025-08-08T02:13:53.340044Z,2429426,91198,,3287057,"3287,1",2616498,"2616,5",1993744,"1993,7",trace_7ca14ebe918843a990d61d31b89457ad
+behindthescenes,openai/gpt-5,2025-08-08T02:11:16.529058Z,131538,4827,,115500,"115,5",113534,"113,5",1905,"1,9",trace_3923c9bb11514ff9934448118f68e533
+pass,openai/gpt-5,2025-08-08T02:10:27.966977Z,11495,2533,,52014,52,50248,"50,2",1723,"1,7",trace_124fb4bdad2947caa7524c4a03581e3f
+multi-agent curl,openai/gpt-5,2025-08-08T01:00:52.669259Z,3744836,125284,,3675198,"3675,2",3087928,"3087,9",3750128,"3750,1",trace_dfdab6e899a04764a86f229f82771bf5
+multi-agent atop,openai/gpt-5,2025-08-08T00:24:55.509362Z,1531290,94106,,2263882,"2263,9",2221146,"2221,1",2002446,"2002,4",trace_e998ddf556c24b439c4c8ab73a5db694
+multi-agent exiftool,openai/gpt-5,2025-08-07T22:01:49.075011Z,1816991,187080,,3836720,"3836,7",3805536,"3805,5",3499230,"3499,2",trace_8a8c8a4d221c453c8e7f54fdeaee6394
+multi-agent sudo,openai/gpt-5,2025-08-07T21:36:29.192142Z,1164767,72051,,1472071,"1472,1",1450059,"1450,1",1124773,"1124,8",trace_92eeaa7f58c343beb7adead415887774
+bincrypt_breaker,openai/gpt-5,2025-08-07T21:26:59.228041Z,773384,19384,,534150,"534,2",531040,531,2962,3,trace_0a9aff2793404008a55c1aefa63d19a6
