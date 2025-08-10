@@ -16,7 +16,7 @@ settings = PartialSettings(
     max_turns=50,
     embedding_model='text-embedding-3-large',
     embedding_provider='openai',
-    setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen_mvp/upload.tgz',
+    setup_archive='testdata/screen_mvp/upload.tgz',
 )
 
 agent = MVPAgent(

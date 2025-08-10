@@ -35,12 +35,20 @@ deploy-docs:
 build-images:
 	docker compose --profile images build
 
+.PHONY: build-testdata
+build-testdata:
+	cd testdata && \
+	for d in *; do \
+		echo "Building test case: $$d"; \
+		docker build -t vuln-$$d:latest $$d/; \
+	done
+
 .PHONY: run-litellm
 run-litellm:
 	docker compose up -d
 
 .PHONY: setup
-setup: build-images sync run-litellm
+setup: build-images build-testdata sync run-litellm
 
 .PHONY: check
 check: format-check lint tests

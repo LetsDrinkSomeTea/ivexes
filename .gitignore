@@ -20,12 +20,14 @@ traces.sqlite*
 
 CLAUDE.md
 clean-api-key.py
+README_KARG.md
 
 # chromadb
 chroma/
 chroma-*/
 output-*.txt
 !output/
+testdata/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -49,7 +49,7 @@ build-backend = "hatchling.build"
 Repository = "https://github.com/LetsDrinkSomeTea/ivexes"
 
 [tool.ruff]
-extend-exclude = [".venv"]
+extend-exclude = [".venv", "testdata", "docs"]
 
 [tool.ruff.format]
 skip-magic-trailing-comma = false

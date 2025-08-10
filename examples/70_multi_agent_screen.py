@@ -17,8 +17,8 @@ settings = PartialSettings(
     max_turns=50,
     embedding_provider='local',
     embedding_model='intfloat/multilingual-e5-large-instruct',
-    setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
-    codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/screen/codebase',
+    setup_archive='testdata/screen/upload.tgz',
+    codebase_path='testdata/screen/codebase',
     vulnerable_folder='vulnerable-screen-4.5.0',
     patched_folder='patched-screen-4.5.1',
 )

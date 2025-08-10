@@ -16,8 +16,8 @@ settings = PartialSettings(
     max_turns=50,
     embedding_model='text-embedding-3-large',
     embedding_provider='openai',
-    setup_archive='/home/julian/Desktop/Bachelorarbeit/testdata/screen/upload.tgz',
-    codebase_path='/home/julian/Desktop/Bachelorarbeit/testdata/screen/codebase',
+    setup_archive='testdata/screen/upload.tgz',
+    codebase_path='testdata/screen/codebase',
     vulnerable_folder='vulnerable-enlightenment-0.25.3',
     patched_folder='patched-enlightenment-0.26.0',
 )

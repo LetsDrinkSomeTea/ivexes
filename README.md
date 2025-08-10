@@ -7,7 +7,8 @@
 IVExES is an advanced Python framework for cybersecurity vulnerability analysis
 and exploitation using multi-agent AI systems. It combines knowledge bases (CWE,
 CAPEC, MITRE ATT&CK) with dynamic analysis capabilities for automated security
-assessment.
+assessment. You can find an auto generated documentation under
+[IVExES](https://pages.faigle.dev/ivexes)
 
 ## 🚀 Quick Start
 
@@ -35,8 +36,7 @@ assessment.
    This will build Docker images, sync dependencies, and start the LiteLLM
    proxy.
 
-3. **Configure environment variables:** Create a `.secrets.env` file with your
-   API keys:
+3. **Configure environment variables:** Create a `.env` file with your API keys:
    ```bash
    LLM_API_KEY=your_openai_api_key_here
    # or
@@ -361,4 +361,3 @@ If you use IVExES in your research, please cite:
 **Note**: IVExES is designed for educational and authorized security testing
 purposes only. Users are responsible for ensuring compliance with applicable
 laws and regulations.
-
