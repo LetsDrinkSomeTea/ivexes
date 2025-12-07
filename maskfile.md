@@ -140,20 +140,3 @@ from tools import browse_sessions
 
 browse_sessions('sessions.sqlite')
 ```
-
-## fragen
-
-> Offen gebliebene Fragen vor der Abgabe
-
-```python
-
-fragen = """
-- Müssen die Exemplare alle mit Farbe ausgedruckt werden oder reicht eins?
-    -> Ich hätte eins in voll Farbe und alle anderen schwarz-weiß
-    -> alternativ nur die Quellenangaben in sw
-- Gibt es schon einen Termin fürs Kolloqium?
-- Wie genau wird das Projekt angeschaut? Soll ich einen API-Key beilegen?
-"""
-
-print(fragen)
-```
