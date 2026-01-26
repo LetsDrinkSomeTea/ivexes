@@ -1,0 +1,2266 @@
+manifest:
+  version: "0.1.2"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: letsdrinksometea/ivexes
+    source: https://github.com/letsdrinksometea/ivexes
+    branch: main
+    commit: "8f2404c2"
+    scope: [main.py, manual.py, src/ivexes/__init__.py, src/ivexes/agents/base.py, src/ivexes/agents/default_agent.py, src/ivexes/agents/htb_challenge.py,
+      src/ivexes/agents/multi_agent/multi_agent.py, src/ivexes/agents/multi_agent/shared_context.py, src/ivexes/agents/multi_agent/tools.py,
+      src/ivexes/agents/mvp.py, src/ivexes/agents/single_agent.py, src/ivexes/code_browser/code_browser.py, src/ivexes/code_browser/tools.py,
+      src/ivexes/cve_search/__init__.py, src/ivexes/cve_search/tools.py, src/ivexes/date/__init__.py, src/ivexes/date/tools.py,
+      src/ivexes/printer/formatter.py, src/ivexes/printer/printer.py, src/ivexes/report/__init__.py, src/ivexes/report/tools.py,
+      src/ivexes/sandbox/sandbox.py, src/ivexes/sandbox/tools.py, src/ivexes/token.py, src/ivexes/tools.py, src/ivexes/vector_db/tools.py,
+      src/ivexes/vector_db/vector_db.py, tools/__init__.py, tools/session_browser/browser.py, tools/session_browser/database.py,
+      tools/session_browser/formatter.py]
+  issued:
+    by: A2AS.org
+    at: '2026-01-26T16:15:21Z'
+  signatures:
+    digest: sha256:eV3ZppDRGxT6fBSu3VddnsYMFDhschKSioMPzfLOMSg
+    key: ed25519:CTXfGLLneHBadDNkqGw-UxVhr6SYk4D3wOuxfXDLaqk
+    sig: ed25519:iic4uzFw7KlCH70WHytEOEleUvNdc9ea7-fRrSED_bLF7GsGGAI0a0D4WNyKb1d7IJqvq6Mx0FxtupgW6OkqCg
+
+agents:
+  agent.0:
+    type: instance
+    models: [self.settings.model]
+    tools: [tools]
+    params:
+      class: HTBChallengeAgent
+      name: Exploiter
+      instance: agent
+      instructions: ['Analyze two versions of a codebase to identify vulnerabilities fixed between them, then develop a proof
+          of concept (PoC) exploit for any identified issues.', '# Steps', '- **Preparation**:', '- Set up the work environment
+          in the Kali Linux sandbox.', '- **Diff Analysis**:', '- Use tools such as `diff` to compare the two codebase versions.',
+        '- Identify differences that may correspond to vulnerability fixes, focusing on changes in syntax, logic, or security
+          mechanisms.', '- **Vulnerability Assessment**:', '- Analyze identified differences to determine if they relate to
+          security vulnerabilities.', '- Verify fixed vulnerabilities by reviewing the relevant code segments and understanding
+          their intended function.', '- **Exploit Development**:', '- For each verified vulnerability, create an exploit strategy.',
+        '- Develop a PoC exploit script in bash or Python that convincingly demonstrates exploitation.', '- **Testing**:',
+        '- Execute the PoC in the sandbox to confirm that it functions as intended.', '- Validate that the exploit reliably
+          demonstrates the vulnerability.', '- **Documentation**:', '- Thoroughly document the process from initial discovery
+          through testing.', '- For each vulnerability, include detailed analysis and a clear explanation of the PoC, including
+          code snippets and observed results.', '- Save each PoC exploit as a file, with an appropriate name, in the sandbox
+          environment.', '# Output Format', '- For each identified vulnerability, generate two output files:', '1. **PoC Exploit
+          Script**: A bash or Python file (with a descriptive name, such as `exploit_<vulnname>.sh` or `exploit_<vulnname>.py`)
+          containing:', '- Well-commented code explaining critical sections and functionality.', '2. **Documentation Report**:
+          A markdown (`.md`) file (with a corresponding name, such as `exploit_<vulnname>_report.md`) containing the following
+          standardized sections:', '- `# Vulnerability Overview`: Description of the vulnerability, its cause, and how it
+          was identified from the code diff.', '- `# PoC Exploit`: Explanation of the exploit strategy and step-by-step guide
+          on executing the PoC.', '- `# Testing Results`: Evidence and outcomes from running the PoC in the sandbox.', '-
+          If no vulnerabilities are found after analysis, generate a markdown report (`analysis_report.md`) with a clear statement
+          that no security-relevant changes were detected between the two versions.', '# Examples', '**Example 1**', '- **Input**:',
+        '- Names of the Versions already in the sandbox.', '- **Output**:', '- `exploit_buffer_overflow.sh`', '- `exploit_buffer_overflow_report.md`
+          with the required sections.', '**Example 2**', '- **Input**:', '- Two directories: `v1.0` and `v1.1`.', '- **Output**:',
+        '- `exploit_sql_injection.py`', '- `exploit_sql_injection_report.md` with the required sections.', '**Example 3 (No
+          Vulnerabilities)**', '- **Output**:', '- `analysis_report.md`:', '```markdown', '# Vulnerability Analysis Report',
+        No security-relevant changes or vulnerabilities identified between the submitted versions., '```', '# Notes', '- Always
+          test PoC exploits safely in the sandbox environment.', '- Follow security best practices and avoid harm outside
+          the test context.', '- The sandbox already has the vulnerable version installed.', '- The code browser and the sandbox
+          are diffrent systems, use the tool with the according prefix']
+  agent.1:
+    type: instance
+    models: [self.settings.reasoning_model]
+    params:
+      class: MultiAgent
+      name: Planning Agent
+      handoff_description: Specialist agent for planning and coordinating the actions of other agents
+      instance: agent
+      instructions: [planning_system_msg]
+  agent.2:
+    type: instance
+    models: [self.settings.model]
+    tools: [date_tools]
+    params:
+      class: DefaultAgent
+      name: Exploiter
+      instance: agent
+  agent._setup_agent.0:
+    type: factory
+    models: [gpt-4.1]
+    params:
+      function: _setup_agent
+      name: Security Specialist
+      handoff_description: Specialist agent for up-to-date information on CWE, CAPEC and ATT&CK data
+      instance: agent._setup_agent
+      instructions: ['You are a Security Specialist working as part of a multi-agent team. Your expertise in CWE, CAPEC, and
+          ATT&CK frameworks supports the entire analysis workflow. Your role is to:', '- Provide up-to-date information on
+          Common Weakness Enumeration (CWE) patterns', '- Analyze attack patterns using CAPEC (Common Attack Pattern Enumeration
+          and Classification)', '- Reference ATT&CK tactics, techniques, and procedures (TTPs)', '- Identify security vulnerabilities
+          and their classifications', '- Suggest mitigation strategies based on industry standards', '**Team Collaboration
+          Requirements:**', '- ALWAYS check shared memory for findings from Code Analyst and other team members before starting',
+        '- STORE all critical findings in shared memory using clear, descriptive keys (CVE IDs, CWE classifications, CAPEC
+          patterns, ATT&CK TTPs)', '- BUILD upon previous team analysis rather than working in isolation', '- NEVER overwrite
+          existing shared memory entries - use new keys or append to existing findings', '- SHARE vulnerability classifications
+          and attack patterns to guide Red Team Operator', '- COORDINATE with Code Analyst findings to provide targeted security
+          framework analysis', '**Critical Information Handling:**', '- If you cannot find sufficient information in shared
+          memory about code vulnerabilities, vulnerability locations, or specific technical details needed for your analysis,
+          STOP your current task', '- CLEARLY state what information is missing and request it from the planning agent', '-
+          Examples of missing information that requires stopping: specific vulnerable code locations, technical vulnerability
+          details, code context, or prerequisite analysis from other agents', '- Do NOT proceed with incomplete analysis -
+          accurate security classification requires complete information', '- Resume work only after receiving the requested
+          information from the planning agent', Use the vector database tools to search for relevant security information
+          and the shared memory tools to collaborate effectively with your team.]
+  agent._setup_agent.1:
+    type: factory
+    models: [gpt-4.1]
+    params:
+      function: _setup_agent
+      name: Code Analyst
+      handoff_description: Specialist agent for information about the codebase, including code structure, functions, diffs
+        and classes
+      instance: agent._setup_agent
+      instructions: ['{code_analyst_system_msg}', '{codebase_structure}']
+  agent._setup_agent.2:
+    type: factory
+    models: [gpt-4.1]
+    params:
+      function: _setup_agent
+      name: Red Team Operator
+      handoff_description: Specialist agent for generating Proof-of-Concepts (PoC) and Exploits
+      instance: agent._setup_agent
+      instructions: ['You are a Red Team Operator working as part of a multi-agent security team. Your exploit development
+          builds directly on analysis from Code Analyst and Security Specialist findings. Your role is to:', '- Develop PoC
+          exploits for identified vulnerabilities', '- Create bash or Python scripts that demonstrate exploitation', '- Test
+          exploits safely in the sandbox environment', '- Validate that exploits reliably demonstrate vulnerabilities', '-
+          Document exploitation techniques and results', '- PERSIST until a working exploit is created', '**Team Collaboration
+          Requirements:**', '- ALWAYS check shared memory for Code Analyst vulnerable code locations and Security Specialist
+          attack patterns before starting', '- BUILD exploits based on specific code findings and security framework guidance
+          from team members', '- STORE exploit attempts, results, and successful techniques in shared memory using descriptive
+          keys', '- SHARE exploitation progress and failures to inform team strategy adjustments', '- LEVERAGE team insights
+          rather than working in isolation', '**Critical Information Handling:**', '- If you cannot find sufficient information
+          in shared memory about vulnerability details, code locations, attack vectors, or exploitation techniques needed
+          for your work, STOP your current task', '- CLEARLY state what information is missing and request it from the planning
+          agent', '- Examples of missing information that requires stopping: specific vulnerable code locations, technical
+          vulnerability details, attack vector information, or prerequisite analysis from Code Analyst or Security Specialist',
+        '- Do NOT proceed with blind exploitation attempts - successful exploits require complete vulnerability understanding',
+        '- Resume work only after receiving the requested information from the planning agent', '**Critical Instructions:**',
+        '- Work AUTONOMOUSLY to create functional exploits using team intelligence', '- Test each exploit thoroughly in the
+          sandbox', '- If an exploit fails, analyze why and create improved versions', '- Try multiple exploitation techniques
+          and approaches', '- Only declare success when an exploit demonstrably works', '- Focus on creating reliable, repeatable
+          exploits', 'Use the sandbox tools to execute and test your PoC exploits, and shared memory tools to leverage your
+          team''s collective analysis.']
+  agent._setup_agent.3:
+    type: factory
+    models: [gpt-4.1]
+    params:
+      function: _setup_agent
+      name: Report Journalist
+      handoff_description: Specialist agent for generating reports and summaries
+      instance: agent._setup_agent
+      instructions: [report_journalist_system_msg.format(datetime=current_date())]
+  agent.MVPAgent.agent:
+    type: class
+    models: [self.settings.model]
+    tools: [tools]
+    params:
+      class: MVPAgent
+      name: Exploiter
+      instructions: [You are an expert at analyzing and reverse engineering binary files, 'You have access to a sandbox environment
+          with a kali linux system, including all the tools you need to analyze and reverse engineer binary files.', 'Note,
+          that you are in an interactive shell, so you can use the command line to execute commands and analyze the output,
+          but you have to exit the programm after you are done.', 'Remember to send commands like ''q'' to exit programms
+          like r2, ghidra, etc.', 'Dont use less! Use head, tail or grep to analyze the output of a programm or file.', 'First
+          make a plan, then execute it step by step.', 'Don''t stop until you found the flag looking like HTB{...}', Last
+          step is to create a markdown report with the flag and your analysis., Use the create_report tool to create the report.]
+  agent.SingleAgent.agent:
+    type: class
+    models: [gpt-4.1]
+    tools: [tools]
+    params:
+      class: SingleAgent
+      name: Exploiter
+      instructions: [You are an expert at analyzing and reverse engineering binary files, 'You have access to a sandbox environment
+          with a kali linux system, including all the tools you need to analyze and reverse engineer binary files.', 'Note,
+          that you are in an interactive shell, so you can use the command line to execute commands and analyze the output,
+          but you have to exit the programm after you are done.', 'Remember to send commands like ''q'' to exit programms
+          like r2, ghidra, etc.', 'Dont use less! Use head, tail or grep to analyze the output of a programm or file.', 'First
+          make a plan, then execute it step by step.', 'Don''t stop until you found the flag looking like HTB{...}', Last
+          step is to create a markdown report with the flag and your analysis., Use the create_report tool to create the report.]
+
+models:
+  gpt-4.1:
+    type: default
+    agents: [agent._setup_agent.0, agent._setup_agent.1, agent._setup_agent.2, agent._setup_agent.3, agent.SingleAgent.agent]
+  self.settings.model:
+    type: variable
+    agents: [agent.MVPAgent.agent, agent.0, agent.2]
+  self.settings.reasoning_model:
+    type: variable
+    agents: [agent.1]
+
+tools:
+  codebrowser_get_definition:
+    type: decorator
+    params:
+      description: |-
+        Find the definition of a symbol in the codebase.
+
+        Args:
+            symbol: The symbol name to find the definition for
+  codebrowser_get_diff:
+    type: decorator
+    params:
+      description: |-
+        Get the diff of the codebase using diff.
+
+        Args:
+            options: List of options for the diff command (default: ['-u', '-w'])
+            file1: Path to the first file to compare (default: vulnerable_folder)
+            file2: Path to the second file to compare (default: patched_folder)
+  codebrowser_get_file_content:
+    type: decorator
+    params:
+      description: |-
+        Get the content of a file in the codebase.
+
+        Args:
+            file: Path to the file within the codebase to analyze
+            offset: Optional: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files.
+            limit: Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit).
+            encode: Optional: Encoding type for the file content. Defaults to 'auto' which detects encoding, or 'raw' to return raw bytes.
+  codebrowser_get_file_structure:
+    type: decorator
+    params:
+      description: |-
+        Get the tree of files in the codebase.
+
+        Args:
+            depth: Maximum depth level of the tree (default: 3)
+  codebrowser_get_references:
+    type: decorator
+    params:
+      description: |-
+        Find all references to a symbol in the codebase.
+
+        Args:
+            symbol: The symbol name to find references for
+  codebrowser_get_symbols:
+    type: decorator
+    params:
+      description: |-
+        Get all symbols (variables, functions, classes) in a file.
+
+        Args:
+            file: Path to the file within the codebase to analyze
+  create_report:
+    type: decorator
+    params:
+      description: |-
+        Create and save a markdown vulnerability analysis report.
+
+        Args:
+            content: The main content of the report in markdown format
+            report_name: Optional report identifier, representing a specific vulnerability.
+                          If provided, creates a specific report for this vulnerability.
+                          If None, creates a general analysis report.
+  date_tools:
+    type: variable
+    agents: [agent.2]
+    params:
+      dynamic: "True"
+  get_current_date:
+    type: decorator
+    params:
+      description: |-
+        Get the current date and time.
+
+        Returns the current date and time in a formatted string.
+
+        Returns:
+            str: Current date and time in 'YYYY-MM-DD HH:MM:SS' format.
+
+        Example:
+            >>> get_current_date()
+            '2024-01-15 14:30:45'
+  get_shared_memory:
+    type: decorator
+    params:
+      description: |-
+        Get a value from shared memory.
+
+        Args:
+            key: The key to retrieve the value for
+
+        Returns:
+            The value stored under the given key, or a message if not found
+  list_shared_memory:
+    type: decorator
+    params:
+      description: |-
+        List all keys and values in shared memory.
+
+        Returns:
+            A summary of all items in shared memory
+  sandbox_run:
+    type: decorator
+    params:
+      description: |-
+        Interactively writes the input to the shell in the Kali Linux sandbox environment.
+
+        Executes commands in the sandbox shell and returns the output. Useful for
+        running analysis tools, scripts, and system commands within the secure environment.
+
+        Args:
+            input (str): The input to write to the shell.
+            user (Literal['root', 'user']): The user context to run the command as.
+            session (Optional[str]): Optional session identifier for interactive commands.
+            timeout (int): Timeout for the command execution in seconds. Defaults to 60.
+
+        Returns:
+            str: The output of the shell command execution.
+
+        Example:
+            >>> sandbox_run('ls -la')
+            'total 0
+            drwxr-xr-x 1 user user 0 Oct 10 12:00 .
+            drwxr-xr-x 1 user user 0 Oct 10 12:00 ..'
+
+            >>> sandbox_run('python3', session='python')
+            'Python 3.13.5 (main, Jun 21 2025, 09:35:00) [GCC 15.1.1 20250425] on linux
+            Type "help", "copyright", "credits" or "license" for more information.'
+
+            >>> sandbox_run('print("Hello, World!")', session='python')
+            'Hello, World!'
+  sandbox_write_file:
+    type: decorator
+    params:
+      description: |-
+        Create a file (overriding) with the specified content in the sandbox environment.
+
+        Creates or overwrites a file at the specified path with the given content.
+        Useful for transferring scripts, configuration files, or analysis data into
+        the sandbox.
+
+        Args:
+            file_path (str): The path where the file should be created.
+            content (str): The content to write into the file.
+
+        Returns:
+            str: Confirmation message or error description.
+  search_cve_by_id:
+    type: decorator
+    params:
+      description: |-
+        Search for CVE information by CVE ID using the NVD database.
+
+        Args:
+            cve_id: The CVE ID to search for, e.g., "CVE-2021-34527".
+  semantic_search:
+    type: decorator
+    params:
+      description: |-
+        Semantic search knowledge base for cybersecurity information.
+
+        Args:
+            query (str): The query to search for.
+            type (list[QueryTypes]): The types to filter the search by.
+            n (int, optional): The count of items to return. Defaults to 5.
+
+        Returns:
+            str: The n best matches formatted as a list of strings.
+  semantic_search_attack_all:
+    type: decorator
+    params:
+      description: |-
+        Semantically searches all MITRE ATT&CK data (techniques, tactics, mitigations, groups, software) in a vector database.
+
+        Args:
+            query (str): The query to search for.
+            n (int, optional): The count of items to return. Defaults to 5.
+
+        Returns:
+            str: The n best matches formatted as a string.
+  semantic_search_attack_groups:
+    type: decorator
+    params:
+      description: |-
+        Semantically searches MITRE ATT&CK threat groups in a vector database.
+
+        Args:
+            query (str): The query to search for.
+            n (int, optional): The count of items to return. Defaults to 5.
+
+        Returns:
+            str: The n best matches formatted as a string.
+  semantic_search_attack_mitigations:
+    type: decorator
+    params:
+      description: |-
+        Semantically searches MITRE ATT&CK mitigations in a vector database.
+
+        Args:
+            query (str): The query to search for.
+            n (int, optional): The count of items to return. Defaults to 5.
+
+        Returns:
+            str: The n best matches formatted as a string.
+  semantic_search_attack_software:
+    type: decorator
+    params:
+      description: |-
+        Semantically searches MITRE ATT&CK software (malware and tools) in a vector database.
+
+        Args:
+            query (str): The query to search for.
+            n (int, optional): The count of items to return. Defaults to 5.
+
+        Returns:
+            str: The n best matches formatted as a string.
+  semantic_search_attack_tactics:
+    type: decorator
+    params:
+      description: |-
+        Semantically searches MITRE ATT&CK tactics (kill chain phases) in a vector database.
+
+        Args:
+            query (str): The query to search for.
+            n (int, optional): The count of items to return. Defaults to 5.
+
+        Returns:
+            str: The n best matches formatted as a string.
+  semantic_search_attack_techniques:
+    type: decorator
+    params:
+      description: |-
+        Semantically searches MITRE ATT&CK techniques in a vector database.
+
+        Args:
+            query (str): The query to search for.
+            n (int, optional): The count of items to return. Defaults to 5.
+
+        Returns:
+            str: The n best matches formatted as a string.
+  semantic_search_capec:
+    type: decorator
+    params:
+      description: |-
+        Semantically searches Common Attack Pattern Enumerations and Classifications (CAPEC) descriptions in a vector database.
+
+        Args:
+            query (str): The query to search for.
+            n (int, optional): The count of items to return. Defaults to 5.
+
+        Returns:
+            str: The n best matches formatted as a string.
+  semantic_search_cwe:
+    type: decorator
+    params:
+      description: |-
+        Semantically searches Common Weakness Enumeration (CWE) descriptions in a vector database.
+
+        Args:
+            query (str): The query to search for.
+            n (int, optional): The count of items to return. Defaults to 5.
+
+        Returns:
+            str: The n best matches formatted as a string.
+  set_shared_memory:
+    type: decorator
+    params:
+      description: |-
+        Set a value in shared memory.
+
+        Args:
+            key: The key under which to store the value
+            value: The value to store
+            override: Whether to override existing value if it exists
+  setup_sandbox:
+    type: decorator
+    params:
+      description: |-
+        Sets up a Kali Linux sandbox environment.
+
+        Initializes a containerized Kali Linux environment for secure code execution
+        and vulnerability analysis. Returns basic environment information upon success.
+
+        Returns:
+            str: A message indicating the result of the setup operation and basic
+                information about the environment including user, working directory,
+                and file listing.
+  teardown_sandbox:
+    type: decorator
+    params:
+      description: |-
+        Teardown the Kali Linux sandbox environment.
+
+        Properly closes the sandbox connection and cleans up associated resources
+        including Docker containers.
+
+        Returns:
+            str: A message indicating the result of the teardown operation.
+  tool_name:
+    type: decorator
+    params:
+      function: agent_tool_function
+      description: tool_description
+  tools:
+    type: variable
+    agents: [agent.0, agent.SingleAgent.agent, agent.MVPAgent.agent]
+    params:
+      dynamic: "True"
+
+imports:
+  _search_cve_by_id: ivexes.cve_search.tools._search_cve_by_id
+  ABC: abc.ABC
+  abstractmethod: abc.abstractmethod
+  Agent: agents.Agent
+  agent_as_tool: multi_agent.agent_as_tool
+  analyze_token_usage: token_usage_analyzer.main
+  Any: typing.Any
+  argparse: argparse
+  asyncio: asyncio
+  AsyncOpenAI: openai.AsyncOpenAI
+  banner: components.banner
+  BarColumn: rich.progress.BarColumn
+  BaseAgent: base.BaseAgent
+  BaseSettings: pydantic_settings.BaseSettings
+  browse_sessions: session_browser.main
+  BrowserSettings: config.BrowserSettings
+  Buffer: pynvim.api.Buffer
+  Callable: typing.Callable
+  cast: typing.cast
+  chardet: chardet
+  chromadb: chromadb
+  cleanup: container.cleanup
+  click: click
+  ClientAPI: chromadb.api.ClientAPI
+  code_analyst_system_msg: prompts.multi_agent.code_analyst_system_msg
+  CodeBrowser: code_browser.CodeBrowser
+  Colors: colors.Colors
+  config: config
+  Console: rich.console.Console
+  Container: docker.models.containers.Container
+  ContainerError: docker.errors.ContainerError
+  Converter: agents.models.chatcmpl_converter.Converter
+  count: ivexes.token
+  create_code_browser_tools: code_browser.tools.create_code_browser_tools
+  create_header: formatter.create_header
+  create_report_tools: ivexes.tools.create_report_tools
+  create_sandbox_tools: tools.create_sandbox_tools
+  create_settings: ivexes.config.create_settings
+  create_shared_memory_tools: multi_agent.create_shared_memory_tools
+  create_tools: tools.create_code_browser_tools
+  create_vectordb_tools: tools.create_vectordb_tools
+  csv: csv
+  current_date: tools.current_date
+  cve_tools: cve_search.tools.cve_tools
+  CweCapecAttackDatabase: vector_db.CweCapecAttackDatabase
+  dataclass: dataclasses.dataclass
+  date_tools: tools.date_tools
+  datetime: datetime.datetime
+  DBMessage: database.Message
+  DefaultAgent: default_agent.DefaultAgent
+  DefaultEmbeddingFunction: chromadb.utils.embedding_functions.DefaultEmbeddingFunction
+  Dict: typing.Dict
+  docker: docker
+  DockerClient: docker.DockerClient
+  ElementTree: xml.etree.ElementTree
+  Enum: enum.Enum
+  estimate_output_tokens: token_estimator.estimate_output_tokens
+  export_to_csv: token_estimator.export_to_csv
+  Field: pydantic.Field
+  field: dataclasses.field
+  field_validator: pydantic.field_validator
+  find_by_name: container.find_by_name
+  format_usage_display: components.format_usage_display
+  function_tool: agents.function_tool
+  futures: concurrent.futures
+  get_agent_name: formatter.get_agent_name
+  get_all_groups: attack_downloader.get_all_groups
+  get_all_mitigations: attack_downloader.get_all_mitigations
+  get_all_software: attack_downloader.get_all_software
+  get_all_tactics: attack_downloader.get_all_tactics
+  get_all_techniques: attack_downloader.get_all_techniques
+  get_attack_data: attack_downloader.get_attack_data
+  get_capec_tree: downloader.get_capec_tree
+  get_client: container.get_client
+  get_cwe_tree: downloader.get_cwe_tree
+  get_database_stats: database.get_database_stats
+  get_run_config: config.get_run_config
+  get_text_statistics: ivexes.token.get_text_statistics
+  HandoffCallItem: agents.HandoffCallItem
+  HandoffOutputItem: agents.HandoffOutputItem
+  HotkeyConfig: config.HotkeyConfig
+  htb_reversing: htb_reversing
+  HTBChallengeAgent: htb_challenge.HTBChallengeAgent
+  ImageNotFound: docker.errors.ImageNotFound
+  insert_attack_all: attack_parser.insert_attack_all
+  insert_capec: parser.insert_capec
+  insert_cwe: parser.insert_cwe
+  InteractiveSession: sandbox.InteractiveSession
+  io: io
+  ItemFormatter: formatter.ItemFormatter
+  ItemHelpers: agents.ItemHelpers
+  Iterable: typing.Iterable
+  IvexesSettings: config.settings.Settings
+  json: json
+  launch_browser: main.launch_browser
+  List: typing.List
+  Literal: typing.Literal
+  load_dotenv: dotenv.load_dotenv
+  logging: logging
+  LogLevels: settings.LogLevels
+  main: main.main
+  MaxTurnsExceeded: agents.exceptions.MaxTurnsExceeded
+  MCPApprovalRequestItem: agents.items.MCPApprovalRequestItem
+  MCPListToolsItem: agents.items.MCPListToolsItem
+  MessageFormatter: formatter.MessageFormatter
+  MessageOutputItem: agents.MessageOutputItem
+  MessageScroller: scroller.MessageScroller
+  MitreAttackData: mitreattack.stix20.MitreAttackData
+  Model: agents.Model
+  ModelProvider: agents.ModelProvider
+  ModelSettings: agents.ModelSettings
+  MofNCompleteColumn: rich.progress.MofNCompleteColumn
+  multi_agent: multi_agent
+  MultiAgent: multi_agent.MultiAgent
+  MultiAgentContext: shared_context.MultiAgentContext
+  mvp: mvp
+  MVPAgent: mvp.MVPAgent
+  nvdlib: nvdlib
+  OpenAIChatCompletionsModel: agents.OpenAIChatCompletionsModel
+  OpenAIEmbeddingFunction: chromadb.utils.embedding_functions.openai_embedding_function.OpenAIEmbeddingFunction
+  Optional: typing.Optional
+  os: os
+  override: typing.override
+  Panel: rich.panel.Panel
+  parse_references: parser.parse_references
+  parse_symbols: parser.parse_symbols
+  PartialSettings: config.PartialSettings
+  path: os.path
+  Path: pathlib.Path
+  pexpect: pexpect
+  planning_system_msg: prompts.multi_agent.planning_system_msg
+  pprint: pprint
+  print_estimation_results: token_estimator.print_estimation_results
+  Printer: printer.Printer
+  printer: printer
+  Progress: rich.progress.Progress
+  prompts: prompts
+  pynvim: pynvim
+  pyperclip: pyperclip
+  QueryTypes: vector_db.QueryTypes
+  re: re
+  ReasoningItem: agents.ReasoningItem
+  red_team_operator_system_msg: prompts.multi_agent.red_team_operator_system_msg
+  remove_if_exists: container.remove_if_exists
+  report_journalist_system_msg: prompts.multi_agent.report_journalist_system_msg
+  request: urllib.request
+  requests: requests
+  ResponseFunctionToolCall: openai.types.responses.ResponseFunctionToolCall
+  RunConfig: agents.RunConfig
+  RunItem: agents.RunItem
+  Runner: agents.Runner
+  RunResult: agents.RunResult
+  RunResultStreaming: agents.RunResultStreaming
+  Sandbox: sandbox.Sandbox
+  santize_name: container.santize_name
+  scrape_github: github_scraper.main
+  security_specialist_system_msg: prompts.multi_agent.security_specialist_system_msg
+  SentenceTransformerEmbeddingFunction: chromadb.utils.embedding_functions.sentence_transformer_embedding_function.SentenceTransformerEmbeddingFunction
+  Session: database.Session
+  SessionBrowser: browser.SessionBrowser
+  SessionDatabase: database.SessionDatabase
+  Settings: config.settings.Settings
+  setup_container: sandbox_container.setup_container
+  setup_default_logging: config.setup_default_logging
+  single_agent: single_agent
+  SingleAgent: single_agent.SingleAgent
+  sleep: time.sleep
+  SpinnerColumn: rich.progress.SpinnerColumn
+  sprint_tools_as_json: ivexes.printer.formatter.sprint_tools_as_json
+  sqlite3: sqlite3
+  SQLiteSession: agents.SQLiteSession
+  stream_result: printer.stream_result
+  sys: sys
+  system_msg: prompts.mvp.system_msg
+  Table: rich.table.Table
+  tarfile: tarfile
+  TaskProgressColumn: rich.progress.TaskProgressColumn
+  tempfile: tempfile
+  termios: termios
+  TextColumn: rich.progress.TextColumn
+  threading: threading
+  tiktoken: tiktoken
+  time: time
+  TimeRemainingColumn: rich.progress.TimeRemainingColumn
+  token: token
+  Tool: agents.Tool
+  ToolCallItem: agents.ToolCallItem
+  ToolCallOutputItem: agents.ToolCallOutputItem
+  tools: tools.create_report_tools
+  trace: agents.trace
+  TResponseInputItem: agents.TResponseInputItem
+  tty: tty
+  Tuple: typing.Tuple
+  TypedDict: typing_extensions.TypedDict
+  Union: typing.Union
+  Usage: agents.usage.Usage
+  user_msg: prompts.mvp.user_msg
+  validate_htb_challenges: validate_htb_challenges.main
+  ValidationError: pydantic.ValidationError
+  WorkflowGroup: database.WorkflowGroup
+  zipfile: zipfile
+
+functions:
+  __del__:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: None
+  __enter__:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: SessionDatabase
+  __exit__:
+    type: sync
+    module: tools.session_browser.database
+    args: [self, exc_type, exc_val, exc_tb]
+    params:
+      returns: None
+  __init__:
+    type: sync
+    module: src.ivexes.agents.default_agent
+    args: [self, system_msg, settings]
+  __post_init__:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: None
+  __str__:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: str
+  _check_database:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self]
+    params:
+      returns: None
+  _check_init:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+    args: [self]
+    params:
+      returns: None
+  _check_settings:
+    type: sync
+    module: src.ivexes.agents.base
+    args: [self, user_msg]
+  _copy_to_clipboard:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self, content]
+    params:
+      returns: None
+  _create_box:
+    type: sync
+    module: src.ivexes.printer.components
+    args: [lines, horizontal, vertical, corner]
+    params:
+      returns: list[str]
+  _create_message_title:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self, message, scroller]
+    params:
+      returns: str
+  _detect_output_type:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, output]
+    params:
+      returns: str
+  _format_agent_name_for_display:
+    type: sync
+    module: tools.session_browser.database
+    args: [self, raw_name]
+    params:
+      returns: str
+  _format_argument_value:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, value]
+    params:
+      returns: str
+  _format_function_call:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, message]
+    params:
+      returns: Tuple
+  _format_function_output:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, message]
+    params:
+      returns: Tuple
+  _format_function_signature:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, function_name, args_dict]
+    params:
+      returns: str
+  _format_metadata:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, message]
+    params:
+      returns: Tuple
+  _format_output_content:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, output]
+    params:
+      returns: str
+  _format_output_text:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, message]
+    params:
+      returns: Tuple
+  _format_regular_message:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, message]
+    params:
+      returns: Tuple
+  _format_sandbox_write_file:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, args_dict]
+    params:
+      returns: str
+  _get_definition_sync:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+  _get_references_sync:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+  _get_runner_config:
+    type: sync
+    module: src.ivexes.agents.base
+    args: [self]
+    params:
+      returns: Dict
+  _get_symbols_sync:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+  _handle_path:
+    type: sync
+    module: src.ivexes.sandbox.sandbox
+    args: [self, filename]
+    params:
+      returns: tuple
+  _is_multiagent_message:
+    type: sync
+    module: tools.session_browser.database
+    args: [self, message]
+    params:
+      returns: bool
+  _is_output_text_message:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, message]
+    params:
+      returns: bool
+  _is_terminal_output:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, text]
+    params:
+      returns: bool
+  _reorder_workflow_messages:
+    type: sync
+    module: tools.session_browser.database
+    args: [self, messages]
+    params:
+      returns: List[Message]
+  _safe_get:
+    type: sync
+    module: src.ivexes.vector_db.attack_parser
+    args: [obj]
+  _save_content_to_file:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self, content]
+    params:
+      returns: None
+  _search_cve_by_id:
+    type: sync
+    module: src.ivexes.cve_search.tools
+    args: [cve_id]
+    params:
+      returns: str
+  _search_symbol:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+    args: [self, symbol]
+    params:
+      returns: tuple
+  _setup_agent:
+    type: sync
+    module: src.ivexes.agents.default_agent
+    args: [self]
+  _show_message_navigation_help:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  _time:
+    type: sync
+    module: src.ivexes.agents.multi_agent.shared_context
+    args: [self]
+  agent_as_tool:
+    type: sync
+    module: src.ivexes.agents.multi_agent.tools
+    args: [agent, tool_name, tool_description, settings, context, run_config]
+    params:
+      returns: Tool
+  agent_name:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: Optional[str]
+  agent_names:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: List[str]
+  agent_tool_function:
+    type: tool
+    module: src.ivexes.agents.multi_agent.tools
+    args: [input]
+  banner:
+    type: sync
+    module: src.ivexes.printer.components
+    args: [model, reasoning_model, temperature, max_turns, trace_name]
+    params:
+      returns: str
+  calculate_progressive_tokens:
+    type: sync
+    module: tools.token_estimator
+    args: [agent_sections]
+    params:
+      returns: Tuple
+  cleanup:
+    type: sync
+    module: src.ivexes.container
+    args: [prefix]
+    params:
+      returns: None
+  clear:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self]
+    params:
+      returns: None
+  cli:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  close:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: None
+  cmd_analyze_token_usage:
+    type: sync
+    module: manual
+    args: [output_dir]
+    params:
+      returns: None
+  cmd_browse_sessions:
+    type: sync
+    module: manual
+    args: [session_db]
+    params:
+      returns: None
+  cmd_clear:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  cmd_cve_by_id:
+    type: sync
+    module: manual
+    args: [id]
+    params:
+      returns: None
+  cmd_estimate_tokens:
+    type: sync
+    module: manual
+    args: [output_dir, csv_output]
+    params:
+      returns: None
+  cmd_get_definition:
+    type: sync
+    module: manual
+    args: [symbol]
+    params:
+      returns: None
+  cmd_get_diff:
+    type: sync
+    module: manual
+    args: [file1, file2]
+    params:
+      returns: None
+  cmd_get_file:
+    type: sync
+    module: manual
+    args: [file]
+    params:
+      returns: None
+  cmd_get_references:
+    type: sync
+    module: manual
+    args: [symbol]
+    params:
+      returns: None
+  cmd_get_symbols:
+    type: sync
+    module: manual
+    args: [file]
+    params:
+      returns: None
+  cmd_get_tree:
+    type: sync
+    module: manual
+    args: [count]
+    params:
+      returns: None
+  cmd_llm_ask:
+    type: sync
+    module: manual
+    args: [input, model]
+    params:
+      returns: None
+  cmd_llm_tools:
+    type: sync
+    module: manual
+    args: [type]
+    params:
+      returns: None
+  cmd_query:
+    type: sync
+    module: manual
+    args: [query_text, type, count]
+    params:
+      returns: None
+  cmd_query_capec:
+    type: sync
+    module: manual
+    args: [query_text, count]
+    params:
+      returns: None
+  cmd_query_cwe:
+    type: sync
+    module: manual
+    args: [query_text, count]
+    params:
+      returns: None
+  cmd_run:
+    type: sync
+    module: manual
+    args: [command, image]
+    params:
+      returns: None
+  cmd_scrape_github:
+    type: sync
+    module: manual
+    args: [num_repos, output, database, force_rescan, query_cve_commits]
+    params:
+      returns: None
+  cmd_session_stats:
+    type: sync
+    module: manual
+    args: [session_db]
+    params:
+      returns: None
+  cmd_size:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  cmd_start:
+    type: sync
+    module: manual
+    args: [image]
+    params:
+      returns: None
+  cmd_validate_htb_challenges:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  code_browser:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  codebrowser_get_definition:
+    type: tool
+    module: src.ivexes.code_browser.tools
+    args: [symbol]
+    params:
+      returns: str
+  codebrowser_get_diff:
+    type: tool
+    module: src.ivexes.code_browser.tools
+    args: [file1, file2, options]
+    params:
+      returns: str
+  codebrowser_get_file_content:
+    type: tool
+    module: src.ivexes.code_browser.tools
+    args: [file, offset, limit, encode]
+    params:
+      returns: str
+  codebrowser_get_file_structure:
+    type: tool
+    module: src.ivexes.code_browser.tools
+    args: [depth]
+    params:
+      returns: str
+  codebrowser_get_references:
+    type: tool
+    module: src.ivexes.code_browser.tools
+    args: [symbol]
+    params:
+      returns: str
+  codebrowser_get_symbols:
+    type: tool
+    module: src.ivexes.code_browser.tools
+    args: [file]
+    params:
+      returns: str
+  connect:
+    type: sync
+    module: src.ivexes.sandbox.sandbox
+    args: [self, reset]
+    params:
+      returns: bool
+  create_code_browser_tools:
+    type: sync
+    module: src.ivexes.code_browser.tools
+    args: [code_browser, settings]
+    params:
+      returns: list[Tool]
+  create_file:
+    type: sync
+    module: manual
+    args: [path, content, image]
+    params:
+      returns: None
+  create_header:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [item_type, turn, agent_name]
+    params:
+      returns: str
+  create_report:
+    type: tool
+    module: src.ivexes.report.tools
+    args: [content, report_name]
+    params:
+      returns: str
+  create_report_tools:
+    type: sync
+    module: src.ivexes.report.tools
+    args: [settings, context]
+    params:
+      returns: list[Tool]
+  create_sandbox_tools:
+    type: sync
+    module: src.ivexes.sandbox.tools
+    args: [settings, sandbox]
+    params:
+      returns: list[Tool]
+  create_settings:
+    type: sync
+    module: src.ivexes.config.settings
+    args: [partial_settings]
+    params:
+      returns: Settings
+  create_shared_memory_tools:
+    type: sync
+    module: src.ivexes.agents.multi_agent.tools
+    args: [context]
+    params:
+      returns: list[Tool]
+  create_user:
+    type: sync
+    module: src.ivexes.sandbox.sandbox_container
+    args: [container, username]
+  create_vectordb_tools:
+    type: sync
+    module: src.ivexes.vector_db.tools
+    args: [db, settings]
+    params:
+      returns: list[Tool]
+  current_date:
+    type: sync
+    module: src.ivexes.date.tools
+  cve:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  diff:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  display_name:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: str
+  display_sessions_table:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  download_capec:
+    type: sync
+    module: src.ivexes.vector_db.downloader
+  download_cwe:
+    type: sync
+    module: src.ivexes.vector_db.downloader
+  estimate_output_tokens:
+    type: sync
+    module: tools.token_estimator
+    args: [output_dir]
+    params:
+      returns: Dict
+  export_to_csv:
+    type: sync
+    module: tools.token_estimator
+    args: [estimation_data, csv_path]
+    params:
+      returns: None
+  find_by_name:
+    type: sync
+    module: src.ivexes.container
+    args: [container_name, start]
+  find_output_files:
+    type: sync
+    module: tools.token_estimator
+    args: [output_dir]
+    params:
+      returns: List[str]
+  find_tool_calls:
+    type: sync
+    module: tools.session_browser.database
+    args: [self, tool_name, session_id]
+    params:
+      returns: List[Dict]
+  format_handoff_call:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [item]
+    params:
+      returns: tuple
+  format_handoff_output:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [item]
+    params:
+      returns: tuple
+  format_item:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [cls, item]
+    params:
+      returns: tuple
+  format_mcp_approval_request:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [item]
+    params:
+      returns: tuple
+  format_mcp_list_tools:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [item]
+    params:
+      returns: tuple
+  format_message:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, message]
+    params:
+      returns: Tuple
+  format_message_output:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [item]
+    params:
+      returns: tuple
+  format_reasoning:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [item]
+    params:
+      returns: tuple
+  format_tool_call:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [tool_call]
+    params:
+      returns: str
+  format_tool_call_output:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [item]
+    params:
+      returns: tuple
+  format_usage:
+    type: sync
+    module: src.ivexes.agents.multi_agent.shared_context
+    args: [u]
+    params:
+      returns: str
+  format_usage_display:
+    type: sync
+    module: src.ivexes.printer.components
+    args: [usage, show_details]
+    params:
+      returns: str
+  get:
+    type: sync
+    module: src.ivexes.agents.multi_agent.shared_context
+    args: [self, key, default]
+  get_agent_name:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [item]
+    params:
+      returns: Optional[str]
+  get_all_groups:
+    type: sync
+    module: src.ivexes.vector_db.attack_downloader
+    args: [attack_data]
+  get_all_mitigations:
+    type: sync
+    module: src.ivexes.vector_db.attack_downloader
+    args: [attack_data]
+  get_all_software:
+    type: sync
+    module: src.ivexes.vector_db.attack_downloader
+    args: [attack_data]
+  get_all_tactics:
+    type: sync
+    module: src.ivexes.vector_db.attack_downloader
+    args: [attack_data]
+  get_all_techniques:
+    type: sync
+    module: src.ivexes.vector_db.attack_downloader
+    args: [attack_data]
+  get_attack_data:
+    type: sync
+    module: src.ivexes.vector_db.attack_downloader
+    args: [domain]
+  get_capec_tree:
+    type: sync
+    module: src.ivexes.vector_db.downloader
+  get_client:
+    type: sync
+    module: src.ivexes.container
+    params:
+      returns: DockerClient
+  get_codebase_structure:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+    args: [self, n]
+    params:
+      returns: str
+  get_current_date:
+    type: tool
+    module: src.ivexes.date.tools
+  get_cwe_tree:
+    type: sync
+    module: src.ivexes.vector_db.downloader
+  get_database_stats:
+    type: sync
+    module: tools.session_browser.database
+    args: [db_path]
+    params:
+      returns: str
+  get_definition:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+    args: [self, symbol]
+    params:
+      returns: tuple
+  get_diff:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+    args: [self, options, file1, file2]
+    params:
+      returns: list[str]
+  get_directory_statistics:
+    type: sync
+    module: src.ivexes.token
+    args: [directory_path]
+    params:
+      returns: tuple
+  get_file_content:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+    args: [self, file, offset, limit, encode]
+  get_file_statistics:
+    type: sync
+    module: src.ivexes.token
+    args: [file_path]
+    params:
+      returns: tuple
+  get_model:
+    type: sync
+    module: src.ivexes.config.settings
+    args: [self, model_name]
+    params:
+      returns: Model
+  get_references:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+    args: [self, symbol]
+    params:
+      returns: list[tuple]
+  get_run_config:
+    type: sync
+    module: src.ivexes.config.settings
+    args: [settings]
+    params:
+      returns: RunConfig
+  get_session_messages:
+    type: sync
+    module: tools.session_browser.database
+    args: [self, session_id]
+    params:
+      returns: List[Message]
+  get_sessions:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: List[Session]
+  get_shared_memory:
+    type: tool
+    module: src.ivexes.agents.multi_agent.tools
+    args: [key]
+  get_single_key:
+    type: sync
+    module: tools.session_browser.browser
+    params:
+      returns: str
+  get_symbols:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+    args: [self, file]
+    params:
+      returns: list[tuple]
+  get_text_statistics:
+    type: sync
+    module: src.ivexes.token
+    args: [string, model]
+    params:
+      returns: tuple
+  get_usage:
+    type: sync
+    module: src.ivexes.agents.multi_agent.shared_context
+    args: [self]
+    params:
+      returns: str
+  get_workflow_groups:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: List[WorkflowGroup]
+  get_workflow_messages:
+    type: sync
+    module: tools.session_browser.database
+    args: [self, workflow_group]
+    params:
+      returns: List[Message]
+  init_verctor_db:
+    type: sync
+    module: manual
+    args: [type_of_data]
+  initialize:
+    type: sync
+    module: src.ivexes.code_browser.code_browser
+    args: [self]
+    params:
+      returns: None
+  initialize_attack:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self]
+    params:
+      returns: None
+  initialize_capec:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self]
+    params:
+      returns: None
+  initialize_cwe:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self]
+    params:
+      returns: None
+  insert_attack_all:
+    type: sync
+    module: src.ivexes.vector_db.attack_parser
+    args: [collection, domain]
+  insert_attack_groups:
+    type: sync
+    module: src.ivexes.vector_db.attack_parser
+    args: [collection, attack_data]
+  insert_attack_mitigations:
+    type: sync
+    module: src.ivexes.vector_db.attack_parser
+    args: [collection, attack_data]
+  insert_attack_software:
+    type: sync
+    module: src.ivexes.vector_db.attack_parser
+    args: [collection, attack_data]
+  insert_attack_tactics:
+    type: sync
+    module: src.ivexes.vector_db.attack_parser
+    args: [collection, attack_data]
+  insert_attack_techniques:
+    type: sync
+    module: src.ivexes.vector_db.attack_parser
+    args: [collection, attack_data]
+  insert_capec:
+    type: sync
+    module: src.ivexes.vector_db.parser
+    args: [collection, xml_data]
+  insert_cwe:
+    type: sync
+    module: src.ivexes.vector_db.parser
+    args: [collection, xml_data]
+  interactive:
+    type: sync
+    module: src.ivexes.sandbox.sandbox
+    args: [self, command, user, session, timeout]
+    params:
+      returns: InteractiveSession
+  is_alive:
+    type: sync
+    module: src.ivexes.sandbox.sandbox
+    args: [self]
+    params:
+      returns: bool
+  is_running:
+    type: sync
+    module: src.ivexes.sandbox.sandbox
+    args: [self]
+    params:
+      returns: bool
+  keys:
+    type: sync
+    module: src.ivexes.agents.multi_agent.shared_context
+    args: [self]
+    params:
+      returns: list[str]
+  launch_browser:
+    type: sync
+    module: tools.session_browser.main
+    args: [db_path]
+    params:
+      returns: None
+  list_shared_memory:
+    type: tool
+    module: src.ivexes.agents.multi_agent.tools
+  llm:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  load_sessions:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  main:
+    type: sync
+    module: tools.session_browser.main
+    args: [db_path]
+    params:
+      returns: None
+  next_page:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  next_session:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  parse_agent_sections:
+    type: sync
+    module: tools.token_estimator
+    args: [file_path]
+    params:
+      returns: Dict
+  parse_references:
+    type: sync
+    module: src.ivexes.code_browser.parser
+    args: [buffer]
+    params:
+      returns: list[tuple]
+  parse_symbols:
+    type: sync
+    module: src.ivexes.code_browser.parser
+    args: [buffer]
+    params:
+      returns: list[tuple]
+  previous_page:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  previous_session:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  print_and_write_to_file:
+    type: sync
+    module: src.ivexes.printer.printer
+    args: [self, text, truncate, end]
+    params:
+      returns: None
+  print_banner:
+    type: sync
+    module: src.ivexes.printer.printer
+    args: [self]
+    params:
+      returns: None
+  print_estimation_results:
+    type: sync
+    module: tools.token_estimator
+    args: [estimation_data]
+    params:
+      returns: None
+  print_item:
+    type: sync
+    module: src.ivexes.printer.printer
+    args: [self, item, turn]
+    params:
+      returns: None
+  print_items:
+    type: sync
+    module: src.ivexes.printer.printer
+    args: [self, items]
+    params:
+      returns: None
+  print_result:
+    type: sync
+    module: src.ivexes.printer.printer
+    args: [result]
+    params:
+      returns: list[TResponseInputItem]
+  print_tools_as_json:
+    type: sync
+    module: src.ivexes.printer.printer
+    args: [self, tools]
+    params:
+      returns: None
+  print_usage_summary:
+    type: sync
+    module: src.ivexes.printer.printer
+    args: [self, result]
+    params:
+      returns: None
+  query:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self, query_text, types, n]
+    params:
+      returns: list[str]
+  query_attack_all:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self, query_text, n]
+    params:
+      returns: list[str]
+  query_attack_groups:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self, query_text, n]
+    params:
+      returns: list[str]
+  query_attack_mitigations:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self, query_text, n]
+    params:
+      returns: list[str]
+  query_attack_software:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self, query_text, n]
+    params:
+      returns: list[str]
+  query_attack_tactics:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self, query_text, n]
+    params:
+      returns: list[str]
+  query_attack_techniques:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self, query_text, n]
+    params:
+      returns: list[str]
+  query_capec:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self, query_text, n]
+    params:
+      returns: list[str]
+  query_cwe:
+    type: sync
+    module: src.ivexes.vector_db.vector_db
+    args: [self, query_text, n]
+    params:
+      returns: list[str]
+  raw_agent_name:
+    type: sync
+    module: tools.session_browser.database
+    args: [self]
+    params:
+      returns: Optional[str]
+  read:
+    type: sync
+    module: src.ivexes.sandbox.sandbox
+    args: [self]
+    params:
+      returns: tuple
+  read_file:
+    type: sync
+    module: src.ivexes.sandbox.sandbox
+    args: [self, filename]
+    params:
+      returns: Optional[str]
+  read_stream:
+    type: sync
+    module: src.ivexes.sandbox.sandbox
+  remove_if_exists:
+    type: sync
+    module: src.ivexes.container
+    args: [container_name]
+    params:
+      returns: bool
+  run:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  run_ensured_report:
+    type: async
+    module: src.ivexes.agents.multi_agent.multi_agent
+    args: [self]
+    params:
+      returns: tuple
+  run_htb_tests:
+    type: async
+    module: main
+    args: [dry_run, total_runs, max_tests, skip, htb_challenges, models]
+    params:
+      returns: int
+  run_interactive:
+    type: async
+    module: src.ivexes.agents.base
+    args: [self, user_msg, result_hook]
+    params:
+      returns: None
+  run_multi_agent_tests:
+    type: async
+    module: main
+    args: [dry_run, total_runs, max_tests, skip, vulnerabilities, models]
+    params:
+      returns: int
+  run_p:
+    type: sync
+    module: src.ivexes.agents.base
+    args: [self, user_msg]
+    params:
+      returns: None
+  run_setup_script:
+    type: sync
+    module: src.ivexes.sandbox.sandbox_container
+    args: [container, setup_archive]
+  run_streamed:
+    type: sync
+    module: src.ivexes.agents.base
+    args: [self, user_msg]
+    params:
+      returns: RunResultStreaming
+  run_streamed_p:
+    type: async
+    module: src.ivexes.agents.base
+    args: [self, user_msg]
+    params:
+      returns: None
+  sandbox:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  sandbox_run:
+    type: tool
+    module: src.ivexes.sandbox.tools
+    args: [input, user, session, timeout]
+    params:
+      returns: str
+  sandbox_write_file:
+    type: tool
+    module: src.ivexes.sandbox.tools
+    args: [file_path, content]
+    params:
+      returns: str
+  santize_name:
+    type: sync
+    module: src.ivexes.container
+    args: [name]
+    params:
+      returns: str
+  search_cve_by_id:
+    type: tool
+    module: src.ivexes.cve_search.tools
+    args: [cve_id]
+    params:
+      returns: str
+  search_sessions:
+    type: sync
+    module: tools.session_browser.database
+    args: [self, search_term]
+    params:
+      returns: List[Session]
+  select_session_by_number:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self, digit]
+    params:
+      returns: None
+  semantic_search:
+    type: tool
+    module: src.ivexes.vector_db.tools
+    args: [query, type, n]
+  semantic_search_attack_all:
+    type: tool
+    module: src.ivexes.vector_db.tools
+    args: [query, n]
+  semantic_search_attack_groups:
+    type: tool
+    module: src.ivexes.vector_db.tools
+    args: [query, n]
+  semantic_search_attack_mitigations:
+    type: tool
+    module: src.ivexes.vector_db.tools
+    args: [query, n]
+  semantic_search_attack_software:
+    type: tool
+    module: src.ivexes.vector_db.tools
+    args: [query, n]
+  semantic_search_attack_tactics:
+    type: tool
+    module: src.ivexes.vector_db.tools
+    args: [query, n]
+  semantic_search_attack_techniques:
+    type: tool
+    module: src.ivexes.vector_db.tools
+    args: [query, n]
+  semantic_search_capec:
+    type: tool
+    module: src.ivexes.vector_db.tools
+    args: [query, n]
+  semantic_search_cwe:
+    type: tool
+    module: src.ivexes.vector_db.tools
+    args: [query, n]
+  send:
+    type: sync
+    module: src.ivexes.sandbox.sandbox
+    args: [self, text]
+  set:
+    type: sync
+    module: src.ivexes.agents.multi_agent.shared_context
+    args: [self, key, value]
+  set_metadata_view:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self, show_metadata]
+    params:
+      returns: None
+  set_shared_memory:
+    type: tool
+    module: src.ivexes.agents.multi_agent.tools
+    args: [key, value, override]
+  setup_container:
+    type: sync
+    module: src.ivexes.code_browser.nvim
+    args: [code_base, settings, port, renew]
+    params:
+      returns: Container
+  setup_default_logging:
+    type: sync
+    module: src.ivexes.config.log
+    args: [ivexes_level]
+  setup_sandbox:
+    type: tool
+    module: src.ivexes.sandbox.tools
+    params:
+      returns: str
+  show_main_menu:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  show_navigation_help:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  sprint_tools_as_json:
+    type: sync
+    module: src.ivexes.printer.formatter
+    args: [tools]
+    params:
+      returns: str
+  stream_result:
+    type: async
+    module: src.ivexes.printer.printer
+    args: [result]
+    params:
+      returns: list[TResponseInputItem]
+  summary:
+    type: sync
+    module: src.ivexes.agents.multi_agent.shared_context
+    args: [self]
+    params:
+      returns: str
+  teardown_sandbox:
+    type: tool
+    module: src.ivexes.sandbox.tools
+    params:
+      returns: str
+  toggle_metadata_view:
+    type: sync
+    module: tools.session_browser.formatter
+    args: [self]
+    params:
+      returns: bool
+  toggle_workflow_mode:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self]
+    params:
+      returns: None
+  tokenize:
+    type: sync
+    module: manual
+    args: [path]
+    params:
+      returns: None
+  update_usage:
+    type: sync
+    module: src.ivexes.agents.multi_agent.shared_context
+    args: [self, result, subagent]
+    params:
+      returns: None
+  utils:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  validate_api_keys:
+    type: sync
+    module: src.ivexes.config.settings
+    args: [cls, v]
+    params:
+      returns: str
+  validate_base_url:
+    type: sync
+    module: src.ivexes.config.settings
+    args: [cls, v]
+    params:
+      returns: str
+  validate_embedding_provider:
+    type: sync
+    module: src.ivexes.config.settings
+    args: [cls, v]
+    params:
+      returns: str
+  validate_log_level:
+    type: sync
+    module: src.ivexes.config.settings
+    args: [cls, v]
+    params:
+      returns: str
+  validate_max_turns:
+    type: sync
+    module: src.ivexes.config.settings
+    args: [cls, v]
+    params:
+      returns: int
+  validate_temperature:
+    type: sync
+    module: src.ivexes.config.settings
+    args: [cls, v]
+    params:
+      returns: float
+  validate_trace_name:
+    type: sync
+    module: src.ivexes.config.settings
+    args: [cls, v]
+    params:
+      returns: str
+  vector_db:
+    type: sync
+    module: manual
+    params:
+      returns: None
+  view_session:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self, session]
+    params:
+      returns: None
+  view_workflow:
+    type: sync
+    module: tools.session_browser.browser
+    args: [self, workflow_group]
+    params:
+      returns: None
+  write_file:
+    type: sync
+    module: src.ivexes.sandbox.sandbox
+    args: [self, filename, content]
+    params:
+      returns: bool
+
+variables:
+  CHROMA_PATH:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  CODEBASE_PATH:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  EMBEDDING_MODEL:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  EMBEDDING_PROVIDER:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  LLM_API_KEY:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  LLM_BASE_URL:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  LOG_LEVEL:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  MAX_REPROMPTS:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  MAX_TURNS:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  MODEL:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  MODEL_TEMPERATURE:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  OPENAI_API_KEY:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  PATCHED_CODEBASE_FOLDER:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  REASONING_MODEL:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  SANDBOX_IMAGE:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  SESSION_DB_PATH:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  SETUP_ARCHIVE:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  TRACE_NAME:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+  VULNERABLE_CODEBASE_FOLDER:
+    type: env
+    params:
+      caller: [os.environ.get]
+      path: [src.ivexes.config.settings]
+
+files:
+  .json:
+    type: literal
+    actions: [write]
+    params:
+      caller: [tempfile.NamedTemporaryFile]
+      mode: w
+      delete: "False"
+  csv_path:
+    type: variable
+    actions: [write, read]
+    params:
+      caller: [open, csv.DictWriter]
+      alias: [csvfile]
+  db_path:
+    type: variable
+    actions: [read]
+    params:
+      caller: [Path]
+  directory_path:
+    type: variable
+    actions: [read]
+    params:
+      caller: [os.walk]
+  file_name:
+    type: variable
+    actions: [read]
+    params:
+      caller: [os.unlink, os.path.exists]
+  file_path:
+    type: variable
+    actions: [read]
+    params:
+      caller: [open, Path, os.path.isfile, os.path.basename]
+      alias: [f]
+  filepath:
+    type: variable
+    actions: [write]
+    params:
+      caller: [open]
+      alias: [f]
+  output_path:
+    type: variable
+    actions: [read]
+    params:
+      caller: [Path(), output_path.glob]
+  path:
+    type: variable
+    actions: [read, write]
+    params:
+      caller: [os.path.dirname, open, os.path.isdir, os.path.isfile]
+  rel_path:
+    type: variable
+    actions: [read]
+    params:
+      caller: [Path.relative_to()]
+  reports_dir:
+    type: variable
+    actions: [read]
+    params:
+      caller: [os.makedirs]
+  settings.codebase_path:
+    type: variable
+    actions: [read]
+    params:
+      caller: [os.path.abspath]
+  settings.patched_folder:
+    type: variable
+    actions: [read]
+    params:
+      caller: [os.path.basename]
+  settings.vulnerable_folder:
+    type: variable
+    actions: [read]
+    params:
+      caller: [os.path.basename]
+
+networks:
+  capec.mitre.org:
+    type: api
+    actions: [GET]
+    urls: [/data/xml/capec_latest.xml]
+    protocols: [https]
+    ports: ["443"]
+    params:
+      caller: [download_capec]
+  cwe.mitre.org:
+    type: api
+    actions: [GET]
+    urls: [/data/xml/cwec_latest.xml.zip]
+    protocols: [https]
+    ports: ["443"]
+    params:
+      caller: [download_cwe]
