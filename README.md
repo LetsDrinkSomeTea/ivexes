@@ -3,6 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Docker](https://img.shields.io/badge/docker-required-blue.svg)](https://www.docker.com/)
+[![A2AS-CERTIFIED](https://img.shields.io/badge/A2AS-CERTIFIED-f3af80)](https://www.a2as.org/certified/agents/letsdrinksometea/ivexes?utm_source=github&utm_medium=pull_request) 
 
 IVExES is an advanced Python framework for cybersecurity vulnerability analysis
 and exploitation using multi-agent AI systems. It combines knowledge bases (CWE,
